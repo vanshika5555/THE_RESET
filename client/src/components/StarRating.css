@@ -1,0 +1,27 @@
+.sr-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.sr-stars {
+  display: flex;
+  gap: 1px;
+}
+
+.sr-star--filled { color: #111; font-size: 11px; }
+.sr-star--empty  { color: #ddd; font-size: 11px; }
+
+.sr-avg {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #111;
+}
+
+.sr-count {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  color: #aaa;
+}

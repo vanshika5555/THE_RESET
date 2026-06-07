@@ -1,0 +1,135 @@
+.dashboard { max-width: 1000px; }
+
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.dash-title {
+  font-size: 26px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: 0.02em;
+}
+
+.dash-add-btn {
+  background: #111;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.dash-add-btn:hover { background: #333; }
+
+/* Stats */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  border: 1px solid #ebebeb;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 10px;
+}
+
+.stat-num {
+  font-size: 36px;
+  font-weight: 300;
+  color: #111;
+}
+
+/* Section */
+.dash-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 16px;
+}
+
+.dash-empty {
+  background: #fff;
+  border: 1px solid #ebebeb;
+  border-radius: 8px;
+  padding: 48px;
+  text-align: center;
+  color: #aaa;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+/* Table */
+.dash-table {
+  width: 100%;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ebebeb;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  overflow: hidden;
+}
+
+.dash-table th {
+  text-align: left;
+  padding: 14px 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #aaa;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.dash-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f7f7f7;
+  color: #333;
+}
+
+.dash-table tr:last-child td { border-bottom: none; }
+
+.dash-badge {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.dash-badge--men    { background: #111; color: #fff; }
+.dash-badge--women  { background: #f0eeeb; color: #111; }
+
+.dash-edit-link {
+  color: #111;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 768px) {
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+}

@@ -1,0 +1,287 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap');
+
+/* ── Section ── */
+.eg-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  box-sizing: border-box;
+  background: #f0eeeb;
+}
+
+/* ── Rows ── */
+.eg-row {
+  display: grid;
+  gap: 6px;
+}
+
+.eg-row--top {
+  grid-template-columns: 1.2fr 0.8fr;
+}
+
+.eg-row--bottom {
+  grid-template-columns: 1fr 0.55fr;
+}
+
+/* ── Blocks ── */
+.eg-block {
+  position: relative;
+  overflow: hidden;
+  min-height: 360px;
+  border-radius: 4px;
+}
+
+.eg-block--dark {
+  background: #111;
+}
+
+.eg-block--stat {
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eg-block--wide {
+  min-height: 380px;
+}
+
+/* ── Image Placeholders (swap for real <img> later) ── */
+.eg-img-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.eg-img--light {
+  background: linear-gradient(135deg, #e8e3db 0%, #d6d0c8 100%);
+}
+
+.eg-img--dark {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2e2e2e 100%);
+  opacity: 0.6;
+}
+
+.eg-img--mid {
+  background: linear-gradient(160deg, #c8c5bf 0%, #9a9590 100%);
+}
+
+/* ── Text overlays ── */
+.eg-block-text {
+  position: relative;
+  z-index: 2;
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  box-sizing: border-box;
+  background: linear-gradient(to top, rgba(0,0,0,0.18) 0%, transparent 60%);
+}
+
+.eg-block-text--bottom {
+  background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%);
+  justify-content: flex-end;
+}
+
+.eg-block--dark .eg-block-text {
+  background: none;
+  justify-content: flex-end;
+}
+
+/* ── Typography ── */
+.eg-eyebrow {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.45);
+  margin-bottom: 10px;
+}
+
+.eg-eyebrow--light {
+  color: rgba(255,255,255,0.4);
+}
+
+.eg-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 300;
+  line-height: 1.15;
+  color: #111;
+  margin-bottom: 12px;
+}
+
+.eg-heading--light {
+  color: #fff;
+  font-size: clamp(22px, 2.5vw, 34px);
+}
+
+.eg-body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: rgba(0,0,0,0.55);
+  max-width: 320px;
+  margin-bottom: 20px;
+}
+
+.eg-body--light {
+  color: rgba(255,255,255,0.5);
+}
+
+/* ── Links ── */
+.eg-link {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 1px solid;
+  transition: opacity 0.2s;
+  width: fit-content;
+}
+
+.eg-link--dark {
+  color: #111;
+  border-color: #111;
+}
+
+.eg-link--light {
+  color: #fff;
+  border-color: #fff;
+}
+
+.eg-link:hover { opacity: 0.45; }
+
+/* ── CTA Button ── */
+.eg-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  color: #111;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 12px 20px;
+  border-radius: 40px;
+  transition: background 0.25s, color 0.25s;
+  width: fit-content;
+  margin-top: 4px;
+}
+
+.eg-cta-btn:hover {
+  background: #111;
+  color: #fff;
+}
+
+/* ── Stats Block ── */
+.eg-stat-inner {
+  padding: 40px;
+  width: 100%;
+}
+
+.eg-stat-eyebrow {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 28px;
+}
+
+.eg-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 16px 0;
+}
+
+.eg-stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 42px;
+  font-weight: 300;
+  color: #111;
+  line-height: 1;
+}
+
+.eg-stat-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  color: #888;
+  line-height: 1.5;
+}
+
+.eg-stat-divider {
+  width: 100%;
+  height: 1px;
+  background: #f0f0f0;
+  margin: 8px 0;
+}
+
+/* ── Hover lift on image blocks ── */
+.eg-block--img-light .eg-img-placeholder,
+.eg-block--wide .eg-img-placeholder {
+  transition: transform 0.6s ease;
+}
+
+.eg-block--img-light:hover .eg-img-placeholder,
+.eg-block--wide:hover .eg-img-placeholder {
+  transform: scale(1.04);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .eg-row--top,
+  .eg-row--bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .eg-block {
+    min-height: 300px;
+  }
+
+  .eg-block--stat {
+    min-height: auto;
+  }
+
+  .eg-stat-inner {
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .eg-section { gap: 4px; padding: 4px; }
+  .eg-block-text { padding: 24px 20px; }
+  .eg-block { min-height: 260px; }
+  .eg-heading { font-size: 26px; }
+}
+
+/* ── Real Images ── */
+.eg-real-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  z-index: 0;
+  transition: transform 0.6s ease;
+}
+
+.eg-block--img-light:hover .eg-real-img,
+.eg-block--wide:hover .eg-real-img {
+  transform: scale(1.02);
+}

@@ -1,0 +1,225 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap');
+
+.fc-section {
+  background: #fff;
+  padding: 60px 0 60px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Header ── */
+.fc-header {
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 0 20px;
+}
+
+.fc-eyebrow {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 10px;
+}
+
+.fc-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  color: #111;
+  margin: 0;
+}
+
+/* ── Track ── */
+.fc-track {
+  position: relative;
+  height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  overflow: visible;
+}
+
+.fc-track:active { cursor: grabbing; }
+
+/* ── Card ── */
+.fc-card {
+  position: absolute;
+  border-radius: 14px;
+  overflow: hidden;
+  transition:
+    transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity   0.45s ease,
+    width     0.45s ease,
+    height    0.45s ease,
+    box-shadow 0.4s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+  flex-shrink: 0;
+}
+
+.fc-card--active {
+  cursor: default;
+  box-shadow: 0 20px 56px rgba(0,0,0,0.16);
+}
+
+.fc-card-img {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.fc-card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+.fc-placeholder-icon {
+  font-size: 48px;
+  pointer-events: none;
+}
+
+/* ── Tag ── */
+.fc-card-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: #111;
+  color: #fff;
+  padding: 4px 9px;
+  border-radius: 2px;
+}
+
+/* ── Active card overlay ── */
+.fc-card-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 18px 16px 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
+  color: #fff;
+  animation: fadeUp 0.3s ease forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fc-card-category {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 3px;
+}
+
+.fc-card-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: #fff;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.fc-card-price {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 10px;
+}
+
+.fc-card-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #111;
+  transition: transform 0.2s;
+}
+
+.fc-card-btn:hover { transform: scale(1.1); }
+
+/* ── Dots ── */
+.fc-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.fc-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ddd;
+  border: none;
+  cursor: pointer;
+  transition: background 0.25s, width 0.3s;
+  padding: 0;
+}
+
+.fc-dot--active {
+  background: #111;
+  width: 22px;
+  border-radius: 3px;
+}
+
+/* ── Footer ── */
+.fc-footer {
+  text-align: center;
+  margin-top: 32px;
+}
+
+.fc-view-all {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #111;
+  text-decoration: none;
+  border-bottom: 1px solid #111;
+  padding-bottom: 3px;
+  transition: opacity 0.2s;
+}
+
+.fc-view-all:hover { opacity: 0.45; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .fc-track { height: 360px; }
+}
+
+@media (max-width: 480px) {
+  .fc-track { height: 300px; }
+  .fc-section { padding: 40px 0 48px; }
+}

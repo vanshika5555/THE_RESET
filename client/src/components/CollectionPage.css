@@ -1,0 +1,362 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+.cp-page {
+  min-height: 100vh;
+  background: #fff;
+}
+
+/* ── Hero ── */
+.cp-hero {
+  text-align: center;
+  padding: 72px 20px 40px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cp-hero-eyebrow {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 12px;
+}
+
+.cp-hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(48px, 7vw, 80px);
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  color: #111;
+  margin-bottom: 12px;
+}
+
+.cp-hero-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: #aaa;
+  letter-spacing: 0.06em;
+}
+
+/* ── Toolbar ── */
+.cp-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 48px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.cp-count {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: #aaa;
+  letter-spacing: 0.06em;
+}
+
+.cp-cart-btn {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #111;
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  transition: opacity 0.2s;
+}
+
+.cp-cart-btn:hover { opacity: 0.6; }
+
+.cp-cart-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  background: #111;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Grid ── */
+.cp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  padding: 2px;
+}
+
+/* ── Card ── */
+.cp-card {
+  background: #fff;
+}
+
+.cp-card-img {
+  position: relative;
+  width: 100%;
+  padding-top: 130%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* Tag */
+.cp-tag {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: #fff;
+  color: #111;
+  padding: 4px 10px;
+}
+
+/* Wishlist */
+.cp-wish-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 4px;
+}
+
+.cp-card-img:hover .cp-wish-btn { opacity: 1; }
+
+/* Size hover panel */
+.cp-size-hover {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255,255,255,0.95);
+  padding: 14px 16px;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  z-index: 3;
+}
+
+.cp-card-img:hover .cp-size-hover {
+  transform: translateY(0);
+}
+
+.cp-size-hover-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.cp-sizes {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cp-size-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #111;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  min-width: 36px;
+  text-align: center;
+}
+
+.cp-size-btn:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* Card info */
+.cp-card-info {
+  padding: 14px 4px 20px;
+}
+
+.cp-card-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: #111;
+  margin-bottom: 5px;
+}
+
+.cp-card-price {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #111;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .cp-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .cp-grid { grid-template-columns: repeat(2, 1fr); }
+  .cp-toolbar { padding: 16px 24px; }
+}
+
+@media (max-width: 480px) {
+  .cp-grid { grid-template-columns: repeat(2, 1fr); gap: 1px; padding: 1px; }
+  .cp-hero { padding: 48px 20px 28px; }
+  .cp-hero-title { font-size: 44px; }
+}
+
+/* ── Loading / Empty ── */
+.cp-loading, .cp-empty {
+  text-align: center;
+  padding: 80px 20px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 20px;
+  color: #aaa;
+  letter-spacing: 0.1em;
+}
+
+.cp-card-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.cp-checkout-overlay {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 2000;
+  overflow-y: auto;
+}
+
+/* ── Filters ── */
+.cp-filters {
+  padding: 0 48px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cp-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 0;
+}
+
+.cp-filter-row--sub {
+  padding-top: 0;
+  padding-bottom: 16px;
+  border-top: 1px dashed #f0f0f0;
+}
+
+.cp-filter-btn {
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  padding: 8px 18px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.cp-filter-btn:hover {
+  border-color: #111;
+  color: #111;
+}
+
+.cp-filter-btn--active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* Subcategory pills */
+.cp-filter-btn--sub {
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #f7f7f7;
+  border-color: #e8e8e8;
+  color: #888;
+}
+
+.cp-filter-btn--sub:hover {
+  background: #f0f0f0;
+  border-color: #ddd;
+  color: #333;
+}
+
+.cp-filter-btn--sub-active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* Count filter label */
+.cp-count-filter {
+  color: #bbb;
+  font-weight: 300;
+}
+
+/* Subcategory label on card */
+.cp-card-sub {
+  font-family: "DM Sans", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #bbb;
+  margin-bottom: 3px;
+}
+
+/* Season tag on card image */
+.cp-season-tag {
+  position: absolute;
+  bottom: 52px;
+  left: 14px;
+  z-index: 2;
+  font-family: "DM Sans", sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.9);
+  color: #555;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cp-filters { padding: 0 16px; }
+  .cp-filter-btn { font-size: 11px; padding: 7px 14px; }
+}

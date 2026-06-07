@@ -1,0 +1,68 @@
+.ao-page { max-width: 1000px; }
+
+.ao-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.ao-title { font-size: 26px; font-weight: 600; color: #111; }
+.ao-count { font-size: 13px; color: #aaa; }
+.ao-loading, .ao-empty { padding: 48px; text-align: center; color: #aaa; font-size: 14px; }
+
+.ao-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 20px; }
+.ao-tab { background: #fff; border: 1px solid #e0e0e0; padding: 7px 14px; font-size: 12px; cursor: pointer; border-radius: 4px; color: #666; transition: all 0.2s; font-family: inherit; }
+.ao-tab--active { background: #111; color: #fff; border-color: #111; }
+
+.ao-list { display: flex; flex-direction: column; gap: 16px; }
+
+.ao-card { background: #fff; border: 1px solid #ebebeb; border-radius: 8px; overflow: hidden; }
+
+.ao-card-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f5f5;
+  background: #fafafa;
+}
+
+.ao-order-id { font-size: 13px; font-weight: 600; color: #111; letter-spacing: 0.06em; display: block; margin-bottom: 3px; }
+.ao-order-date { font-size: 11px; color: #aaa; }
+.ao-customer-name { display: block; font-size: 13px; font-weight: 500; color: #111; margin-bottom: 2px; }
+.ao-customer-email { font-size: 11px; color: #aaa; }
+
+.ao-status-select {
+  border: 1.5px solid #ddd;
+  border-radius: 4px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.ao-items { padding: 14px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+.ao-item { display: flex; gap: 12px; align-items: center; }
+
+.ao-item-img { width: 48px; height: 58px; flex-shrink: 0; border-radius: 3px; overflow: hidden; }
+.ao-item-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+.ao-item-name { font-size: 14px; font-weight: 500; color: #111; margin-bottom: 3px; }
+.ao-item-meta { font-size: 12px; color: #888; }
+
+.ao-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #fafafa;
+  border-top: 1px solid #f5f5f5;
+}
+
+.ao-address { font-size: 12px; color: #888; }
+.ao-total { font-size: 15px; font-weight: 600; color: #111; }
+
+@media (max-width: 600px) {
+  .ao-card-header { grid-template-columns: 1fr; }
+}
