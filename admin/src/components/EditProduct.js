@@ -33,7 +33,7 @@ export default function EditProduct() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/products/${id}`)
+    axios.get(`/api/products/${id}`)
       .then(res => setForm(res.data))
       .catch(() => setError('Product not found.'));
   }, [id]);
@@ -72,7 +72,7 @@ export default function EditProduct() {
     }
     setLoading(true);
     try {
-      await axios.put(`http://localhost:5000/api/products/${id}`, form);
+      await axios.put(`/api/products/${id}`, form);
       navigate('/products');
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong.');

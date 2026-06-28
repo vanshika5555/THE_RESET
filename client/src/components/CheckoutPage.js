@@ -61,7 +61,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
       }));
 
       const res = await axios.post(
-        'http://localhost:5000/api/orders',
+        `/api/orders`,
         { items: orderItems, subtotal, shippingAddress: address },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );

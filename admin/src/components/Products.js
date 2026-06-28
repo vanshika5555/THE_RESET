@@ -10,13 +10,13 @@ export default function Products() {
   useEffect(() => { fetchProducts(); }, []);
 
   const fetchProducts = async () => {
-    const res = await axios.get('http://localhost:5000/api/products');
+    const res = await axios.get(`/api/products`);
     setProducts(res.data);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this product?')) return;
-    await axios.delete(`http://localhost:5000/api/products/${id}`);
+    await axios.delete(`/api/products/${id}`);
     fetchProducts();
   };
 

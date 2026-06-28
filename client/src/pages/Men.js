@@ -53,7 +53,7 @@ export default function Men() {
   const navigate                          = useNavigate();
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products?category=Men")
+    axios.get(`/api/products?category=Men`)
       .then(res => { setProducts(res.data); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);

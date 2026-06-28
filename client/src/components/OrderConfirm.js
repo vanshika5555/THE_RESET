@@ -10,7 +10,7 @@ export default function OrderConfirm({ orderId }) {
 
   useEffect(() => {
     if (!orderId) return;
-    axios.get(`http://localhost:5000/api/orders/${orderId}`, {
+    axios.get(`/api/orders/${orderId}`, {
       headers: { Authorization: `Bearer ${user.token}` }
     }).then(res => setOrder(res.data));
   }, [orderId, user]);

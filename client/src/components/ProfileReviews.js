@@ -43,7 +43,7 @@ export default function ProfileReviews() {
 
   const fetchReviews = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/reviews/myreviews', { headers });
+      const res = await axios.get(`/api/reviews/myreviews`, { headers });
       setReviews(res.data);
     } catch {}
     setLoading(false);
@@ -51,7 +51,7 @@ export default function ProfileReviews() {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/orders/myorders', { headers });
+      const res = await axios.get(`/api/orders/myorders`, { headers });
       setOrders(res.data);
     } catch {}
   };
@@ -76,7 +76,7 @@ export default function ProfileReviews() {
     setError(''); setSuccess('');
     if (!form.productId || !form.review) { setError('Please select a product and write a review.'); return; }
     try {
-      await axios.post('http://localhost:5000/api/reviews', {
+      await axios.post(`/api/reviews`, {
         product: form.productId,
         rating:  form.rating,
         review:  form.review,
@@ -93,7 +93,7 @@ export default function ProfileReviews() {
   const deleteReview = async (id) => {
     if (!window.confirm('Delete this review?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/reviews/${id}`, { headers });
+      await axios.delete(`/api/reviews/${id}`, { headers });
       fetchReviews();
     } catch {}
   };

@@ -20,7 +20,7 @@ export default function MyOrders() {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    axios.get('http://localhost:5000/api/orders/myorders', {
+    axios.get(`/api/orders/myorders`, {
       headers: { Authorization: `Bearer ${user.token}` }
     }).then(res => { setOrders(res.data); setLoading(false); })
       .catch(() => setLoading(false));

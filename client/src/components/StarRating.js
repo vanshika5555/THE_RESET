@@ -7,7 +7,7 @@ export default function StarRating({ productId }) {
 
   useEffect(() => {
     if (!productId) return;
-    axios.get(`http://localhost:5000/api/reviews/summary/${productId}`)
+    axios.get(`/api/reviews/summary/${productId}`)
       .then(res => setSummary(res.data))
       .catch(() => {});
   }, [productId]);

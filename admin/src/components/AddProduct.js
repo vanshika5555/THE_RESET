@@ -68,7 +68,7 @@ export default function AddProduct() {
     }
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/products', form);
+      await axios.post(`/api/products`, form);
       navigate('/products');
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong.');

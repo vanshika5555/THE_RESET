@@ -53,7 +53,7 @@ export default function Women() {
   const navigate                          = useNavigate();
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products?category=Women")
+    axios.get(`/api/products?category=Women`)
       .then(res => { setProducts(res.data); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);

@@ -81,7 +81,7 @@ function Orders({ user }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/orders/myorders', {
+    axios.get(`/api/orders/myorders`, {
       headers: { Authorization: `Bearer ${user.token}` }
     }).then(res => { setOrders(res.data); setLoading(false); })
       .catch(() => setLoading(false));
@@ -345,7 +345,7 @@ function ChangePassword({ user }) {
     if (form.newPass !== form.confirm) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
-      await axios.put('http://localhost:5000/api/auth/changepassword', {
+      await axios.put(`/api/auth/changepassword`, {
         currentPassword: form.current,
         newPassword: form.newPass
       }, { headers: { Authorization: `Bearer ${user.token}` } });
