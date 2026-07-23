@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
-// GET all products
+// GET all products  (public — the shop needs this)
 router.get('/', async (req, res) => {
   try {
     const { category, season, subcategory } = req.query;
@@ -17,7 +18,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET single product
+// GET single product  (public)
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -28,8 +29,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST create product
-router.post('/', async (req, res) => {
+// POST create product  (admin only)
+router.post('/', protect, adminOnly, async (req, res) => {
   try {
     const product = new Product(req.body);
     const saved = await product.save();
@@ -39,8 +40,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update product
-router.put('/:id', async (req, res) => {
+// PUT update product  (admin only)
+router.put('/:id', protect, adminOnly, async (req, res) => {
   try {
     const updated = await Product.findByIdAndUpdate(
       req.params.id,
@@ -54,8 +55,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE product
-router.delete('/:id', async (req, res) => {
+// DELETE product  (admin only)
+router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Product not found' });

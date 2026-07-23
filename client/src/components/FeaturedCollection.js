@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./FeaturedCollection.css";
 import FC1 from "../assets/FC1.jpg";
@@ -143,7 +144,7 @@ export default function FeaturedCollection() {
       </div>
 
       <div className="fc-footer">
-        <a href="#" className="fc-view-all">View All Collection →</a>
+        <Link to="/men" className="fc-view-all">View All Collection →</Link>
       </div>
     </section>
   );

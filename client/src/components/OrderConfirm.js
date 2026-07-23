@@ -6,25 +6,63 @@ import './OrderConfirm.css';
 
 export default function OrderConfirm({ orderId }) {
   const { user } = useAuth();
-  const [order, setOrder] = useState(null);
+  const [order, setOrder]     = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed]   = useState(false);
 
   useEffect(() => {
-    if (!orderId) return;
-    axios.get(`/api/orders/${orderId}`, {
-      headers: { Authorization: `Bearer ${user.token}` }
-    }).then(res => setOrder(res.data));
-  }, [orderId, user]);
+    if (!orderId) { setLoading(false); return; }
+    let active = true;
+
+    axios.get(`/api/orders/${orderId}`)
+      .then(res => {
+        if (!active) return;
+        setOrder(res.data);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setFailed(true);
+        setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [orderId]);
+
+  const addr = order?.shippingAddress;
+  const addressLine = addr
+    ? [addr.houseNo, addr.address, addr.landmark, addr.city, addr.state]
+        .filter(Boolean).join(', ')
+    : '';
 
   return (
     <div className="oc-page">
       <div className="oc-box">
         <div className="oc-icon">✓</div>
-        <h1 className="oc-title">Order Confirmed!</h1>
-        <p className="oc-sub">Thank you, {user?.name?.split(' ')[0]}. Your order has been placed successfully.</p>
+        <h1 className="oc-title">Order Confirmed</h1>
+        <p className="oc-sub">
+          Thank you{user?.name ? `, ${user.name.split(' ')[0]}` : ''}. We have received your order
+          and will send it on its way shortly.
+        </p>
+
+        {loading && <p className="oc-loading">Loading your order details...</p>}
+
+        {failed && (
+          <div className="oc-warn">
+            <p><strong>Your order was placed.</strong></p>
+            <p>
+              We just could not load the details on this screen. You can see the
+              full order any time under{' '}
+              <Link to="/orders" className="oc-inline-link">My Orders</Link>.
+            </p>
+          </div>
+        )}
 
         {order && (
           <>
-            <div className="oc-id">Order ID: <span>#{order._id.slice(-8).toUpperCase()}</span></div>
+            <div className="oc-id">
+              Order ID: <span>#{order._id.slice(-8).toUpperCase()}</span>
+            </div>
 
             <div className="oc-items">
               {order.items.map((item, i) => (
@@ -43,16 +81,49 @@ export default function OrderConfirm({ orderId }) {
 
             <div className="oc-address">
               <p className="oc-address-label">Delivering to</p>
-              <p>{order.shippingAddress.fullName}</p>
-              <p>{order.shippingAddress.address}, {order.shippingAddress.city} - {order.shippingAddress.pincode}</p>
+              <p>{addr.fullName}{addr.phone ? ` · +91 ${addr.phone}` : ''}</p>
+              <p>{addressLine} - {addr.pincode}</p>
             </div>
 
             <div className="oc-total">
-              Total Paid: <span>₹{order.subtotal.toLocaleString('en-IN')}</span>
+              Order Total: <span>₹{(order.subtotal || 0).toLocaleString('en-IN')}</span>
             </div>
 
             <div className="oc-status">
               Status: <span className="oc-status-badge">{order.status}</span>
+            </div>
+
+            {/* What happens next — the thing first-time buyers actually want to know */}
+            <div className="oc-next">
+              <p className="oc-next-title">What happens next</p>
+              <ol className="oc-steps">
+                <li>
+                  <span className="oc-step-dot oc-step-dot--done" />
+                  <span>
+                    <strong>Order placed</strong>
+                    <em>We have your order and are getting it ready.</em>
+                  </span>
+                </li>
+                <li>
+                  <span className="oc-step-dot" />
+                  <span>
+                    <strong>Packed and dispatched</strong>
+                    <em>Usually within 2 working days.</em>
+                  </span>
+                </li>
+                <li>
+                  <span className="oc-step-dot" />
+                  <span>
+                    <strong>On its way to you</strong>
+                    <em>3–5 working days in metro cities, 5–8 elsewhere.</em>
+                  </span>
+                </li>
+              </ol>
+              <p className="oc-next-note">
+                You can follow the status any time under{' '}
+                <Link to="/orders" className="oc-inline-link">My Orders</Link>.
+                Questions? See our <Link to="/help" className="oc-inline-link">Help page</Link>.
+              </p>
             </div>
           </>
         )}

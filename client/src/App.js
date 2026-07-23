@@ -14,6 +14,10 @@ import MyOrders from './pages/MyOrders';
 import WishlistPage from './pages/WishlistPage';
 import CheckoutRoute from './pages/CheckoutRoute';
 import Profile from './pages/Profile';
+import ProductDetail from './pages/ProductDetail';
+import SearchPage from './pages/SearchPage';
+import Help from './pages/Help';
+import Legal from './pages/Legal';
 
 function App() {
   return (
@@ -32,6 +36,11 @@ function App() {
                 <Route path="/orders"    element={<MyOrders />} />
                 <Route path="/wishlist"  element={<WishlistPage />} />
                 <Route path="/checkout"  element={<CheckoutRoute />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/privacy" element={<Legal />} />
+                <Route path="/terms" element={<Legal />} />
                 <Route path="/profile/*" element={<Profile />} />
               </Routes>
               <Footer />

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ProfileReviews from '../components/ProfileReviews';
+import AddressFields, { BLANK_ADDRESS, validateAddress } from '../components/AddressFields';
+import '../components/AddressFields.css';
 import { Link, useNavigate, Routes, Route, NavLink } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -140,101 +142,121 @@ function Orders({ user }) {
 
 // ─── Addresses ────────────────────────────
 function Addresses() {
-  const [addresses, setAddresses] = useState(
-    JSON.parse(localStorage.getItem('theresetAddresses') || '[]')
-  );
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ label: 'Home', fullName: '', phone: '', address: '', city: '', state: '', pincode: '' });
-  const [editIdx, setEditIdx] = useState(null);
+  const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [showForm, setShowForm]   = useState(false);
+  const [form, setForm]           = useState(BLANK_ADDRESS);
+  const [editId, setEditId]       = useState(null);
 
-  const save = () => {
-    if (!form.fullName || !form.phone || !form.address || !form.city || !form.pincode) return;
-    let updated;
-    if (editIdx !== null) {
-      updated = addresses.map((a, i) => i === editIdx ? form : a);
-      setEditIdx(null);
-    } else {
-      updated = [...addresses, form];
+  useEffect(() => {
+    axios.get('/api/auth/addresses')
+      .then(res => { setAddresses(res.data || []); setLoading(false); })
+      .catch(() => { setError('Could not load your addresses.'); setLoading(false); });
+  }, []);
+
+  const save = async () => {
+    const errs = validateAddress(form);
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      setError('Please fix the highlighted fields.');
+      return;
     }
-    setAddresses(updated);
-    localStorage.setItem('theresetAddresses', JSON.stringify(updated));
-    setForm({ label: 'Home', fullName: '', phone: '', address: '', city: '', state: '', pincode: '' });
-    setShowForm(false);
+
+    setSaving(true);
+    setError('');
+    try {
+      const res = editId
+        ? await axios.put(`/api/auth/addresses/${editId}`, form)
+        : await axios.post('/api/auth/addresses', form);
+      setAddresses(res.data || []);
+      setForm(BLANK_ADDRESS);
+      setEditId(null);
+      setFieldErrors({});
+      setShowForm(false);
+    } catch (err) {
+      setError(
+        err.response
+          ? (err.response.data?.message || 'Could not save the address.')
+          : 'Cannot reach the server.'
+      );
+    }
+    setSaving(false);
   };
 
-  const remove = (i) => {
-    const updated = addresses.filter((_, idx) => idx !== i);
-    setAddresses(updated);
-    localStorage.setItem('theresetAddresses', JSON.stringify(updated));
+  const remove = async (id) => {
+    if (!window.confirm('Remove this address?')) return;
+    try {
+      const res = await axios.delete(`/api/auth/addresses/${id}`);
+      setAddresses(res.data || []);
+    } catch {
+      setError('Could not remove the address.');
+    }
   };
 
-  const edit = (i) => {
-    setForm(addresses[i]);
-    setEditIdx(i);
+  const edit = (addr) => {
+    setForm({ ...BLANK_ADDRESS, ...addr });
+    setEditId(addr._id);
     setShowForm(true);
+    setError('');
+    setFieldErrors({});
   };
+
+  const startNew = () => {
+    setForm(BLANK_ADDRESS);
+    setEditId(null);
+    setShowForm(true);
+    setError('');
+    setFieldErrors({});
+  };
+
+  const oneLine = (a) => [a.houseNo, a.address, a.landmark, a.city, a.state]
+    .filter(Boolean).join(', ');
 
   return (
     <div className="prof-section">
       <div className="prof-section-header">
         <h2 className="prof-section-title">Saved Addresses</h2>
-        <button className="prof-add-btn" onClick={() => { setShowForm(true); setEditIdx(null); setForm({ label: 'Home', fullName: '', phone: '', address: '', city: '', state: '', pincode: '' }); }}>
-          + Add New Address
-        </button>
+        <button className="prof-add-btn" onClick={startNew}>+ Add New Address</button>
       </div>
+
+      {error && <p style={{ color: '#b91c1c', fontSize: '14px' }}>{error}</p>}
 
       {showForm && (
         <div className="prof-addr-form">
-          <div className="prof-addr-labels">
-            {['Home', 'Work', 'Other'].map(l => (
-              <button key={l} className={`prof-label-btn ${form.label === l ? 'prof-label-btn--active' : ''}`} onClick={() => setForm(f => ({ ...f, label: l }))}>{l}</button>
-            ))}
-          </div>
-          <div className="prof-form-grid">
-            <div className="prof-form-field prof-form-field--full">
-              <label>Full Name *</label>
-              <input value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Full name" />
-            </div>
-            <div className="prof-form-field">
-              <label>Phone *</label>
-              <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="10 digit number" maxLength={10} />
-            </div>
-            <div className="prof-form-field">
-              <label>Pincode *</label>
-              <input value={form.pincode} onChange={e => setForm(f => ({ ...f, pincode: e.target.value }))} placeholder="6 digit pincode" maxLength={6} />
-            </div>
-            <div className="prof-form-field prof-form-field--full">
-              <label>Address *</label>
-              <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="House No., Street, Area" />
-            </div>
-            <div className="prof-form-field">
-              <label>City *</label>
-              <input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="City" />
-            </div>
-            <div className="prof-form-field">
-              <label>State</label>
-              <input value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} placeholder="State" />
-            </div>
-          </div>
+          <AddressFields value={form} onChange={setForm} errors={fieldErrors} />
           <div className="prof-form-actions">
-            <button className="prof-btn prof-btn--outline" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="prof-btn prof-btn--fill" onClick={save}>{editIdx !== null ? 'Save Changes' : 'Add Address'}</button>
+            <button className="prof-btn prof-btn--outline" onClick={() => { setShowForm(false); setError(''); setFieldErrors({}); }}>
+              Cancel
+            </button>
+            <button className="prof-btn prof-btn--fill" onClick={save} disabled={saving}>
+              {saving ? 'Saving...' : editId ? 'Save Changes' : 'Add Address'}
+            </button>
           </div>
         </div>
       )}
 
-      {addresses.length === 0 && !showForm ? (
-        <div className="prof-empty"><p>No saved addresses yet.</p></div>
+      {loading ? (
+        <div className="prof-loading">Loading addresses...</div>
+      ) : addresses.length === 0 && !showForm ? (
+        <div className="prof-empty">
+          <p>No saved addresses yet.</p>
+          <p style={{ fontSize: '14px', color: '#888' }}>
+            Save one and it will be ready at checkout.
+          </p>
+        </div>
       ) : (
         <div className="prof-addr-list">
-          {addresses.map((addr, i) => (
-            <div key={i} className="prof-addr-card">
+          {addresses.map((addr) => (
+            <div key={addr._id} className="prof-addr-card">
               <div className="prof-addr-label-tag">{addr.label}</div>
-              <p className="prof-addr-name">{addr.fullName} · {addr.phone}</p>
-              <p className="prof-addr-text">{addr.address}, {addr.city}{addr.state ? `, ${addr.state}` : ''} - {addr.pincode}</p>
+              <p className="prof-addr-name">{addr.fullName} · +91 {addr.phone}</p>
+              <p className="prof-addr-text">{oneLine(addr)} - {addr.pincode}</p>
               <div className="prof-addr-actions">
-                <button onClick={() => edit(i)}>Edit</button>
-                <button onClick={() => remove(i)} className="prof-addr-remove">Remove</button>
+                <button onClick={() => edit(addr)}>Edit</button>
+                <button onClick={() => remove(addr._id)} className="prof-addr-remove">Remove</button>
               </div>
             </div>
           ))}
@@ -244,94 +266,6 @@ function Addresses() {
   );
 }
 
-// ─── Reviews ── (moved to ProfileReviews.js) ──────────────────────────────
-// keeping stub for now
-function Reviews({ user }) {
-  const [reviews, setReviews] = useState(
-    JSON.parse(localStorage.getItem(`theresetReviews_${user?._id}`) || '[]')
-  );
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ product: '', rating: 5, review: '' });
-
-  const saveReview = () => {
-    if (!form.product || !form.review) return;
-    const updated = [{ ...form, date: new Date().toISOString() }, ...reviews];
-    setReviews(updated);
-    localStorage.setItem(`theresetReviews_${user?._id}`, JSON.stringify(updated));
-    setForm({ product: '', rating: 5, review: '' });
-    setShowForm(false);
-  };
-
-  const removeReview = (i) => {
-    const updated = reviews.filter((_, idx) => idx !== i);
-    setReviews(updated);
-    localStorage.setItem(`theresetReviews_${user?._id}`, JSON.stringify(updated));
-  };
-
-  return (
-    <div className="prof-section">
-      <div className="prof-section-header">
-        <h2 className="prof-section-title">My Reviews</h2>
-        <button className="prof-add-btn" onClick={() => setShowForm(true)}>+ Write a Review</button>
-      </div>
-
-      {showForm && (
-        <div className="prof-addr-form">
-          <div className="prof-form-field prof-form-field--full">
-            <label>Product Name</label>
-            <input value={form.product} onChange={e => setForm(f => ({ ...f, product: e.target.value }))} placeholder="e.g. Clean Fit Oxford Shirt" />
-          </div>
-          <div className="prof-form-field">
-            <label>Rating</label>
-            <div className="prof-stars-input">
-              {[1,2,3,4,5].map(star => (
-                <button key={star} className={`prof-star-btn ${star <= form.rating ? 'prof-star-btn--active' : ''}`} onClick={() => setForm(f => ({ ...f, rating: star }))}>★</button>
-              ))}
-              <span className="prof-star-label">{form.rating}/5</span>
-            </div>
-          </div>
-          <div className="prof-form-field prof-form-field--full">
-            <label>Your Review</label>
-            <textarea value={form.review} onChange={e => setForm(f => ({ ...f, review: e.target.value }))} placeholder="Share your experience..." rows={4} />
-          </div>
-          <div className="prof-form-actions">
-            <button className="prof-btn prof-btn--outline" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="prof-btn prof-btn--fill" onClick={saveReview}>Submit Review</button>
-          </div>
-        </div>
-      )}
-
-      {reviews.length === 0 && !showForm ? (
-        <div className="prof-empty"><p>You haven't written any reviews yet.</p></div>
-      ) : (
-        <div className="prof-reviews-list">
-          {reviews.map((r, i) => (
-            <div key={i} className="prof-review-card">
-              <div className="prof-review-header">
-                <div>
-                  <p className="prof-review-product">{r.product}</p>
-                  <div className="prof-stars">
-                    {[1,2,3,4,5].map(s => (
-                      <span key={s} className={s <= r.rating ? 'prof-star--filled' : 'prof-star--empty'}>★</span>
-                    ))}
-                    <span className="prof-star-label">{r.rating}/5</span>
-                  </div>
-                </div>
-                <div className="prof-review-meta">
-                  <p className="prof-review-date">{new Date(r.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                  <button className="prof-review-remove" onClick={() => removeReview(i)}>Delete</button>
-                </div>
-              </div>
-              <p className="prof-review-text">{r.review}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Change Password ───────────────────────
 function ChangePassword({ user }) {
   const [form, setForm] = useState({ current: '', newPass: '', confirm: '' });
   const [msg, setMsg] = useState('');

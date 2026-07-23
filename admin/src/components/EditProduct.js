@@ -34,7 +34,13 @@ export default function EditProduct() {
 
   useEffect(() => {
     axios.get(`/api/products/${id}`)
-      .then(res => setForm(res.data))
+      .then(res => {
+        const d = res.data;
+        const gallery = (d.images && d.images.length)
+          ? d.images
+          : (d.image ? [d.image] : ['']);
+        setForm({ ...d, images: gallery });
+      })
       .catch(() => setError('Product not found.'));
   }, [id]);
 
@@ -65,17 +71,47 @@ export default function EditProduct() {
     }));
   };
 
+  const updateImage = (i, value) => {
+    setForm(f => {
+      const list = [...(f.images || [''])];
+      list[i] = value;
+      return { ...f, images: list };
+    });
+  };
+
+  const addImageField = () => {
+    setForm(f => ({ ...f, images: [...(f.images || []), ''] }));
+  };
+
+  const removeImage = (i) => {
+    setForm(f => {
+      const list = (f.images || []).filter((_, idx) => idx !== i);
+      return { ...f, images: list.length ? list : [''] };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.price || !form.subcategory || form.sizes.length === 0) {
       setError('Name, price, subcategory and at least one size are required.'); return;
     }
+    const priceNum = parseInt((form.price || '').replace(/[^0-9]/g, ''), 10);
+    if (!priceNum || priceNum < 1) {
+      setError('Please enter a valid price.'); return;
+    }
+    if (priceNum > 1000000) {
+      setError('That price looks wrong (over ₹10,00,000). Please check it.'); return;
+    }
     setLoading(true);
     try {
-      await axios.put(`/api/products/${id}`, form);
+      const gallery = (form.images || []).map(u => u.trim()).filter(Boolean);
+      await axios.put(`/api/products/${id}`, { ...form, images: gallery, image: gallery[0] || '' });
       navigate('/products');
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong.');
+      const msg = err.response
+        ? (err.response.data?.message || `Server error (${err.response.status}).`)
+        : 'Cannot reach the server. Is the backend running?';
+      setError(msg);
     }
     setLoading(false);
   };
@@ -147,9 +183,40 @@ export default function EditProduct() {
             </div>
           </div>
 
-          <div className="pf-field">
-            <label>Image URL</label>
-            <input name="image" value={form.image || ''} onChange={handleChange} placeholder="https://..." />
+          <div className="pf-field pf-field--full">
+            <label>Images <span className="pf-hint">(first one is the main photo)</span></label>
+            {(form.images || ['']).map((url, i) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input
+                  value={url}
+                  onChange={(e) => updateImage(i, e.target.value)}
+                  placeholder="https://..."
+                  style={{ flex: 1 }}
+                />
+                {url && (
+                  <img
+                    src={url}
+                    alt=""
+                    style={{ width: '40px', height: '48px', objectFit: 'cover', border: '1px solid #eee' }}
+                    onError={(e) => { e.target.style.visibility = 'hidden'; }}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeImage(i)}
+                  style={{ padding: '0 12px', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', borderRadius: '4px' }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addImageField}
+              style={{ padding: '8px 14px', border: '1px dashed #bbb', background: '#fafafa', cursor: 'pointer', borderRadius: '4px', font: 'inherit', fontSize: '13px' }}
+            >
+              + Add another image
+            </button>
           </div>
         </div>
 
@@ -158,6 +225,42 @@ export default function EditProduct() {
             {form.category} → {form.season} → {form.subcategory}
           </div>
         )}
+
+        <div className="pf-field pf-field--full">
+          <label>Description</label>
+          <textarea
+            name="description"
+            value={form.description || ''}
+            onChange={handleChange}
+            rows={4}
+            placeholder="Fabric, fit, styling notes..."
+            style={{ width: '100%', padding: '12px', font: 'inherit', border: '1px solid #ddd', borderRadius: '4px', resize: 'vertical' }}
+          />
+        </div>
+
+        <div className="pf-field pf-field--full">
+          <label>Materials &amp; Wash Care</label>
+          <textarea
+            name="materials"
+            value={form.materials || ''}
+            onChange={handleChange}
+            rows={3}
+            placeholder="100% cotton. Machine wash cold..."
+            style={{ width: '100%', padding: '12px', font: 'inherit', border: '1px solid #ddd', borderRadius: '4px', resize: 'vertical' }}
+          />
+        </div>
+
+        <div className="pf-field pf-field--full">
+          <label>Delivery &amp; Returns</label>
+          <textarea
+            name="delivery"
+            value={form.delivery || ''}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Ships in 3-5 working days. 14 day returns."
+            style={{ width: '100%', padding: '12px', font: 'inherit', border: '1px solid #ddd', borderRadius: '4px', resize: 'vertical' }}
+          />
+        </div>
 
         <div className="pf-field pf-field--full">
           <label>Sizes * <span className="pf-hint">(click to select)</span></label>

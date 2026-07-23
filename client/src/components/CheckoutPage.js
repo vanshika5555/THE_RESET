@@ -1,45 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { cartSubtotal } from '../utils/price';
+import AddressFields, { BLANK_ADDRESS, validateAddress } from './AddressFields';
+import './AddressFields.css';
 import './CheckoutPage.css';
 
 export default function CheckoutPage({ cart, onOrderSuccess }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1=address, 2=payment, 3=processing
-  const [address, setAddress] = useState({
-    fullName: user?.name || '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: '',
-  });
+  const [address, setAddress] = useState({ ...BLANK_ADDRESS, fullName: user?.name || '' });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [showNewForm, setShowNewForm] = useState(false);
 
-  const subtotal = cart.reduce((sum, item) => {
-    const num = parseInt((item.price || '0').replace(/[^0-9]/g, ''));
-    return sum + num * item.qty;
-  }, 0);
+  const subtotal = cartSubtotal(cart);
 
-  const handleAddressChange = (e) => {
-    setAddress(a => ({ ...a, [e.target.name]: e.target.value }));
+
+  // Pull in whatever the customer has already saved so they
+  // don't have to type it all again.
+  useEffect(() => {
+    if (!user) return;
+    axios.get('/api/auth/addresses')
+      .then(res => {
+        const list = res.data || [];
+        setSaved(list);
+        if (list.length > 0) {
+          const first = list[0];
+          setSelectedId(first._id);
+          setAddress({ ...BLANK_ADDRESS, ...first });
+        } else {
+          setShowNewForm(true);
+        }
+      })
+      .catch(() => setShowNewForm(true));
+  }, [user]);
+
+  const chooseSaved = (addr) => {
+    setSelectedId(addr._id);
+    setShowNewForm(false);
     setError('');
+    setAddress({ ...BLANK_ADDRESS, ...addr });
   };
 
-  const validateAddress = () => {
-    const { fullName, phone, address: addr, city, pincode } = address;
-    if (!fullName || !phone || !addr || !city || !pincode) {
-      setError('Please fill all required fields.'); return false;
+  const useNewAddress = () => {
+    setSelectedId(null);
+    setShowNewForm(true);
+    setError('');
+    setAddress({ ...BLANK_ADDRESS, fullName: user?.name || '' });
+    setFieldErrors({});
+  };
+
+  const checkAddress = () => {
+    const errs = validateAddress(address);
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      setError('Please fix the highlighted fields before continuing.');
+      return false;
     }
-    if (phone.length < 10) {
-      setError('Please enter a valid phone number.'); return false;
-    }
-    if (pincode.length < 6) {
-      setError('Please enter a valid pincode.'); return false;
-    }
+    setError('');
     return true;
   };
 
@@ -62,8 +86,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
 
       const res = await axios.post(
         `/api/orders`,
-        { items: orderItems, subtotal, shippingAddress: address },
-        { headers: { Authorization: `Bearer ${user.token}` } }
+        { items: orderItems, subtotal, shippingAddress: address }
       );
 
       onOrderSuccess(res.data._id);
@@ -110,35 +133,45 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
           {step === 1 && (
             <div className="co-section">
               <h3 className="co-section-title">Delivery Address</h3>
-              <div className="co-grid">
-                <div className="co-field co-field--full">
-                  <label>Full Name *</label>
-                  <input name="fullName" value={address.fullName} onChange={handleAddressChange} placeholder="As on ID" />
+
+              {saved.length > 0 && (
+                <div className="co-saved">
+                  {saved.map(a => (
+                    <button
+                      type="button"
+                      key={a._id}
+                      className={`co-saved-card ${selectedId === a._id ? 'co-saved-card--active' : ''}`}
+                      onClick={() => chooseSaved(a)}
+                    >
+                      <span className="co-saved-label">{a.label}</span>
+                      <span className="co-saved-name">{a.fullName} · {a.phone}</span>
+                      <span className="co-saved-text">
+                        {[a.houseNo, a.address, a.landmark, a.city, a.state].filter(Boolean).join(', ')} - {a.pincode}
+                      </span>
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    className={`co-saved-card co-saved-card--new ${showNewForm ? 'co-saved-card--active' : ''}`}
+                    onClick={useNewAddress}
+                  >
+                    + Deliver to a new address
+                  </button>
                 </div>
-                <div className="co-field co-field--full">
-                  <label>Phone Number *</label>
-                  <input name="phone" value={address.phone} onChange={handleAddressChange} placeholder="10 digit mobile number" maxLength={10} />
-                </div>
-                <div className="co-field co-field--full">
-                  <label>Address *</label>
-                  <input name="address" value={address.address} onChange={handleAddressChange} placeholder="House No., Building, Street, Area" />
-                </div>
-                <div className="co-field">
-                  <label>City *</label>
-                  <input name="city" value={address.city} onChange={handleAddressChange} placeholder="City" />
-                </div>
-                <div className="co-field">
-                  <label>State</label>
-                  <input name="state" value={address.state} onChange={handleAddressChange} placeholder="State" />
-                </div>
-                <div className="co-field">
-                  <label>Pincode *</label>
-                  <input name="pincode" value={address.pincode} onChange={handleAddressChange} placeholder="6 digit pincode" maxLength={6} />
-                </div>
+              )}
+
+              <div style={{ display: saved.length > 0 && !showNewForm ? 'none' : undefined }}>
+                <AddressFields
+                  value={address}
+                  onChange={setAddress}
+                  errors={fieldErrors}
+                  showLabelPicker={false}
+                />
               </div>
               <button
                 className="co-btn"
-                onClick={() => { if (validateAddress()) setStep(2); }}
+                onClick={() => { if (checkAddress()) setStep(2); }}
               >
                 Continue to Payment
               </button>
@@ -156,7 +189,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                   <span>Delivering to</span>
                   <button onClick={() => setStep(1)}>Change</button>
                 </div>
-                <p><strong>{address.fullName}</strong> — {address.phone}</p>
+                <p><strong>{address.fullName}</strong> — +91 {address.phone}</p>
                 <p>{address.address}, {address.city} - {address.pincode}</p>
               </div>
 

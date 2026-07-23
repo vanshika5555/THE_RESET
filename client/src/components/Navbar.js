@@ -9,16 +9,28 @@ import "./Navbar.css";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [term, setTerm] = useState("");
   const [analyserOpen, setAnalyserOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { cart, cartOpen, setCartOpen, removeFromCart, changeQty, cartCount } = useCart();
   const { wishCount } = useWishlist();
 
+  const submitSearch = (e) => {
+    e.preventDefault();
+    const q = term.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    setTerm("");
+    setMenuOpen(false);
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
+
   return (
     <>
       <div className="announcement-bar">
-        <span>Discover What's New &nbsp;|&nbsp; <a href="#">Shop Now</a></span>
+        <span>Discover What's New &nbsp;|&nbsp; <Link to="/men">Shop Now</Link></span>
       </div>
 
       <nav className="navbar">
@@ -36,6 +48,14 @@ export default function Navbar() {
           <li><Link to="/men"    onClick={() => setMenuOpen(false)}>Men</Link></li>
           <li><Link to="/women"  onClick={() => setMenuOpen(false)}>Women</Link></li>
           <li><Link to="/about"  onClick={() => setMenuOpen(false)}>About</Link></li>
+          <li className="nav-links-analyser">
+            <button
+              className="nav-analyser-link"
+              onClick={() => { setAnalyserOpen(true); setMenuOpen(false); }}
+            >
+              ✦ Style Analyser
+            </button>
+          </li>
         </ul>
 
         {/* Style Analyser button */}
@@ -44,6 +64,17 @@ export default function Navbar() {
         </button>
 
         <div className="navbar-icons">
+
+          {/* Search */}
+          <button
+            className="icon-btn"
+            aria-label={searchOpen ? 'Close search' : 'Open search'}
+            onClick={() => setSearchOpen(o => !o)}
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
 
           {/* Wishlist */}
           <Link to="/wishlist" className="icon-btn navbar-icon-wrap" aria-label="Wishlist">
@@ -86,6 +117,28 @@ export default function Navbar() {
 
         </div>
       </nav>
+
+      {/* Search bar — full width so it fits any screen */}
+      {searchOpen && (
+        <form className="navbar-search" onSubmit={submitSearch}>
+          <input
+            className="navbar-search-input"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            placeholder="Search for shirts, dresses, blazers..."
+            autoFocus
+          />
+          <button type="submit" className="navbar-search-go">Search</button>
+          <button
+            type="button"
+            className="navbar-search-close"
+            aria-label="Close search"
+            onClick={() => { setSearchOpen(false); setTerm(""); }}
+          >
+            ✕
+          </button>
+        </form>
+      )}
 
       {/* Global Cart Drawer */}
       {cartOpen && (

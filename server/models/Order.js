@@ -26,8 +26,11 @@ const orderSchema = new mongoose.Schema({
   shippingAddress: {
     fullName: String,
     phone:    String,
+    houseNo:  String,
     address:  String,
+    landmark: String,
     city:     String,
+    state:    String,
     pincode:  String,
   },
 }, { timestamps: true });

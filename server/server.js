@@ -5,8 +5,38 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ---- Which websites are allowed to call this API ----
+// Add more by setting ALLOWED_ORIGINS in .env / Render, comma separated.
+const defaultOrigins = [
+  'http://localhost:3000',   // admin (local)
+  'http://localhost:3001',   // shop (local)
+];
+
+const envOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [...defaultOrigins, ...envOrigins];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Requests with no origin (Postman, server-to-server, health checks) are fine.
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Allow Vercel preview deployments of these two projects.
+    if (/^https:\/\/the-reset(-admin)?[a-z0-9-]*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn('Blocked by CORS:', origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // Routes
@@ -24,6 +54,7 @@ app.get('/', (req, res) => {
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
+    console.log('Allowed origins:', allowedOrigins.join(', '));
     app.listen(process.env.PORT || 5000, () => {
       console.log(`Server running on port ${process.env.PORT || 5000}`);
     });

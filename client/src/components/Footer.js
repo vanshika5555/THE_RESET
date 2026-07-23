@@ -2,6 +2,14 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "./Footer.css";
 
+// EDIT THIS: add your real profile links. Anything left empty is hidden.
+const SOCIAL = [
+  { label: 'Instagram',   url: '' },
+  { label: 'Pinterest',   url: '' },
+  { label: 'Twitter / X', url: '' },
+  { label: 'YouTube',     url: '' },
+];
+
 export default function Footer() {
   const [email, setEmail] = useState("");
 
@@ -40,8 +48,7 @@ export default function Footer() {
           <ul className="footer-links">
             <li><Link to="/men">Men</Link></li>
             <li><Link to="/women">Women</Link></li>
-            <li><a href="#">New Arrivals</a></li>
-            <li><a href="#">Bestsellers</a></li>
+            <li><Link to="/search?q=new">New Arrivals</Link></li>
           </ul>
         </div>
 
@@ -49,29 +56,30 @@ export default function Footer() {
           <h4 className="footer-col-title">Company</h4>
           <ul className="footer-links">
             <li><Link to="/about">Our Story</Link></li>
-            <li><a href="#">Sustainability</a></li>
-            <li><a href="#">Careers</a></li>
-            <li><a href="#">Press</a></li>
           </ul>
         </div>
 
         <div className="footer-col">
           <h4 className="footer-col-title">Help</h4>
           <ul className="footer-links">
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">Shipping Policy</a></li>
-            <li><a href="#">Returns & Exchanges</a></li>
-            <li><a href="#">Contact Us</a></li>
+            <li><Link to="/help#faq">FAQ</Link></li>
+            <li><Link to="/help#shipping">Shipping</Link></li>
+            <li><Link to="/help#returns">Returns &amp; Exchanges</Link></li>
+            <li><Link to="/help#contact">Contact Us</Link></li>
           </ul>
         </div>
 
         <div className="footer-col">
           <h4 className="footer-col-title">Follow</h4>
           <ul className="footer-links">
-            <li><a href="#" target="_blank" rel="noreferrer">Instagram</a></li>
-            <li><a href="#" target="_blank" rel="noreferrer">Pinterest</a></li>
-            <li><a href="#" target="_blank" rel="noreferrer">Twitter / X</a></li>
-            <li><a href="#" target="_blank" rel="noreferrer">YouTube</a></li>
+            {SOCIAL.filter(s => s.url).map(s => (
+              <li key={s.label}>
+                <a href={s.url} target="_blank" rel="noreferrer">{s.label}</a>
+              </li>
+            ))}
+            {SOCIAL.every(s => !s.url) && (
+              <li className="footer-soon">Coming soon</li>
+            )}
           </ul>
         </div>
 
@@ -84,9 +92,9 @@ export default function Footer() {
       <div className="footer-bottom">
         <p className="footer-copy">© 2026 The Reset. All rights reserved. Built by Vanshika.</p>
         <div className="footer-legal">
-          <a href="#">Privacy Policy</a>
+          <Link to="/privacy">Privacy Policy</Link>
           <span>·</span>
-          <a href="#">Terms of Use</a>
+          <Link to="/terms">Terms of Use</Link>
         </div>
       </div>
 

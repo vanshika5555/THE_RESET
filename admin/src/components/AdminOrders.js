@@ -12,9 +12,6 @@ const STATUS_COLORS = {
   Cancelled: '#ef4444',
 };
 
-// Hardcoded admin token for now — replace with real login later
-const ADMIN_TOKEN = localStorage.getItem('theresetAdminToken') || '';
-
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,9 +21,7 @@ export default function AdminOrders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get(`/api/orders`, {
-        headers: { Authorization: `Bearer ${ADMIN_TOKEN}` }
-      });
+      const res = await axios.get(`/api/orders`);
       setOrders(res.data);
     } catch (err) {
       console.error(err);
@@ -36,10 +31,7 @@ export default function AdminOrders() {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`/api/orders/${id}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${ADMIN_TOKEN}` } }
-      );
+      await axios.put(`/api/orders/${id}/status`, { status });
       fetchOrders();
     } catch (err) {
       alert('Failed to update status');

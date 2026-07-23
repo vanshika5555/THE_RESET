@@ -1,0 +1,137 @@
+.help-page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 110px 24px 90px;
+  color: #222;
+}
+
+.help-hero { margin-bottom: 34px; }
+
+.help-eyebrow {
+  font-size: 11px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: #aaa;
+  margin: 0 0 12px;
+}
+
+.help-title {
+  font-size: 34px;
+  font-weight: 400;
+  margin: 0 0 12px;
+  line-height: 1.2;
+}
+
+.help-sub {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.help-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  padding: 16px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+}
+.help-nav a {
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #666;
+  text-decoration: none;
+}
+.help-nav a:hover { color: #111; }
+
+.help-section {
+  padding: 34px 0;
+  border-bottom: 1px solid #f0f0f0;
+  scroll-margin-top: 100px;
+}
+.help-section:last-of-type { border-bottom: none; }
+
+.help-h2 {
+  font-size: 19px;
+  font-weight: 500;
+  margin: 0 0 16px;
+}
+
+.help-section p {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #444;
+  margin: 0 0 14px;
+}
+.help-section p:last-child { margin-bottom: 0; }
+
+.help-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+}
+.help-list li {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #444;
+}
+
+.help-link { color: #111; }
+
+.help-faq { margin: 0; }
+.help-faq-item { margin-bottom: 22px; }
+.help-faq-item:last-child { margin-bottom: 0; }
+
+.help-faq dt {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111;
+  margin-bottom: 7px;
+}
+.help-faq dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #555;
+}
+
+.help-contact {
+  border: 1px solid #eee;
+  padding: 20px 22px;
+  margin: 4px 0 16px;
+}
+.help-contact-row {
+  display: flex;
+  gap: 18px;
+  padding: 9px 0;
+  font-size: 15px;
+}
+.help-contact-label {
+  min-width: 74px;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #999;
+  padding-top: 3px;
+}
+
+.help-note {
+  font-size: 14px !important;
+  color: #777 !important;
+}
+
+.help-updated {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 13px !important;
+}
+
+@media (max-width: 640px) {
+  .help-page { padding: 90px 18px 60px; }
+  .help-title { font-size: 26px; }
+  .help-nav { gap: 16px; }
+  .help-contact-row { flex-direction: column; gap: 4px; }
+}

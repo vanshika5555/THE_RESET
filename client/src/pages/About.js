@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import React from "react";
 import "./About.css";
 
@@ -131,7 +132,7 @@ export default function About() {
             <div className="collection-card-body">
               <h3>Men</h3>
               <p>Sharp silhouettes. Clean cuts. Built for the man who moves with quiet authority.</p>
-              <a href="#" className="collection-link">Shop Men →</a>
+              <Link to="/men" className="collection-link">Shop Men →</Link>
             </div>
           </div>
           <div className="collection-card">
@@ -139,7 +140,7 @@ export default function About() {
             <div className="collection-card-body">
               <h3>Women</h3>
               <p>Fluid, precise, and unapologetically refined. Dressing as a form of self-expression.</p>
-              <a href="#" className="collection-link">Shop Women →</a>
+              <Link to="/women" className="collection-link">Shop Women →</Link>
             </div>
           </div>
         </div>

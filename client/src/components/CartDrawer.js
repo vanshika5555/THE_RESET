@@ -1,16 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { cartSubtotal } from "../utils/price";
 import "./CartDrawer.css";
 
 export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onCheckout }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const subtotal = cart.reduce((sum, item) => {
-    const num = parseInt((item.price || '0').replace(/[^0-9]/g, ""));
-    return sum + num * item.qty;
-  }, 0);
+  const subtotal = cartSubtotal(cart);
 
   const handleCheckout = () => {
     onClose();
