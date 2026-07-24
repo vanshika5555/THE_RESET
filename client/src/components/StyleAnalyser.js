@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './StyleAnalyser.css';
 
 const SKIN_TONES = ['Fair', 'Wheatish', 'Medium', 'Olive', 'Dark'];
@@ -148,27 +150,88 @@ function generateResult(form) {
   };
 }
 
+
+/**
+ * Pick pieces from the catalogue that suit the advice we just gave.
+ *
+ * Each product is scored on how well its subcategory, name and tags match
+ * the recommended silhouettes and the chosen occasion. Anything sold out
+ * is dropped, and if nothing scores we simply show the newest arrivals so
+ * the customer is never left with an empty shelf.
+ */
+const OCCASION_WORDS = {
+  'Everyday Casual':   ['t-shirt', 'tee', 'shirt', 'denim', 'chino', 'short', 'co-ord', 'top'],
+  'Office / Work':     ['formal', 'shirt', 'trouser', 'blazer', 'chino', 'skirt'],
+  'Formal Event':      ['blazer', 'formal', 'dress', 'trouser', 'coat'],
+  'Party / Night Out': ['dress', 'top', 'shirt', 'skirt', 'co-ord'],
+  'Date Night':        ['shirt', 'dress', 'top', 'chino', 'trouser'],
+};
+
+function isSoldOut(p) {
+  if (!p.inStock) return true;
+  if (!p.stock || p.stock.length === 0) return false;
+  return (p.sizes || []).every(size => {
+    const entry = p.stock.find(e => e.size === size);
+    return !entry || entry.qty <= 0;
+  });
+}
+
+function matchProducts(products, form, result) {
+  const available = products.filter(p => !isSoldOut(p));
+
+  const words = [
+    ...(result?.silhouettes || []).join(' ').toLowerCase().split(/[^a-z]+/),
+    ...(OCCASION_WORDS[form.occasion] || []),
+  ].filter(w => w.length > 3);
+
+  const scored = available.map(p => {
+    const haystack = [p.subcategory, p.name, p.tag, p.description]
+      .filter(Boolean).join(' ').toLowerCase();
+    const score = words.reduce((n, w) => (haystack.includes(w) ? n + 1 : n), 0);
+    return { p, score };
+  });
+
+  const good = scored.filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(x => x.p);
+
+  return (good.length >= 2 ? good : available).slice(0, 4);
+}
+
 // ────────────────────────────────────────────────────────
 
 export default function StyleAnalyser({ onClose }) {
   const [step, setStep]   = useState(1);
   const [form, setForm]   = useState({ gender: '', skinTone: '', eyeColor: '', hairColor: '', bodyType: '', occasion: '' });
   const [result, setResult] = useState(null);
+  const [picks, setPicks] = useState([]);
+  const [picksLoading, setPicksLoading] = useState(false);
+  const navigate = useNavigate();
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
   const isFormValid = form.gender && form.skinTone && form.eyeColor && form.hairColor && form.bodyType && form.occasion;
 
   const analyse = () => {
     setStep(2);
+    const generated = generateResult(form);
+
+    // Use the pause to actually fetch something useful.
+    setPicksLoading(true);
+    axios.get(`/api/products?category=${form.gender}`)
+      .then(res => setPicks(matchProducts(res.data || [], form, generated)))
+      .catch(() => setPicks([]))
+      .finally(() => setPicksLoading(false));
+
     setTimeout(() => {
-      setResult(generateResult(form));
+      setResult(generated);
       setStep(3);
-    }, 1800); // fake loading for effect
+    }, 1800);
   };
 
   const reset = () => {
     setStep(1);
     setResult(null);
+    setPicks([]);
     setForm({ gender: '', skinTone: '', eyeColor: '', hairColor: '', bodyType: '', occasion: '' });
   };
 
@@ -314,9 +377,45 @@ export default function StyleAnalyser({ onClose }) {
 
             </div>
 
+            {(picksLoading || picks.length > 0) && (
+              <div className="sa-picks">
+                <h4 className="sa-result-heading">Pieces For You</h4>
+
+                {picksLoading ? (
+                  <p className="sa-picks-loading">Finding pieces from the collection...</p>
+                ) : (
+                  <div className="sa-picks-grid">
+                    {picks.map(p => {
+                      const img = (p.images && p.images[0]) || p.image;
+                      return (
+                        <button
+                          type="button"
+                          key={p._id}
+                          className="sa-pick"
+                          onClick={() => { onClose(); navigate(`/product/${p._id}`); }}
+                        >
+                          <span className="sa-pick-img" style={{ background: p.color || '#f0f0f0' }}>
+                            {img && <img src={img} alt={p.name} />}
+                          </span>
+                          <span className="sa-pick-sub">{p.subcategory}</span>
+                          <span className="sa-pick-name">{p.name}</span>
+                          <span className="sa-pick-price">{p.price}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="sa-result-actions">
               <button className="sa-btn-outline" onClick={reset}>← Try Again</button>
-              <button className="sa-btn-fill" onClick={onClose}>Shop Now →</button>
+              <button
+                className="sa-btn-fill"
+                onClick={() => { onClose(); navigate(form.gender === 'Women' ? '/women' : '/men'); }}
+              >
+                Shop {form.gender} →
+              </button>
             </div>
           </div>
         )}

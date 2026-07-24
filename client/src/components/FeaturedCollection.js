@@ -1,28 +1,50 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import axios from "axios";
 import "./FeaturedCollection.css";
-import FC1 from "../assets/FC1.jpg";
-import FC2 from "../assets/FC2.jpg";
-import FC3 from "../assets/FC3.jpg";
-import FC4 from "../assets/FC4.jpg";
-import FC5 from "../assets/FC5.jpg";
-import FC6 from "../assets/FC6.jpg";
 
-const products = [
-  { id: 1, name: "Structured Linen Shirt", category: "Men",   price: "₹3,490", color: "#e8e4dc", tag: null,        img: FC1 },
-  { id: 2, name: "Relaxed Poplin Shirt",   category: "Men",   price: "₹2,990", color: "#d4cfc8", tag: null,        img: FC2 },
-  { id: 3, name: "Clean Fit Oxford",       category: "Men",   price: "₹3,290", color: "#f5f3f0", tag: "NEW",       img: FC3 },
-  { id: 4, name: "Slim Taper Trouser",     category: "Men",   price: "₹3,990", color: "#2a2a2a", tag: null,        img: FC4 },
-  { id: 5, name: "Utility Cargo Pant",     category: "Men",   price: "₹4,290", color: "#c4bfb5", tag: null,        img: FC5 },
-  { id: 6, name: "Tonal Knit Polo",        category: "Men",   price: "₹2,490", color: "#3d3d3d", tag: "BESTSELLER", img: FC6 },
-];
+// Sold out pieces are left out — there is no point featuring what cannot be bought.
+const isSoldOut = (p) => {
+  if (!p.inStock) return true;
+  if (!p.stock || p.stock.length === 0) return false;
+  return (p.sizes || []).every(size => {
+    const entry = p.stock.find(s => s.size === size);
+    return !entry || entry.qty <= 0;
+  });
+};
 
 export default function FeaturedCollection() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading]   = useState(true);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [cardW, setCardW] = useState(220);
   const timerRef = useRef(null);
   const startX = useRef(null);
+  const navigate = useNavigate();
+
+  // Real pieces from the shop, newest first.
+  useEffect(() => {
+    axios.get('/api/products')
+      .then(res => {
+        const live = (res.data || [])
+          .filter(p => !isSoldOut(p))
+          .slice(0, 9)
+          .map(p => ({
+            id: p._id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            color: p.color || '#f0f0f0',
+            tag: p.tag || null,
+            img: (p.images && p.images[0]) || p.image,
+          }))
+          .filter(p => p.img);          // a card with no photo looks broken
+        setProducts(live);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   // Responsive card width
   useEffect(() => {
@@ -37,16 +59,15 @@ export default function FeaturedCollection() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Auto-advance every 2.8s
   const next = useCallback(() => {
-    setActive((p) => (p + 1) % products.length);
-  }, []);
+    setActive((p) => (products.length ? (p + 1) % products.length : 0));
+  }, [products.length]);
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || products.length < 2) return;
     timerRef.current = setInterval(next, 2800);
     return () => clearInterval(timerRef.current);
-  }, [paused, next]);
+  }, [paused, next, products.length]);
 
   const goTo = (i) => {
     setActive(i);
@@ -54,7 +75,6 @@ export default function FeaturedCollection() {
     setTimeout(() => setPaused(false), 6000);
   };
 
-  // Swipe
   const onDragStart = (e) => {
     startX.current = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
     setPaused(true);
@@ -63,14 +83,17 @@ export default function FeaturedCollection() {
   const onDragEnd = (e) => {
     const endX = e.type === "touchend" ? e.changedTouches[0].clientX : e.clientX;
     const diff = startX.current - endX;
-    if (Math.abs(diff) > 40) {
+    if (Math.abs(diff) > 40 && products.length > 1) {
       if (diff > 0) setActive((p) => (p + 1) % products.length);
       else          setActive((p) => (p - 1 + products.length) % products.length);
     }
     setTimeout(() => setPaused(false), 6000);
   };
 
-  const gap = cardW * 0.78;
+  const gap = cardW * 0.72;
+
+  // Nothing to feature — hide the section rather than show an empty stage.
+  if (!loading && products.length === 0) return null;
 
   return (
     <section className="fc-section">
@@ -79,69 +102,98 @@ export default function FeaturedCollection() {
         <h2 className="fc-title">FEATURED COLLECTION</h2>
       </div>
 
-      <div
-        className="fc-track"
-        onMouseDown={onDragStart}
-        onMouseUp={onDragEnd}
-        onTouchStart={onDragStart}
-        onTouchEnd={onDragEnd}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-      >
-        {products.map((p, i) => {
-          const offset   = i - active;
-          const wrapped  = ((offset + products.length) % products.length);
-          const dir      = wrapped <= products.length / 2 ? wrapped : wrapped - products.length;
-          const isActive = dir === 0;
-          const absDir   = Math.abs(dir);
-          const scale    = isActive ? 1 : Math.max(0.68, 1 - absDir * 0.1);
-          const zIndex   = 10 - absDir;
-          const tx       = dir * gap;
-          const opacity  = absDir > 3 ? 0 : isActive ? 1 : Math.max(0.35, 1 - absDir * 0.22);
-          const isLight  = ["#e8e4dc","#d4cfc8","#f5f3f0","#c4bfb5"].includes(p.color);
+      {loading ? (
+        <div className="fc-loading">Loading the collection...</div>
+      ) : (
+        <>
+          <div
+            className="fc-track"
+            onMouseDown={onDragStart}
+            onMouseUp={onDragEnd}
+            onTouchStart={onDragStart}
+            onTouchEnd={onDragEnd}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+          >
+            {products.map((p, i) => {
+              // Work out how far this card sits from the front one, wrapping
+              // around the ends so the carousel is a loop rather than a line.
+              const offset   = i - active;
+              const wrapped  = ((offset + products.length) % products.length);
+              const dir      = wrapped > products.length / 2
+                ? wrapped - products.length
+                : wrapped;
 
-          return (
-            <div
-              key={p.id}
-              className={`fc-card ${isActive ? "fc-card--active" : ""}`}
-              style={{
-                transform: `translateX(${tx}px) scale(${scale})`,
-                zIndex,
-                opacity,
-                width:  isActive ? cardW + 20 : cardW,
-                height: isActive ? (cardW + 20) * 1.75 : cardW * 1.6,
-              }}
-              onClick={() => goTo(i)}
-            >
-              {p.tag && <span className="fc-card-tag">{p.tag}</span>}
+              const isActive = dir === 0;
+              const absDir   = Math.abs(dir);
 
-              <div className="fc-card-img">
-                <img src={p.img} alt={p.name} className="fc-card-photo" />
-              </div>
+              // Two cards either side of the front one, and nothing beyond.
+              const VISIBLE  = 2;
+              const shown    = absDir <= VISIBLE;
 
-              {isActive && (
-                <div className="fc-card-info">
-                  <p className="fc-card-category">{p.category}</p>
-                  <p className="fc-card-name">{p.name}</p>
-                  <p className="fc-card-price">{p.price}</p>
-                  <button className="fc-card-btn" onClick={(e) => e.stopPropagation()}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="5" x2="12" y2="19"/>
-                      <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                  </button>
+              const scale    = isActive ? 1 : Math.max(0.7, 1 - absDir * 0.13);
+              const zIndex   = 10 - absDir;
+              const tx       = dir * gap;
+              const opacity  = !shown ? 0 : isActive ? 1 : Math.max(0.4, 1 - absDir * 0.26);
+
+              return (
+                <div
+                  key={p.id}
+                  className={`fc-card ${isActive ? "fc-card--active" : ""}`}
+                  style={{
+                    transform: `translateX(${tx}px) scale(${scale})`,
+                    zIndex,
+                    opacity,
+                    width:  isActive ? cardW + 20 : cardW,
+                    height: isActive ? (cardW + 20) * 1.75 : cardW * 1.6,
+                    background: p.color,
+                    pointerEvents: shown ? 'auto' : 'none',
+                  }}
+                  // Clicking the front card opens it; clicking a side card brings it forward.
+                  onClick={() => (isActive ? navigate(`/product/${p.id}`) : goTo(i))}
+                >
+                  {p.tag && <span className="fc-card-tag">{p.tag}</span>}
+
+                  <div className="fc-card-img">
+                    <img src={p.img} alt={p.name} className="fc-card-photo" />
+                  </div>
+
+                  {isActive && (
+                    <div className="fc-card-info">
+                      <p className="fc-card-category">{p.category}</p>
+                      <p className="fc-card-name">{p.name}</p>
+                      <p className="fc-card-price">{p.price}</p>
+                      <button
+                        className="fc-card-btn"
+                        aria-label={`View ${p.name}`}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/product/${p.id}`); }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="12" y1="5" x2="12" y2="19"/>
+                          <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
 
-      <div className="fc-dots">
-        {products.map((_, i) => (
-          <button key={i} className={`fc-dot ${i === active ? "fc-dot--active" : ""}`} onClick={() => goTo(i)} />
-        ))}
-      </div>
+          {products.length > 1 && (
+            <div className="fc-dots">
+              {products.map((_, i) => (
+                <button
+                  key={i}
+                  aria-label={`Show item ${i + 1}`}
+                  className={`fc-dot ${i === active ? "fc-dot--active" : ""}`}
+                  onClick={() => goTo(i)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       <div className="fc-footer">
         <Link to="/men" className="fc-view-all">View All Collection →</Link>

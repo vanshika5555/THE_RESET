@@ -66,3 +66,106 @@
 @media (max-width: 600px) {
   .ao-card-header { grid-template-columns: 1fr; }
 }
+/* ---- search + errors ---- */
+.ao-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 12px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.ao-search {
+  width: 100%;
+  max-width: 460px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  outline: none;
+}
+.ao-search:focus { border-color: #111; }
+
+/* ---- shipping block ---- */
+.ao-ship {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+
+.ao-ship-label {
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #999;
+  margin: 0 0 7px;
+}
+
+.ao-ship-name {
+  margin: 0 0 3px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.ao-ship-line {
+  margin: 0 0 2px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.ao-ship-phone {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.ao-ship-phone a { color: #111; text-decoration: none; }
+.ao-ship-phone a:hover { text-decoration: underline; }
+
+.ao-ship-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ao-mini-btn {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #333;
+  white-space: nowrap;
+}
+.ao-mini-btn:hover { border-color: #111; }
+
+/* ---- money breakdown ---- */
+.ao-money {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #999;
+}
+.ao-money-discount { color: #15803d; }
+
+@media (max-width: 700px) {
+  .ao-ship { flex-direction: column; }
+  .ao-ship-actions { width: 100%; }
+  .ao-mini-btn { flex: 1; }
+}

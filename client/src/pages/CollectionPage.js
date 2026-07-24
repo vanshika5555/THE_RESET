@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useWishlist } from "../context/WishlistContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import "../components/CollectionPage.css";
 import StarRating from "../components/StarRating";
 import CardGallery from "../components/CardGallery";
@@ -51,6 +51,17 @@ const SORT_OPTIONS = [
 
 const getPrice = parsePrice;
 
+
+// How many of a size are left. Products saved before stock tracking have no
+// stock list, so they fall back to the in/out switch.
+const sizeAvailable = (p, size) => {
+  if (!p.inStock) return false;
+  if (!(p.sizes || []).includes(size)) return false;
+  if (!p.stock || p.stock.length === 0) return true;
+  const entry = p.stock.find(s => s.size === size);
+  return !!entry && entry.qty > 0;
+};
+
 // Is anything left of this piece, in any size?
 const isSoldOut = (p) => {
   if (!p.inStock) return true;
@@ -65,6 +76,7 @@ const isSoldOut = (p) => {
 
 export default function CollectionPage({ category = 'Men' }) {
   const config = CATEGORY_CONFIG[category] || CATEGORY_CONFIG.Men;
+  const [searchParams, setSearchParams] = useSearchParams();
 
   usePageMeta({
     title: `${category}'s Collection`,
@@ -76,6 +88,7 @@ export default function CollectionPage({ category = 'Men' }) {
   const [activeSeason, setActiveSeason]   = useState('All');
   const [activeSub, setActiveSub]         = useState('All');
   const [priceRange, setPriceRange]       = useState(0); // index of PRICE_RANGES
+  const [activeSizes, setActiveSizes]     = useState([]);  // empty means any size
   const [sort, setSort]                   = useState('newest');
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
 
@@ -84,13 +97,25 @@ export default function CollectionPage({ category = 'Men' }) {
 
   useEffect(() => {
     setLoading(true);
-    setActiveSeason('All');
-    setActiveSub('All');
     setLoadError(false);
+
+    // A link like /men?sub=Blazers should open on that filter.
+    const wanted = searchParams.get('sub');
+    const season = Object.keys(config.subcategories)
+      .find(s => (config.subcategories[s] || []).includes(wanted));
+
+    if (wanted && season) {
+      setActiveSeason(season);
+      setActiveSub(wanted);
+    } else {
+      setActiveSeason('All');
+      setActiveSub('All');
+    }
     axios.get(`/api/products?category=${category}`)
       .then(res => { setProducts(res.data); setLoading(false); })
       .catch(() => { setLoadError(true); setLoading(false); });
-  }, [category]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, searchParams]);
 
   const handleSeasonClick = (season) => {
     setActiveSeason(season);
@@ -105,7 +130,13 @@ export default function CollectionPage({ category = 'Men' }) {
       const price       = getPrice(p.price);
       const range       = PRICE_RANGES[priceRange];
       const priceMatch  = price >= range.min && price < range.max;
-      return seasonMatch && subMatch && priceMatch;
+
+      // No size chosen means show everything. Otherwise the piece has to be
+      // genuinely available in at least one of the chosen sizes.
+      const sizeMatch = activeSizes.length === 0
+        || activeSizes.some(sz => sizeAvailable(p, sz));
+
+      return seasonMatch && subMatch && priceMatch && sizeMatch;
     })
     .sort((a, b) => {
       if (sort === 'price_asc')  return getPrice(a.price) - getPrice(b.price);
@@ -113,7 +144,25 @@ export default function CollectionPage({ category = 'Men' }) {
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
+  // Only offer sizes that some piece in this collection actually comes in,
+  // in the order the size list defines rather than alphabetically.
+  const SIZE_ORDER = ['XS','S','M','L','XL','XXL','6','8','10','12','14','16','28','30','32','34','36','38'];
+  const offeredSizes = SIZE_ORDER.filter(sz => products.some(p => (p.sizes || []).includes(sz)));
+
+  const toggleSize = (sz) => {
+    setActiveSizes(prev =>
+      prev.includes(sz) ? prev.filter(s => s !== sz) : [...prev, sz]
+    );
+  };
+
   const currentSubs = activeSeason !== 'All' ? (config.subcategories[activeSeason] || []) : [];
+
+  // Keep the address bar honest when filters are changed on the page.
+  const chooseSub = (sub) => {
+    setActiveSub(sub);
+    if (sub === 'All') setSearchParams({});
+    else setSearchParams({ sub });
+  };
   const activeRange = PRICE_RANGES[priceRange];
 
   return (
@@ -142,15 +191,40 @@ export default function CollectionPage({ category = 'Men' }) {
           <div className="cp-filter-row cp-filter-row--sub">
             <button
               className={`cp-filter-btn cp-filter-btn--sub ${activeSub === 'All' ? 'cp-filter-btn--sub-active' : ''}`}
-              onClick={() => setActiveSub('All')}
+              onClick={() => chooseSub('All')}
             >All</button>
             {currentSubs.map(s => (
               <button
                 key={s}
                 className={`cp-filter-btn cp-filter-btn--sub ${activeSub === s ? 'cp-filter-btn--sub-active' : ''}`}
-                onClick={() => setActiveSub(s)}
+                onClick={() => chooseSub(s)}
               >{s}</button>
             ))}
+          </div>
+        )}
+
+        {offeredSizes.length > 0 && (
+          <div className="cp-size-filter">
+            <span className="cp-size-filter-label">Size</span>
+            {offeredSizes.map(sz => {
+              const anyLeft = products.some(p => sizeAvailable(p, sz));
+              return (
+                <button
+                  key={sz}
+                  className={`cp-size-chip ${activeSizes.includes(sz) ? 'cp-size-chip--on' : ''} ${!anyLeft ? 'cp-size-chip--gone' : ''}`}
+                  onClick={() => toggleSize(sz)}
+                  disabled={!anyLeft}
+                  title={anyLeft ? `Show pieces available in ${sz}` : `Nothing left in ${sz}`}
+                >
+                  {sz}
+                </button>
+              );
+            })}
+            {activeSizes.length > 0 && (
+              <button className="cp-size-clear" onClick={() => setActiveSizes([])}>
+                Clear
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -161,6 +235,7 @@ export default function CollectionPage({ category = 'Men' }) {
           {filtered.length} piece{filtered.length !== 1 ? 's' : ''}
           {activeSeason !== 'All' && <span className="cp-count-filter"> · {activeSeason}{activeSub !== 'All' ? ` · ${activeSub}` : ''}</span>}
           {priceRange !== 0 && <span className="cp-count-filter"> · {activeRange.label}</span>}
+          {activeSizes.length > 0 && <span className="cp-count-filter"> · size {activeSizes.join(', ')}</span>}
         </p>
 
         <div className="cp-toolbar-right">

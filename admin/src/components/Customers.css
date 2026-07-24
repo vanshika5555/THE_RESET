@@ -174,3 +174,48 @@
   .cu-col { min-width: 72px; }
   .cu-order-total { margin-left: 0; }
 }
+
+/* Append to admin/src/components/Customers.css */
+
+.cu-interest {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.cu-interest-col { min-width: 0; }
+
+.cu-interest-head {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.cu-interest-empty {
+  margin: 0;
+  font-size: 13px;
+  color: #bbb;
+}
+
+.cu-interest-list {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.cu-interest-list li {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #444;
+}
+
+.cu-interest-meta { color: #999; }
+
+@media (max-width: 800px) {
+  .cu-interest { grid-template-columns: 1fr; gap: 14px; }
+}

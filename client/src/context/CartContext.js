@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import axios from 'axios';
 
 const CartContext = createContext();
 
@@ -17,6 +18,7 @@ const loadCart = () => {
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(loadCart);
   const [cartOpen, setCartOpen] = useState(false);
+  const firstRun = useRef(true);
 
   // Save the cart every time it changes.
   useEffect(() => {
@@ -25,6 +27,21 @@ export function CartProvider({ children }) {
     } catch {
       // storage full or blocked - cart still works for this session
     }
+
+    // Mirror it onto the account when signed in, so the bag follows the
+    // customer to another device. Skipped on first load, and silent on
+    // failure — syncing must never interrupt shopping.
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    if (!axios.defaults.headers.common.Authorization) return;
+
+    const timer = setTimeout(() => {
+      axios.put('/api/auth/cart', { cart }).catch(() => {});
+    }, 800);                       // wait for rapid changes to settle
+
+    return () => clearTimeout(timer);
   }, [cart]);
 
   const addToCart = (product, size) => {

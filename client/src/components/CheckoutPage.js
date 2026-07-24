@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { cartSubtotal, deliveryCharge, amountToFreeDelivery, FREE_DELIVERY_ABOVE } from '../utils/price';
 import AddressFields, { BLANK_ADDRESS, validateAddress } from './AddressFields';
@@ -23,6 +23,8 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   const [couponError, setCouponError] = useState('');
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [saveAddress, setSaveAddress] = useState(true);
+  const [guestEmail, setGuestEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   const subtotal = cartSubtotal(cart);
   const discount = coupon ? coupon.discount : 0;
@@ -95,6 +97,17 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   };
 
   const checkAddress = () => {
+    // Guests need an email so we can reach them about the order.
+    if (!user) {
+      const email = guestEmail.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setEmailError('Please enter a valid email address.');
+        setError('We need an email to send your order confirmation.');
+        return false;
+      }
+      setEmailError('');
+    }
+
     const errs = validateAddress(address);
     setFieldErrors(errs);
 
@@ -136,12 +149,18 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
       // send what was ordered — not what we think it costs.
       const res = await axios.post(
         `/api/orders`,
-        { items: orderItems, shippingAddress: address, couponCode: coupon ? coupon.code : '' }
+        {
+          items: orderItems,
+          shippingAddress: address,
+          couponCode: coupon ? coupon.code : '',
+          guestEmail: user ? '' : guestEmail.trim(),
+          guestName: user ? '' : address.fullName,
+        }
       );
 
       // Keep their address book current. This must never block the order,
       // so a failure here is deliberately swallowed.
-      if (showNewForm && saveAddress) {
+      if (user && showNewForm && saveAddress) {
         try {
           if (selectedId) {
             await axios.put(`/api/auth/addresses/${selectedId}`, address);
@@ -153,7 +172,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
         }
       }
 
-      onOrderSuccess(res.data._id);
+      onOrderSuccess(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Order failed. Try again.');
       setStep(2);
@@ -196,6 +215,28 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
           {/* Step 1 — Address */}
           {step === 1 && (
             <div className="co-section">
+              {!user && (
+                <div className="co-guest">
+                  <div className="co-guest-head">
+                    <h3 className="co-section-title">Your Email</h3>
+                    <Link to="/login" className="co-guest-signin">Sign in instead</Link>
+                  </div>
+                  <input
+                    className="co-guest-input"
+                    type="email"
+                    value={guestEmail}
+                    onChange={(e) => { setGuestEmail(e.target.value); setEmailError(''); }}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                  {emailError
+                    ? <p className="co-guest-error">{emailError}</p>
+                    : <p className="co-guest-hint">
+                        We will send your order confirmation here. No account needed.
+                      </p>}
+                </div>
+              )}
+
               <h3 className="co-section-title">Delivery Address</h3>
 
               {saved.length > 0 && (

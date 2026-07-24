@@ -14,7 +14,8 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
   const handleCheckout = () => {
     onClose();
     if (!user) {
-      navigate('/login');
+      // Remember where they were headed so login does not dead-end at home.
+      navigate('/login', { state: { from: '/checkout' } });
       return;
     }
     navigate('/checkout');
@@ -89,7 +90,7 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
               ? <p className="cd-shipping">Add ₹{toFree.toLocaleString('en-IN')} more for free delivery.</p>
               : <p className="cd-shipping">Your order qualifies for free delivery.</p>}
             <button className="cd-btn cd-btn--fill" onClick={handleCheckout}>
-              {user ? 'Proceed to Checkout' : 'Login to Checkout'}
+              {user ? 'Proceed to Checkout' : 'Sign In to Checkout'}
             </button>
           </div>
         )}

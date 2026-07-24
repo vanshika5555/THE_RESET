@@ -147,6 +147,9 @@ router.get('/users', protect, adminOnly, async (req, res) => {
   try {
     const users = await User.find({})
       .select('-password')
+      // Bring product names through so the admin shows pieces, not ids.
+      .populate('wishlist', 'name price category')
+      .populate('viewed.product', 'name price category')
       .sort({ createdAt: -1 });
     res.json(users);
   } catch (err) {
@@ -206,6 +209,56 @@ router.delete('/addresses/:addressId', protect, async (req, res) => {
     res.json(user.addresses);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// ---- What the customer is currently interested in ----
+
+/**
+ * The shop keeps the bag and wishlist in the browser so they work instantly
+ * and while signed out. These endpoints mirror them onto the account, so the
+ * lists follow the customer between devices and the shop can see demand that
+ * has not become an order yet.
+ */
+
+// PUT /api/auth/cart — replace the saved bag
+router.put('/cart', protect, async (req, res) => {
+  try {
+    const items = Array.isArray(req.body.cart) ? req.body.cart : [];
+    const clean = items.slice(0, 50).map(i => ({
+      product: i._id || i.product,
+      name:  i.name,
+      price: i.price,
+      image: i.image,
+      size:  i.size,
+      qty:   Math.max(1, Number(i.qty) || 1),
+    }));
+
+    await User.updateOne({ _id: req.user._id }, { cart: clean });
+    res.json({ saved: clean.length });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// PUT /api/auth/wishlist — replace the saved wishlist
+router.put('/wishlist', protect, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.wishlist) ? req.body.wishlist : [];
+    await User.updateOne({ _id: req.user._id }, { wishlist: ids.slice(0, 100) });
+    res.json({ saved: Math.min(ids.length, 100) });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// GET /api/auth/saved — the bag and wishlist stored on this account
+router.get('/saved', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('cart wishlist');
+    res.json({ cart: user?.cart || [], wishlist: user?.wishlist || [] });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

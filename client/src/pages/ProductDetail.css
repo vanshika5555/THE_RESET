@@ -345,3 +345,26 @@
   cursor: pointer;
 }
 .pd-size-guide-btn:hover { color: #666; }
+
+/* Append to client/src/pages/ProductDetail.css */
+
+.pd-zoom-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(255,255,255,.9);
+  color: #111;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  opacity: 0;
+  transition: opacity .2s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.pd-media:hover .pd-zoom-hint { opacity: 1; }
+
+@media (max-width: 640px) {
+  .pd-zoom-hint { opacity: 1; }   /* no hover on touch, so always show it */
+}

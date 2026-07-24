@@ -4,13 +4,16 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './OrderConfirm.css';
 
-export default function OrderConfirm({ orderId }) {
+export default function OrderConfirm({ orderId, order: passedOrder }) {
   const { user } = useAuth();
-  const [order, setOrder]     = useState(null);
-  const [loading, setLoading] = useState(true);
+  // A guest has no way to fetch their order back, so the placed order is
+  // handed straight to this screen.
+  const [order, setOrder]     = useState(passedOrder || null);
+  const [loading, setLoading] = useState(!passedOrder);
   const [failed, setFailed]   = useState(false);
 
   useEffect(() => {
+    if (passedOrder) return;              // already have everything
     if (!orderId) { setLoading(false); return; }
     let active = true;
 
@@ -27,7 +30,11 @@ export default function OrderConfirm({ orderId }) {
       });
 
     return () => { active = false; };
-  }, [orderId]);
+  }, [orderId, passedOrder]);
+
+  const guestName = order?.guest?.name || order?.shippingAddress?.fullName || '';
+  const firstName = (user?.name || guestName || '').split(' ')[0];
+  const isGuest = order ? !order.user : !user;
 
   const addr = order?.shippingAddress;
   const addressLine = addr
@@ -41,7 +48,7 @@ export default function OrderConfirm({ orderId }) {
         <div className="oc-icon">✓</div>
         <h1 className="oc-title">Order Confirmed</h1>
         <p className="oc-sub">
-          Thank you{user?.name ? `, ${user.name.split(' ')[0]}` : ''}. We have received your order
+          Thank you{firstName ? `, ${firstName}` : ''}. We have received your order
           and will send it on its way shortly.
         </p>
 
@@ -139,8 +146,21 @@ export default function OrderConfirm({ orderId }) {
           </>
         )}
 
+        {isGuest && order && (
+          <div className="oc-guest-note">
+            <p>
+              <strong>Save your order number</strong> — #{order._id.slice(-8).toUpperCase()}.
+              You ordered as a guest, so it will not appear in an account.
+            </p>
+            <p>
+              <Link to="/login" className="oc-inline-link">Create an account</Link> with{' '}
+              {order.guest?.email || 'your email'} to track future orders.
+            </p>
+          </div>
+        )}
+
         <div className="oc-actions">
-          <Link to="/orders" className="oc-btn oc-btn--outline">View My Orders</Link>
+          {!isGuest && <Link to="/orders" className="oc-btn oc-btn--outline">View My Orders</Link>}
           <Link to="/" className="oc-btn oc-btn--fill">Continue Shopping</Link>
         </div>
       </div>

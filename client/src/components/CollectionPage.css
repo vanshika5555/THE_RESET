@@ -375,3 +375,66 @@
   padding: 6px 11px;
   z-index: 2;
 }
+
+/* Append to client/src/components/CollectionPage.css */
+
+.cp-size-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+
+.cp-size-filter-label {
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #999;
+  margin-right: 4px;
+}
+
+.cp-size-chip {
+  min-width: 42px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 2px;
+  color: #333;
+  transition: all .15s ease;
+}
+.cp-size-chip:hover:not(:disabled) { border-color: #111; }
+
+.cp-size-chip--on {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.cp-size-chip--gone {
+  color: #ccc;
+  border-color: #f0f0f0;
+  background: #fafafa;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.cp-size-clear {
+  background: none;
+  border: none;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 12px;
+  color: #666;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.cp-size-clear:hover { color: #111; }
+
+@media (max-width: 560px) {
+  .cp-size-filter { gap: 6px; }
+  .cp-size-chip { min-width: 38px; padding: 7px 9px; font-size: 12px; }
+}

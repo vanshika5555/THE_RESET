@@ -1,0 +1,131 @@
+.tm-section {
+  background: #111;
+  color: #fff;
+  padding: 84px 40px;
+}
+
+.tm-head {
+  max-width: 1400px;
+  margin: 0 auto 40px;
+  text-align: center;
+}
+
+.tm-eyebrow {
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  margin: 0 0 12px;
+}
+
+.tm-title {
+  font-size: 32px;
+  font-weight: 300;
+  margin: 0 0 16px;
+  letter-spacing: .01em;
+}
+
+.tm-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255,255,255,.6);
+}
+
+.tm-avg { color: #fff; font-weight: 500; }
+.tm-sep { color: rgba(255,255,255,.3); }
+
+.tm-stars { letter-spacing: 2px; line-height: 1; }
+.tm-star { color: rgba(255,255,255,.22); font-size: 13px; }
+.tm-star--on { color: #fff; }
+
+.tm-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.tm-card {
+  margin: 0;
+  padding: 28px 26px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color .25s ease, background .25s ease;
+}
+.tm-card:hover {
+  border-color: rgba(255,255,255,.3);
+  background: rgba(255,255,255,.03);
+}
+
+.tm-quote {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 19px;
+  font-weight: 300;
+  line-height: 1.65;
+  color: rgba(255,255,255,.92);
+  flex: 1;
+}
+
+.tm-by {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.tm-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.tm-by-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.tm-name {
+  font-size: 14px;
+  color: #fff;
+}
+
+.tm-product {
+  font-size: 12px;
+  color: rgba(255,255,255,.5);
+  text-decoration: none;
+}
+.tm-product:hover { color: rgba(255,255,255,.85); text-decoration: underline; }
+
+@media (max-width: 1000px) {
+  .tm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .tm-section { padding: 60px 18px; }
+  .tm-title { font-size: 25px; }
+  .tm-grid { grid-template-columns: 1fr; gap: 12px; }
+  .tm-quote { font-size: 17px; }
+}

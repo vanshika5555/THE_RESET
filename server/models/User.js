@@ -19,6 +19,38 @@ const userSchema = new mongoose.Schema({
   password:  { type: String, required: true, minlength: 6 },
   role:      { type: String, enum: ['user', 'admin'], default: 'user' },
   addresses: { type: [addressSchema], default: [] },
+
+  // What this customer is currently interested in. Kept on the account so
+  // it follows them between devices — and so the shop can see demand that
+  // has not turned into an order yet.
+  cart: {
+    type: [{
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+      name:    String,
+      price:   String,
+      image:   String,
+      size:    String,
+      qty:     { type: Number, default: 1 },
+      _id:     false,
+    }],
+    default: [],
+  },
+
+  wishlist: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    default: [],
+  },
+
+  // Recently viewed, newest first, capped so it cannot grow forever.
+  viewed: {
+    type: [{
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+      at:      { type: Date, default: Date.now },
+      count:   { type: Number, default: 1 },
+      _id:     false,
+    }],
+    default: [],
+  },
 }, { timestamps: true });
 
 // Hash password before saving

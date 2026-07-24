@@ -531,3 +531,66 @@
   accent-color: #111;
   cursor: pointer;
 }
+
+/* Append to client/src/components/CheckoutPage.css */
+
+.co-guest {
+  padding-bottom: 22px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid #eee;
+}
+
+.co-guest-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.co-guest-signin {
+  font-size: 13px;
+  color: #111;
+}
+
+.co-guest-input {
+  width: 100%;
+  padding: 13px 14px;
+  font: inherit;
+  font-size: 15px;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  outline: none;
+  box-sizing: border-box;
+  margin-top: 4px;
+}
+.co-guest-input:focus { border-color: #111; }
+
+.co-guest-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #999;
+}
+
+.co-guest-error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+/* guest note on the confirmation screen */
+.oc-guest-note {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin-top: 22px;
+  text-align: left;
+}
+.oc-guest-note p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #555;
+}
+.oc-guest-note p:last-child { margin-bottom: 0; }

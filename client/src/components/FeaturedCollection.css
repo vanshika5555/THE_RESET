@@ -223,3 +223,19 @@
   .fc-track { height: 300px; }
   .fc-section { padding: 40px 0 48px; }
 }
+
+
+/* Append to client/src/components/FeaturedCollection.css */
+
+.fc-loading {
+  height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: #999;
+}
+
+@media (max-width: 768px) { .fc-loading { height: 360px; } }
+@media (max-width: 480px) { .fc-loading { height: 300px; } }

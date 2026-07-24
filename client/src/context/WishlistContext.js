@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import axios from 'axios';
 
 const WishlistContext = createContext();
 
@@ -16,6 +17,7 @@ const loadWishlist = () => {
 
 export function WishlistProvider({ children }) {
   const [wishlist, setWishlist] = useState(loadWishlist);
+  const firstRun = useRef(true);
 
   // Save on every change so a refresh never loses it.
   useEffect(() => {
@@ -24,6 +26,20 @@ export function WishlistProvider({ children }) {
     } catch {
       // storage full or blocked — the list still works for this session
     }
+
+    // Mirror onto the account when signed in. Silent on failure.
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    if (!axios.defaults.headers.common.Authorization) return;
+
+    const timer = setTimeout(() => {
+      axios.put('/api/auth/wishlist', { wishlist: wishlist.map(p => p._id) })
+        .catch(() => {});
+    }, 800);
+
+    return () => clearTimeout(timer);
   }, [wishlist]);
 
   const toggleWishlist = (product) => {

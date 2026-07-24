@@ -18,6 +18,9 @@ import ProductDetail from './pages/ProductDetail';
 import SearchPage from './pages/SearchPage';
 import Help from './pages/Help';
 import Legal from './pages/Legal';
+import NotFound from './pages/NotFound';
+import ScrollToTop from './components/ScrollToTop';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
@@ -25,8 +28,10 @@ function App() {
       <CartProvider>
         <WishlistProvider>
           <Router>
+            <ScrollToTop />
             <div className="App">
               <Navbar />
+              <ErrorBoundary>
               <Routes>
                 <Route path="/"          element={<Home />} />
                 <Route path="/men"       element={<Men />} />
@@ -42,7 +47,11 @@ function App() {
                 <Route path="/privacy" element={<Legal />} />
                 <Route path="/terms" element={<Legal />} />
                 <Route path="/profile/*" element={<Profile />} />
+
+                {/* anything else */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
+              </ErrorBoundary>
               <Footer />
             </div>
           </Router>

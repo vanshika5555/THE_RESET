@@ -1,0 +1,54 @@
+.eb-page {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 140px 24px 120px;
+  text-align: center;
+}
+
+.eb-eyebrow {
+  font-size: 13px;
+  letter-spacing: .22em;
+  color: #bbb;
+  margin: 0 0 20px;
+}
+
+.eb-title {
+  font-size: 28px;
+  font-weight: 400;
+  margin: 0 0 16px;
+}
+
+.eb-text {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #666;
+  margin: 0 0 32px;
+}
+
+.eb-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.eb-btn {
+  padding: 14px 26px;
+  border: 1px solid #111;
+  background: #fff;
+  color: #111;
+  text-decoration: none;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.eb-btn:hover { background: #111; color: #fff; }
+.eb-btn--fill { background: #111; color: #fff; }
+.eb-btn--fill:hover { background: #333; }
+
+@media (max-width: 520px) {
+  .eb-page { padding: 110px 18px 80px; }
+  .eb-actions { flex-direction: column; }
+}

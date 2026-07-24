@@ -78,4 +78,30 @@ router.get('/summary/:productId', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/reviews/recent — the latest well-rated reviews, for the homepage.
+ * Only 4 and 5 star reviews with a bit of substance behind them.
+ */
+router.get('/recent', async (req, res) => {
+  try {
+    const reviews = await Review.find({ rating: { $gte: 4 } })
+      .populate('product', 'name category image images')
+      .sort({ createdAt: -1 })
+      .limit(12);
+
+    // Skip one-word reviews — they read as filler on a homepage.
+    // Low enough to let a genuine short review through ("Great fit, love it")
+    // while still keeping out "ok" and "nice".
+    const MIN_LENGTH = 10;
+
+    const worthShowing = reviews
+      .filter(r => r.product && (r.review || '').trim().length >= MIN_LENGTH)
+      .slice(0, 6);
+
+    res.json(worthShowing);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

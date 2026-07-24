@@ -9,6 +9,7 @@ import ProductReviews from '../components/ProductReviews';
 import RelatedProducts from '../components/RelatedProducts';
 import Loading from '../components/Loading';
 import SizeGuide from '../components/SizeGuide';
+import ImageLightbox from '../components/ImageLightbox';
 import './ProductDetail.css';
 import usePageMeta from '../hooks/usePageMeta';
 
@@ -54,6 +55,7 @@ export default function ProductDetail() {
   const [activeImg, setActiveImg] = useState(0);
   const [added, setAdded] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const [sizeWarning, setSizeWarning] = useState(false);
 
   usePageMeta({
@@ -89,6 +91,13 @@ export default function ProductDetail() {
         setError('Sorry, we could not find that product.');
         setLoading(false);
       });
+
+    // Note the visit for signed-in customers. Fire and forget — this must
+    // never slow down or break the page.
+    if (axios.defaults.headers.common.Authorization) {
+      axios.post(`/api/products/${id}/view`).catch(() => {});
+    }
+
     return () => { active = false; };
   }, [id]);
 
@@ -111,7 +120,13 @@ export default function ProductDetail() {
     setSizeWarning(false);
     addToCart(product, chosenSize);
     setCartOpen(false);
-    navigate(user ? '/checkout' : '/login');
+    // The item is already in the bag, so after signing in they land on
+    // checkout with it waiting — not back at the start.
+    if (!user) {
+      navigate('/login', { state: { from: '/checkout' } });
+      return;
+    }
+    navigate('/checkout');
   };
 
   const pickSize = (s) => {
@@ -171,10 +186,19 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <div className="pd-media" style={{ background: product.color || '#f0f0f0' }}>
+          <div
+            className="pd-media"
+            style={{ background: product.color || '#f0f0f0', cursor: mainImg ? 'zoom-in' : 'default' }}
+            onClick={() => mainImg && setZoomOpen(true)}
+            role={mainImg ? 'button' : undefined}
+            tabIndex={mainImg ? 0 : undefined}
+            onKeyDown={(e) => { if (mainImg && e.key === 'Enter') setZoomOpen(true); }}
+          >
             {mainImg
               ? <img src={mainImg} alt={product.name} className="pd-photo" />
               : <div className="pd-photo-empty">No image</div>}
+
+            {mainImg && <span className="pd-zoom-hint">Click to zoom</span>}
             {product.tag && <span className="pd-tag">{product.tag}</span>}
 
             {gallery.length > 1 && (
@@ -183,7 +207,7 @@ export default function ProductDetail() {
                   type="button"
                   aria-label="Previous image"
                   style={{ ...pdNav, left: '12px' }}
-                  onClick={() => step(-1)}
+                  onClick={(e) => { e.stopPropagation(); step(-1); }}
                 >
                   ‹
                 </button>
@@ -191,7 +215,7 @@ export default function ProductDetail() {
                   type="button"
                   aria-label="Next image"
                   style={{ ...pdNav, right: '12px' }}
-                  onClick={() => step(1)}
+                  onClick={(e) => { e.stopPropagation(); step(1); }}
                 >
                   ›
                 </button>
@@ -329,6 +353,15 @@ export default function ProductDetail() {
       <ProductReviews productId={product._id} />
 
       <RelatedProducts product={product} />
+
+      {zoomOpen && gallery.length > 0 && (
+        <ImageLightbox
+          images={gallery}
+          startIndex={activeImg}
+          alt={product.name}
+          onClose={() => setZoomOpen(false)}
+        />
+      )}
 
       {guideOpen && (
         <SizeGuide

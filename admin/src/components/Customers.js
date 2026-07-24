@@ -125,6 +125,63 @@ export default function Customers() {
 
                 {isOpen && (
                   <div className="cu-detail">
+
+                    {/* What they are interested in right now */}
+                    <div className="cu-interest">
+                      <div className="cu-interest-col">
+                        <p className="cu-interest-head">
+                          In their bag ({(u.cart || []).length})
+                        </p>
+                        {(u.cart || []).length === 0 ? (
+                          <p className="cu-interest-empty">Nothing right now</p>
+                        ) : (
+                          <ul className="cu-interest-list">
+                            {u.cart.map((c, i) => (
+                              <li key={i}>
+                                {c.name}
+                                <span className="cu-interest-meta">
+                                  {c.size ? ` · ${c.size}` : ''}{c.qty > 1 ? ` · x${c.qty}` : ''}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                      <div className="cu-interest-col">
+                        <p className="cu-interest-head">
+                          Wishlist ({(u.wishlist || []).length})
+                        </p>
+                        {(u.wishlist || []).length === 0 ? (
+                          <p className="cu-interest-empty">Nothing saved</p>
+                        ) : (
+                          <ul className="cu-interest-list">
+                            {u.wishlist.map((w, i) => (
+                              <li key={i}>{w?.name || 'Removed product'}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                      <div className="cu-interest-col">
+                        <p className="cu-interest-head">Recently viewed</p>
+                        {(u.viewed || []).length === 0 ? (
+                          <p className="cu-interest-empty">No visits recorded</p>
+                        ) : (
+                          <ul className="cu-interest-list">
+                            {u.viewed.slice(0, 6).map((v, i) => (
+                              <li key={i}>
+                                {v.product?.name || 'Removed product'}
+                                {v.count > 1 && (
+                                  <span className="cu-interest-meta"> · {v.count} times</span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+
                     {s.count === 0 ? (
                       <p className="cu-no-orders">This customer has signed up but not ordered yet.</p>
                     ) : (
