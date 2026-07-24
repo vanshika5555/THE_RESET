@@ -1,3 +1,9 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Private pages — no value in search results
+Disallow: /profile
+Disallow: /checkout
+Disallow: /orders
+
+Sitemap: https://the-reset-snowy.vercel.app/sitemap.xml

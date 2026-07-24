@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom';
 import React from "react";
 import "./About.css";
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function About() {
+  usePageMeta({
+    title: 'Our Story',
+    description: 'Why THE RESET exists, and how the collection is made.',
+  });
+
   return (
     <div className="about-page">
 

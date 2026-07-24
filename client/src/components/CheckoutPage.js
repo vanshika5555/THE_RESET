@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { cartSubtotal } from '../utils/price';
+import { cartSubtotal, deliveryCharge, amountToFreeDelivery, FREE_DELIVERY_ABOVE } from '../utils/price';
 import AddressFields, { BLANK_ADDRESS, validateAddress } from './AddressFields';
 import './AddressFields.css';
 import './CheckoutPage.css';
@@ -18,8 +18,18 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   const [saved, setSaved] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [showNewForm, setShowNewForm] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [coupon, setCoupon] = useState(null);       // { code, discount, description }
+  const [couponError, setCouponError] = useState('');
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(true);
 
   const subtotal = cartSubtotal(cart);
+  const discount = coupon ? coupon.discount : 0;
+  const afterDiscount = subtotal - discount;
+  const delivery = deliveryCharge(afterDiscount);
+  const total = afterDiscount + delivery;
+  const toFree = amountToFreeDelivery(afterDiscount);
 
 
   // Pull in whatever the customer has already saved so they
@@ -45,6 +55,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
     setSelectedId(addr._id);
     setShowNewForm(false);
     setError('');
+    setFieldErrors({});
     setAddress({ ...BLANK_ADDRESS, ...addr });
   };
 
@@ -56,13 +67,50 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
     setFieldErrors({});
   };
 
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+
+    setCheckingCoupon(true);
+    setCouponError('');
+    try {
+      const res = await axios.post('/api/coupons/check', { code, subtotal });
+      setCoupon(res.data);
+      setCouponInput('');
+    } catch (err) {
+      setCoupon(null);
+      setCouponError(
+        err.response
+          ? (err.response.data?.message || 'Could not apply that code.')
+          : 'Cannot reach the server.'
+      );
+    }
+    setCheckingCoupon(false);
+  };
+
+  const removeCoupon = () => {
+    setCoupon(null);
+    setCouponError('');
+  };
+
   const checkAddress = () => {
     const errs = validateAddress(address);
     setFieldErrors(errs);
+
     if (Object.keys(errs).length > 0) {
-      setError('Please fix the highlighted fields before continuing.');
+      // A saved address can be missing details we did not used to ask for,
+      // such as a house number. Open the form so it can actually be fixed —
+      // otherwise the fields are hidden and there is nothing to correct.
+      if (selectedId && !showNewForm) {
+        setShowNewForm(true);
+        setError('This saved address is missing a few details. Please complete the highlighted fields — we will save the changes with your order.');
+      } else {
+        setError('Please fix the highlighted fields before continuing.');
+      }
       return false;
     }
+
     setError('');
     return true;
   };
@@ -84,10 +132,26 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
         color:   item.color || '#f0f0f0',
       }));
 
+      // The server recalculates the total from the database, so we only
+      // send what was ordered — not what we think it costs.
       const res = await axios.post(
         `/api/orders`,
-        { items: orderItems, subtotal, shippingAddress: address }
+        { items: orderItems, shippingAddress: address, couponCode: coupon ? coupon.code : '' }
       );
+
+      // Keep their address book current. This must never block the order,
+      // so a failure here is deliberately swallowed.
+      if (showNewForm && saveAddress) {
+        try {
+          if (selectedId) {
+            await axios.put(`/api/auth/addresses/${selectedId}`, address);
+          } else {
+            await axios.post('/api/auth/addresses', { ...address, label: address.label || 'Home' });
+          }
+        } catch {
+          // the order is already placed — nothing to do here
+        }
+      }
 
       onOrderSuccess(res.data._id);
     } catch (err) {
@@ -148,6 +212,9 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                       <span className="co-saved-text">
                         {[a.houseNo, a.address, a.landmark, a.city, a.state].filter(Boolean).join(', ')} - {a.pincode}
                       </span>
+                      {Object.keys(validateAddress(a)).length > 0 && (
+                        <span className="co-saved-incomplete">Needs a few more details</span>
+                      )}
                     </button>
                   ))}
 
@@ -168,6 +235,19 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                   errors={fieldErrors}
                   showLabelPicker={false}
                 />
+
+                <label className="co-save-addr">
+                  <input
+                    type="checkbox"
+                    checked={saveAddress}
+                    onChange={(e) => setSaveAddress(e.target.checked)}
+                  />
+                  <span>
+                    {selectedId
+                      ? 'Update this address in my account'
+                      : 'Save this address for next time'}
+                  </span>
+                </label>
               </div>
               <button
                 className="co-btn"
@@ -212,7 +292,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
               </div>
 
               <button className="co-btn co-btn--place" onClick={handlePlaceOrder} disabled={loading}>
-                Place Order — ₹{subtotal.toLocaleString('en-IN')}
+                Place Order — ₹{total.toLocaleString('en-IN')}
               </button>
               <p className="co-disclaimer">By placing this order you agree to our Terms & Conditions</p>
             </div>
@@ -236,18 +316,71 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
               </div>
             ))}
           </div>
+          <div className="co-coupon">
+            {coupon ? (
+              <div className="co-coupon-applied">
+                <div>
+                  <span className="co-coupon-code">{coupon.code}</span>
+                  {coupon.description && (
+                    <span className="co-coupon-desc">{coupon.description}</span>
+                  )}
+                </div>
+                <button type="button" onClick={removeCoupon} className="co-coupon-remove">
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="co-coupon-row">
+                  <input
+                    className="co-coupon-input"
+                    value={couponInput}
+                    onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
+                    placeholder="Discount code"
+                  />
+                  <button
+                    type="button"
+                    className="co-coupon-apply"
+                    onClick={applyCoupon}
+                    disabled={checkingCoupon || !couponInput.trim()}
+                  >
+                    {checkingCoupon ? '...' : 'Apply'}
+                  </button>
+                </div>
+                {couponError && <p className="co-coupon-error">{couponError}</p>}
+              </>
+            )}
+          </div>
+
           <div className="co-totals">
             <div className="co-total-row">
               <span>Subtotal</span>
               <span>₹{subtotal.toLocaleString('en-IN')}</span>
             </div>
+            {discount > 0 && (
+              <div className="co-total-row co-total-row--discount">
+                <span>Discount ({coupon.code})</span>
+                <span>− ₹{discount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+
             <div className="co-total-row">
               <span>Delivery</span>
-              <span className="co-free">FREE</span>
+              {delivery === 0
+                ? <span className="co-free">FREE</span>
+                : <span>₹{delivery.toLocaleString('en-IN')}</span>}
             </div>
+
+            {toFree > 0 && (
+              <p className="co-free-nudge">
+                Add ₹{toFree.toLocaleString('en-IN')} more for free delivery
+              </p>
+            )}
+
             <div className="co-total-row co-total-row--final">
               <span>Total</span>
-              <span>₹{subtotal.toLocaleString('en-IN')}</span>
+              <span>₹{total.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import CardGallery from '../components/CardGallery';
 import StarRating from '../components/StarRating';
 import { useWishlist } from '../context/WishlistContext';
 import '../components/CollectionPage.css';
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
@@ -16,6 +17,11 @@ export default function SearchPage() {
 
   const navigate = useNavigate();
   const { toggleWishlist, isWished } = useWishlist();
+
+  usePageMeta({
+    title: query ? `Search: ${query}` : 'Search',
+    description: 'Search the THE RESET collection by name, style or season.',
+  });
 
   useEffect(() => { setInput(query); }, [query]);
 

@@ -17,14 +17,37 @@ export default function MyOrders() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-    axios.get(`/api/orders/myorders`, {
-      headers: { Authorization: `Bearer ${user.token}` }
-    }).then(res => { setOrders(res.data); setLoading(false); })
-      .catch(() => setLoading(false));
+    axios.get(`/api/orders/myorders`)
+      .then(res => { setOrders(res.data); setLoading(false); })
+      .catch(() => { setError('Could not load your orders.'); setLoading(false); });
   }, [user, navigate]);
+
+
+  const cancelOrder = async (orderId) => {
+    const sure = window.confirm(
+      'Cancel this order? This cannot be undone.'
+    );
+    if (!sure) return;
+
+    setCancelling(orderId);
+    setError('');
+    try {
+      const res = await axios.put(`/api/orders/${orderId}/cancel`);
+      setOrders(list => list.map(o => (o._id === orderId ? res.data : o)));
+    } catch (err) {
+      setError(
+        err.response
+          ? (err.response.data?.message || 'Could not cancel this order.')
+          : 'Cannot reach the server.'
+      );
+    }
+    setCancelling(null);
+  };
 
   if (loading) return <div className="mo-loading">Loading your orders...</div>;
 
@@ -34,6 +57,8 @@ export default function MyOrders() {
         <h1 className="mo-title">My Orders</h1>
         <p className="mo-sub">{orders.length} order{orders.length !== 1 ? 's' : ''}</p>
       </div>
+
+      {error && <div className="mo-error">{error}</div>}
 
       {orders.length === 0 ? (
         <div className="mo-empty">
@@ -77,8 +102,36 @@ export default function MyOrders() {
                     {order.shippingAddress.fullName}, {order.shippingAddress.city}
                   </div>
                   <div className="mo-total">
-                    Total: <strong>₹{order.subtotal.toLocaleString('en-IN')}</strong>
+                    Total: <strong>₹{(order.total || order.subtotal).toLocaleString('en-IN')}</strong>
+                    {order.delivery > 0 && (
+                      <span className="mo-delivery-note"> (incl. ₹{order.delivery} delivery)</span>
+                    )}
                   </div>
+                </div>
+
+                <div className="mo-card-actions">
+                  {order.status === 'Pending' ? (
+                    <>
+                      <span className="mo-action-note">
+                        You can cancel while the order is still being prepared.
+                      </span>
+                      <button
+                        className="mo-cancel-btn"
+                        onClick={() => cancelOrder(order._id)}
+                        disabled={cancelling === order._id}
+                      >
+                        {cancelling === order._id ? 'Cancelling...' : 'Cancel Order'}
+                      </button>
+                    </>
+                  ) : order.status === 'Cancelled' ? (
+                    <span className="mo-action-note">This order was cancelled.</span>
+                  ) : order.status === 'Delivered' ? (
+                    <span className="mo-action-note">Delivered. Need help? See our <Link to="/help#returns" className="mo-inline-link">returns page</Link>.</span>
+                  ) : (
+                    <span className="mo-action-note">
+                      Already on its way — <Link to="/help#contact" className="mo-inline-link">contact us</Link> if you need to make a change.
+                    </span>
+                  )}
                 </div>
               </div>
             );

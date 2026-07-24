@@ -30,14 +30,84 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login
+
+/**
+ * Simple in-memory brake on repeated failed logins.
+ *
+ * Not a replacement for a proper rate limiter, but it stops someone
+ * guessing passwords thousands of times a minute against one account.
+ */
+const attempts = new Map();          // email -> { count, firstAt, blockedUntil }
+const WINDOW_MS = 15 * 60 * 1000;    // 15 minutes
+const MAX_TRIES = 8;
+const BLOCK_MS  = 15 * 60 * 1000;
+
+function loginBlocked(email) {
+  const rec = attempts.get(email);
+  if (!rec) return 0;
+  if (rec.blockedUntil && rec.blockedUntil > Date.now()) {
+    return Math.ceil((rec.blockedUntil - Date.now()) / 60000);
+  }
+  return 0;
+}
+
+function recordFailure(email) {
+  const now = Date.now();
+  const rec = attempts.get(email) || { count: 0, firstAt: now };
+
+  // start a fresh window if the old one has passed
+  if (now - rec.firstAt > WINDOW_MS) {
+    rec.count = 0;
+    rec.firstAt = now;
+  }
+
+  rec.count += 1;
+  if (rec.count >= MAX_TRIES) {
+    rec.blockedUntil = now + BLOCK_MS;
+    rec.count = 0;
+    rec.firstAt = now;
+  }
+  attempts.set(email, rec);
+}
+
+function clearFailures(email) {
+  attempts.delete(email);
+}
+
+// keep the map from growing forever
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, rec] of attempts) {
+    if ((rec.blockedUntil || 0) < now && now - rec.firstAt > WINDOW_MS) {
+      attempts.delete(email);
+    }
+  }
+}, 30 * 60 * 1000).unref();
+
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  const key = (email || '').toLowerCase().trim();
+
+  const waitMinutes = loginBlocked(key);
+  if (waitMinutes) {
+    return res.status(429).json({
+      message: `Too many failed attempts. Please try again in ${waitMinutes} minute${waitMinutes > 1 ? 's' : ''}.`,
+    });
+  }
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!user) {
+      recordFailure(key);
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
 
     const match = await user.matchPassword(password);
-    if (!match) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!match) {
+      recordFailure(key);
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    clearFailures(key);
 
     res.json({
       _id:   user._id,

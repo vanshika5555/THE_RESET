@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { sizesFor, guessFitType } from '../utils/sizeOptions';
 import './ProductForm.css';
 
 const CATEGORIES = {
@@ -18,10 +19,7 @@ const CATEGORIES = {
   },
 };
 
-const SIZE_OPTIONS = {
-  Men:   ['XS','S','M','L','XL','XXL','28','30','32','34','36','38'],
-  Women: ['XS','S','M','L','XL','XXL','6','8','10','12','14','16'],
-};
+
 
 const SEASONS = ['Summer', 'Winter', 'Monsoon', 'All Season'];
 
@@ -29,7 +27,7 @@ export default function AddProduct() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '', price: '', description: '', category: 'Men', season: 'All Season',
-    subcategory: '', tag: '', color: '#f0f0f0', inStock: true, sizes: [], image: '', images: [''],
+    subcategory: '', fitType: 'Top', tag: '', color: '#f0f0f0', inStock: true, sizes: [], stock: [], image: '', images: [''],
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,11 +42,28 @@ export default function AddProduct() {
       return;
     }
     if (name === 'category') {
-      setForm(f => ({ ...f, category: value, season: 'All Season', subcategory: '' }));
+      setForm(f => ({
+        ...f, category: value, season: 'All Season', subcategory: '',
+        sizes: [], stock: [],
+      }));
+      return;
+    }
+    if (name === 'fitType') {
+      // different fit means a different set of sizes
+      setForm(f => ({ ...f, fitType: value, sizes: [], stock: [] }));
       return;
     }
     if (name === 'season') {
       setForm(f => ({ ...f, season: value, subcategory: '' }));
+      return;
+    }
+    if (name === 'subcategory') {
+      const guessed = guessFitType(value);
+      setForm(f => (
+        guessed === f.fitType
+          ? { ...f, subcategory: value }
+          : { ...f, subcategory: value, fitType: guessed, sizes: [], stock: [] }
+      ));
       return;
     }
     setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
@@ -81,6 +96,28 @@ export default function AddProduct() {
     });
   };
 
+
+  const stockFor = (size) => {
+    const entry = (form.stock || []).find(s => s.size === size);
+    return entry ? entry.qty : 0;
+  };
+
+  const setStock = (size, value) => {
+    const qty = Math.max(0, parseInt(value, 10) || 0);
+    setForm(f => {
+      const list = [...(f.stock || [])];
+      const i = list.findIndex(s => s.size === size);
+      if (i === -1) list.push({ size, qty });
+      else list[i] = { size, qty };
+      return { ...f, stock: list };
+    });
+  };
+
+  const totalStock = () =>
+    (form.stock || [])
+      .filter(s => (form.sizes || []).includes(s.size))
+      .reduce((sum, s) => sum + (Number(s.qty) || 0), 0);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.price || !form.subcategory || form.sizes.length === 0) {
@@ -96,7 +133,8 @@ export default function AddProduct() {
     setLoading(true);
     try {
       const gallery = (form.images || []).map(u => u.trim()).filter(Boolean);
-      await axios.post(`/api/products`, { ...form, images: gallery, image: gallery[0] || '' });
+      const stock = (form.sizes || []).map(size => ({ size, qty: stockFor(size) }));
+      await axios.post(`/api/products`, { ...form, images: gallery, image: gallery[0] || '', stock });
       navigate('/products');
     } catch (err) {
       const msg = err.response
@@ -149,6 +187,15 @@ export default function AddProduct() {
             <select name="season" value={form.season} onChange={handleChange}>
               {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
+          </div>
+
+          <div className="pf-field">
+            <label>Worn on *</label>
+            <select name="fitType" value={form.fitType || 'Top'} onChange={handleChange}>
+              <option value="Top">Upper body (shirts, jackets, dresses)</option>
+              <option value="Bottom">Lower body (trousers, skirts, shorts)</option>
+            </select>
+            <span className="pf-hint">Sets which size chart customers see</span>
           </div>
 
           <div className="pf-field">
@@ -254,9 +301,9 @@ export default function AddProduct() {
         </div>
 
         <div className="pf-field pf-field--full">
-          <label>Sizes * <span className="pf-hint">(click to select)</span></label>
+          <label>Sizes * <span className="pf-hint">(click to select, then set how many you have)</span></label>
           <div className="pf-sizes">
-            {SIZE_OPTIONS[form.category].map(s => (
+            {sizesFor(form.category, form.fitType).map(s => (
               <button
                 type="button" key={s}
                 className={`pf-size-btn ${form.sizes.includes(s) ? 'pf-size-btn--active' : ''}`}
@@ -266,6 +313,31 @@ export default function AddProduct() {
               </button>
             ))}
           </div>
+
+          {form.sizes.length > 0 && (
+            <div style={{ marginTop: '16px' }}>
+              <p style={{ fontSize: '11px', letterSpacing: '.1em', textTransform: 'uppercase', color: '#666', margin: '0 0 10px' }}>
+                Stock per size
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {form.sizes.map(s => (
+                  <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '7px', border: '1px solid #eee', borderRadius: '4px', padding: '7px 10px' }}>
+                    <span style={{ fontSize: '13px', minWidth: '26px' }}>{s}</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={stockFor(s)}
+                      onChange={(e) => setStock(s, e.target.value)}
+                      style={{ width: '64px', padding: '6px 8px', font: 'inherit', fontSize: '13px', border: '1px solid #ddd', borderRadius: '3px' }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: '12px', color: '#999', margin: '9px 0 0' }}>
+                A size with 0 left cannot be ordered. Total in stock: {totalStock()}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="pf-field pf-field--full pf-checkbox">

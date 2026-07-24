@@ -7,6 +7,7 @@ import StarRating from "../components/StarRating";
 import CardGallery from "../components/CardGallery";
 import { parsePrice } from "../utils/price";
 import Loading from "../components/Loading";
+import usePageMeta from '../hooks/usePageMeta';
 
 
 const SEASONS = ['All', 'Summer', 'Winter', 'Monsoon', 'All Season'];
@@ -50,8 +51,25 @@ const SORT_OPTIONS = [
 
 const getPrice = parsePrice;
 
+// Is anything left of this piece, in any size?
+const isSoldOut = (p) => {
+  if (!p.inStock) return true;
+  if (!p.stock || p.stock.length === 0) return false;   // not tracked yet
+  const sizes = p.sizes || [];
+  return sizes.every(size => {
+    const entry = p.stock.find(s => s.size === size);
+    return !entry || entry.qty <= 0;
+  });
+};
+
+
 export default function CollectionPage({ category = 'Men' }) {
   const config = CATEGORY_CONFIG[category] || CATEGORY_CONFIG.Men;
+
+  usePageMeta({
+    title: `${category}'s Collection`,
+    description: `Shop ${category.toLowerCase()}'s clothing at THE RESET. ${config.subtitle}`,
+  });
   const [products, setProducts]           = useState([]);
   const [loading, setLoading]             = useState(true);
   const [loadError, setLoadError]         = useState(false);
@@ -220,7 +238,8 @@ export default function CollectionPage({ category = 'Men' }) {
                 onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/product/${p._id}`); }}
               >
                 <CardGallery product={p} />
-                {p.tag && <span className="cp-tag">{p.tag}</span>}
+                {isSoldOut(p) && <span className="cp-soldout">Sold Out</span>}
+                {p.tag && !isSoldOut(p) && <span className="cp-tag">{p.tag}</span>}
                 {p.season && p.season !== 'All Season' && (
                   <span className="cp-season-tag">{p.season}</span>
                 )}
@@ -230,7 +249,7 @@ export default function CollectionPage({ category = 'Men' }) {
                   </svg>
                 </button>
                 <div className="cp-size-hover">
-                  <p className="cp-size-hover-label">View Product</p>
+                  <p className="cp-size-hover-label">{isSoldOut(p) ? 'Sold Out' : 'View Product'}</p>
                 </div>
               </div>
               <div className="cp-card-info">

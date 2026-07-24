@@ -38,3 +38,23 @@ export function cartSubtotal(items = []) {
     return sum + price * qty;
   }, 0);
 }
+
+// ---------------------------------------------------------------------
+// Delivery charges shown while shopping.
+//
+// These MUST match server/utils/shipping.js — the server decides what is
+// actually charged, this is only so the cart can show the same figures.
+// ---------------------------------------------------------------------
+export const FREE_DELIVERY_ABOVE = 1999;
+export const DELIVERY_CHARGE = 99;
+
+export function deliveryCharge(subtotal) {
+  const value = Number(subtotal) || 0;
+  if (value <= 0) return 0;
+  return value >= FREE_DELIVERY_ABOVE ? 0 : DELIVERY_CHARGE;
+}
+
+export function amountToFreeDelivery(subtotal) {
+  const gap = FREE_DELIVERY_ABOVE - (Number(subtotal) || 0);
+  return gap > 0 ? gap : 0;
+}

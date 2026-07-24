@@ -360,3 +360,18 @@
   .cp-filters { padding: 0 16px; }
   .cp-filter-btn { font-size: 11px; padding: 7px 14px; }
 }
+
+/* Append these to client/src/components/CollectionPage.css */
+
+.cp-soldout {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(17,17,17,.88);
+  color: #fff;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 6px 11px;
+  z-index: 2;
+}

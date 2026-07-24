@@ -9,6 +9,7 @@ import AddProduct from './components/AddProduct';
 import EditProduct from './components/EditProduct';
 import AdminOrders from './components/AdminOrders';
 import Customers from './components/Customers';
+import Coupons from './components/Coupons';
 import AdminLogin from './components/AdminLogin';
 
 const TOKEN_KEY = 'theresetAdminToken';
@@ -84,6 +85,7 @@ function App() {
             <Route path="/products/edit/:id" element={<EditProduct />} />
             <Route path="/orders" element={<AdminOrders />} />
             <Route path="/customers" element={<Customers />} />
+            <Route path="/coupons" element={<Coupons />} />
           </Routes>
         </main>
       </div>

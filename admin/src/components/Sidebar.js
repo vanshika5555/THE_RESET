@@ -38,6 +38,16 @@ const links = [
     ),
   },
   {
+    to: '/coupons',
+    label: 'Discounts',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M20 12a2 2 0 0 1 2-2V7a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v3a2 2 0 0 1 0 4v3a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-3a2 2 0 0 1-2-2z"/>
+        <path d="M9 9l6 6M9.5 9.5h.01M14.5 14.5h.01"/>
+      </svg>
+    ),
+  },
+  {
     to: '/products',
     label: 'Products',
     icon: (

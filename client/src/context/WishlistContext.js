@@ -1,23 +1,51 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const WishlistContext = createContext();
 
+const STORAGE_KEY = 'thereset_wishlist';
+
+// Load whatever was saved last time, once, when the app starts.
+const loadWishlist = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
 export function WishlistProvider({ children }) {
-  const [wishlist, setWishlist] = useState([]);
+  const [wishlist, setWishlist] = useState(loadWishlist);
+
+  // Save on every change so a refresh never loses it.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlist));
+    } catch {
+      // storage full or blocked — the list still works for this session
+    }
+  }, [wishlist]);
 
   const toggleWishlist = (product) => {
-    setWishlist(prev => {
-      const exists = prev.find(p => p._id === product._id);
-      if (exists) return prev.filter(p => p._id !== product._id);
-      return [...prev, product];
-    });
+    setWishlist(prev =>
+      prev.some(p => p._id === product._id)
+        ? prev.filter(p => p._id !== product._id)
+        : [...prev, product]
+    );
   };
 
+  const removeFromWishlist = (id) =>
+    setWishlist(prev => prev.filter(p => p._id !== id));
+
+  const clearWishlist = () => setWishlist([]);
+
   const isWished = (id) => wishlist.some(p => p._id === id);
-  const wishCount = wishlist.length;
 
   return (
-    <WishlistContext.Provider value={{ wishlist, toggleWishlist, isWished, wishCount }}>
+    <WishlistContext.Provider value={{
+      wishlist, toggleWishlist, removeFromWishlist, clearWishlist, isWished,
+      wishCount: wishlist.length,
+    }}>
       {children}
     </WishlistContext.Provider>
   );

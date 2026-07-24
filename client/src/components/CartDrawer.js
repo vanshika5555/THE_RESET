@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { cartSubtotal } from "../utils/price";
+import { cartSubtotal, amountToFreeDelivery } from "../utils/price";
 import "./CartDrawer.css";
 
 export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onCheckout }) {
@@ -9,6 +9,7 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
   const navigate = useNavigate();
 
   const subtotal = cartSubtotal(cart);
+  const toFree = amountToFreeDelivery(subtotal);
 
   const handleCheckout = () => {
     onClose();
@@ -84,7 +85,9 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
               <span>Subtotal</span>
               <span>₹{subtotal.toLocaleString('en-IN')}</span>
             </div>
-            <p className="cd-shipping">Shipping charges calculated at checkout.</p>
+            {toFree > 0
+              ? <p className="cd-shipping">Add ₹{toFree.toLocaleString('en-IN')} more for free delivery.</p>
+              : <p className="cd-shipping">Your order qualifies for free delivery.</p>}
             <button className="cd-btn cd-btn--fill" onClick={handleCheckout}>
               {user ? 'Proceed to Checkout' : 'Login to Checkout'}
             </button>

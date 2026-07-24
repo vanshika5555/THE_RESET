@@ -297,3 +297,51 @@
   .pd-thumb { height: 76px; min-width: 58px; }
   .pd-name { font-size: 20px; }
 }
+
+/* ---- stock ---- */
+.pd-size-btn--gone {
+  color: #bbb;
+  border-color: #eee;
+  background: #fafafa;
+  cursor: not-allowed;
+  position: relative;
+  overflow: hidden;
+}
+.pd-size-btn--gone::after {
+  content: '';
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: 50%;
+  height: 1px;
+  background: #ddd;
+  transform: rotate(-18deg);
+}
+.pd-size-btn--gone:hover { border-color: #eee; }
+
+.pd-low-stock {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: #b45309;
+}
+
+/* ---- size guide link ---- */
+.pd-sizes-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.pd-sizes-head .pd-sizes-label { margin: 0; }
+
+.pd-size-guide-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: #111;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.pd-size-guide-btn:hover { color: #666; }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import './Help.css';
+import usePageMeta from '../hooks/usePageMeta';
 
 /**
  * Privacy Policy and Terms of Use.
@@ -70,6 +71,8 @@ const TERMS = {
 export default function Legal() {
   const { pathname } = useLocation();
   const doc = pathname.includes('terms') ? TERMS : PRIVACY;
+
+  usePageMeta({ title: doc.title, description: doc.intro });
 
   return (
     <div className="help-page">

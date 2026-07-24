@@ -144,3 +144,84 @@
 }
 
 .action-btn--delete:hover { background: #ffe0e0; }
+/* ---- per-size stock editing ---- */
+.stock-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 320px;
+}
+
+.stock-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #e5e5e5;
+  border-radius: 5px;
+  padding: 4px 6px 4px 8px;
+  background: #fff;
+  cursor: text;
+}
+.stock-chip:focus-within { border-color: #111; }
+
+.stock-chip-size {
+  font-size: 11px;
+  color: #777;
+  letter-spacing: .04em;
+  min-width: 20px;
+}
+
+.stock-chip input {
+  width: 40px;
+  padding: 4px 5px;
+  font: inherit;
+  font-size: 13px;
+  border: none;
+  border-left: 1px solid #f0f0f0;
+  outline: none;
+  text-align: center;
+  background: transparent;
+}
+.stock-chip input::placeholder { color: #ccc; }
+
+.stock-chip--zero {
+  border-color: #f4c9a0;
+  background: #fffaf4;
+}
+.stock-chip--zero .stock-chip-size { color: #b45309; }
+.stock-chip--zero input { color: #b45309; }
+
+.stock-total {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: #999;
+}
+
+.products-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 12px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.products-hint {
+  margin: 20px 0 0;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+.stock-chip--error { border-color: #fca5a5; background: #fef2f2; }
+
+.stock-chip-state {
+  font-size: 11px;
+  color: #999;
+  min-width: 10px;
+  text-align: center;
+}
+.stock-chip-state--ok  { color: #16a34a; }
+.stock-chip-state--bad { color: #dc2626; font-weight: 700; }

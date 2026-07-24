@@ -85,8 +85,19 @@ export default function OrderConfirm({ orderId }) {
               <p>{addressLine} - {addr.pincode}</p>
             </div>
 
+            <div className="oc-breakdown">
+              <div className="oc-line">
+                <span>Subtotal</span>
+                <span>₹{(order.subtotal || 0).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="oc-line">
+                <span>Delivery</span>
+                <span>{order.delivery ? `₹${order.delivery.toLocaleString('en-IN')}` : 'FREE'}</span>
+              </div>
+            </div>
+
             <div className="oc-total">
-              Order Total: <span>₹{(order.subtotal || 0).toLocaleString('en-IN')}</span>
+              Order Total: <span>₹{(order.total || order.subtotal || 0).toLocaleString('en-IN')}</span>
             </div>
 
             <div className="oc-status">

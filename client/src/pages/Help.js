@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Help.css';
+import usePageMeta from '../hooks/usePageMeta';
 
 // ---------------------------------------------------------------
 // EDIT THIS: your real contact details and policy timings.
@@ -35,6 +36,11 @@ const FAQS = [
 ];
 
 export default function Help() {
+  usePageMeta({
+    title: 'Help & Support',
+    description: 'Delivery times, returns, exchanges and how to reach us.',
+  });
+
   return (
     <div className="help-page">
       <div className="help-hero">
@@ -71,7 +77,8 @@ export default function Help() {
           <li>Delivery is within India only</li>
         </ul>
         <p>
-          Shipping charges, where they apply, are shown at checkout before you pay.
+          Delivery is free on orders of ₹1,999 and above. Below that, a flat
+          charge of ₹99 applies, shown at checkout before you confirm.
           You can follow your order under{' '}
           <Link to="/profile/orders" className="help-link">My Orders</Link>.
         </p>

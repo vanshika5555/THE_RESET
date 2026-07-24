@@ -8,7 +8,9 @@ import StarRating from '../components/StarRating';
 import ProductReviews from '../components/ProductReviews';
 import RelatedProducts from '../components/RelatedProducts';
 import Loading from '../components/Loading';
+import SizeGuide from '../components/SizeGuide';
 import './ProductDetail.css';
+import usePageMeta from '../hooks/usePageMeta';
 
 const pdNav = {
   position: 'absolute',
@@ -51,7 +53,18 @@ export default function ProductDetail() {
   const [chosenSize, setChosenSize] = useState('');
   const [activeImg, setActiveImg] = useState(0);
   const [added, setAdded] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [sizeWarning, setSizeWarning] = useState(false);
+
+  usePageMeta({
+    title: product ? product.name : 'Loading product',
+    description: product
+      ? (product.description
+          ? product.description.slice(0, 155)
+          : `${product.name} — ${product.subcategory} for ${product.category.toLowerCase()}. ${product.price} at THE RESET.`)
+      : undefined,
+    image: product ? ((product.images && product.images[0]) || product.image) : undefined,
+  });
 
   const { addToCart, setCartOpen } = useCart();
   const { toggleWishlist, isWished } = useWishlist();
@@ -114,6 +127,16 @@ export default function ProductDetail() {
   const gallery = (product.images && product.images.length)
     ? product.images
     : (product.image ? [product.image] : []);
+
+  // How many are left in a size. Products created before stock tracking
+  // have no stock list, so they fall back to the in/out switch.
+  const qtyFor = (size) => {
+    if (!product.stock || product.stock.length === 0) {
+      return product.inStock ? Infinity : 0;
+    }
+    const entry = product.stock.find(s => s.size === size);
+    return entry ? entry.qty : 0;
+  };
 
   const step = (dir) => {
     setActiveImg(prev => {
@@ -205,14 +228,25 @@ export default function ProductDetail() {
           )}
 
           <div className="pd-sizes-block">
-            <p className="pd-sizes-label">Size</p>
+            <div className="pd-sizes-head">
+              <p className="pd-sizes-label">Size</p>
+              <button
+                type="button"
+                className="pd-size-guide-btn"
+                onClick={() => setGuideOpen(true)}
+              >
+                Size Guide
+              </button>
+            </div>
             <div className="pd-sizes">
               {product.sizes.map(s => (
                 <button
                   key={s}
                   type="button"
-                  className={`pd-size-btn ${chosenSize === s ? 'pd-size-btn--active' : ''}`}
+                  className={`pd-size-btn ${chosenSize === s ? 'pd-size-btn--active' : ''} ${qtyFor(s) <= 0 ? 'pd-size-btn--gone' : ''}`}
                   onClick={() => pickSize(s)}
+                  disabled={qtyFor(s) <= 0}
+                  title={qtyFor(s) <= 0 ? 'Sold out in this size' : undefined}
                 >
                   {s}
                 </button>
@@ -220,11 +254,19 @@ export default function ProductDetail() {
             </div>
           </div>
 
+          {chosenSize && qtyFor(chosenSize) !== Infinity && qtyFor(chosenSize) > 0 && qtyFor(chosenSize) <= 3 && (
+            <p className="pd-low-stock">
+              Only {qtyFor(chosenSize)} left in size {chosenSize}
+            </p>
+          )}
+
           {sizeWarning && (
             <p className="pd-warn">Please select a size first.</p>
           )}
 
-          {!product.inStock && <p className="pd-oos">Currently out of stock.</p>}
+          {(!product.inStock || product.sizes.every(s => qtyFor(s) <= 0)) && (
+            <p className="pd-oos">Currently sold out.</p>
+          )}
 
           <button
             type="button"
@@ -287,6 +329,16 @@ export default function ProductDetail() {
       <ProductReviews productId={product._id} />
 
       <RelatedProducts product={product} />
+
+      {guideOpen && (
+        <SizeGuide
+          category={product.category}
+          fitType={product.fitType}
+          sizes={product.sizes}
+          availableSizes={product.sizes.filter(s => qtyFor(s) > 0)}
+          onClose={() => setGuideOpen(false)}
+        />
+      )}
     </div>
   );
 }
