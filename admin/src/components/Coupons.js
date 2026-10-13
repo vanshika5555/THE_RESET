@@ -1,54 +1,85 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { inr, fmtDate, Badge, Switch, Empty, ErrorNote, Drawer } from './ui';
 import './Coupons.css';
 
-// Numbers are kept as text while the form is open so the boxes can be
-// cleared and retyped. They are converted on save.
+// Numbers stay text while the form is open so boxes can be cleared and retyped.
 const BLANK = {
   code: '', description: '', type: 'percent', value: '10',
-  minOrder: '0', maxDiscount: '0', usageLimit: '0', expiresAt: '', active: true,
+  minOrder: '', maxDiscount: '', usageLimit: '', expiresAt: '', active: true,
 };
 
-// digits only, and an empty box is allowed while typing
 const digits = (v) => v.replace(/[^0-9]/g, '');
-const num = (v) => Number(String(v).trim() || 0);
+const num = (v) => Number(String(v ?? '').trim() || 0);
+const today = () => new Date().toISOString().slice(0, 10);
 
-const fmt = (n) => '₹' + (n || 0).toLocaleString('en-IN');
+const isExpired = (c) => c.expiresAt && new Date(c.expiresAt) < new Date(new Date().toDateString());
+
+function ruleText(c) {
+  const off = c.type === 'percent' ? `${c.value}% off` : `${inr(c.value)} off`;
+  const bits = [off];
+  if (c.minOrder > 0) bits.push(`orders over ${inr(c.minOrder)}`);
+  else bits.push('any order');
+  let text = bits.join(' on ');
+  if (c.type === 'percent' && c.maxDiscount > 0) text += `, up to ${inr(c.maxDiscount)}`;
+  return text;
+}
 
 export default function Coupons() {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(BLANK);
-  const [editId, setEditId] = useState(null);
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [error, setError]     = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm]       = useState(BLANK);
+  const [editId, setEditId]   = useState(null);
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving]   = useState(false);
 
   const load = () => {
     axios.get('/api/coupons')
-      .then(res => { setCoupons(res.data || []); setLoading(false); })
-      .catch(() => { setError('Could not load discount codes.'); setLoading(false); });
+      .then((res) => { setCoupons(res.data || []); })
+      .catch(() => setError('Discount codes could not be loaded. Check that the server is running.'))
+      .finally(() => setLoading(false));
   };
-
   useEffect(load, []);
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const openNew = () => { setForm(BLANK); setEditId(null); setFormError(''); setFormOpen(true); };
+
+  const openEdit = (c) => {
+    setForm({
+      code: c.code,
+      description: c.description || '',
+      type: c.type,
+      value: String(c.value ?? ''),
+      minOrder: c.minOrder ? String(c.minOrder) : '',
+      maxDiscount: c.maxDiscount ? String(c.maxDiscount) : '',
+      usageLimit: c.usageLimit ? String(c.usageLimit) : '',
+      expiresAt: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
+      active: c.active,
+    });
+    setEditId(c._id);
+    setFormError('');
+    setFormOpen(true);
+  };
 
   const save = async () => {
-    if (!form.code.trim()) { setError('Give the code a name.'); return; }
-
+    const code = form.code.toUpperCase().trim();
+    if (!code) { setFormError('Give the code a name, for example WELCOME10.'); return; }
     const value = num(form.value);
-    if (value <= 0) { setError('Enter a discount amount above zero.'); return; }
-    if (form.type === 'percent' && value > 100) { setError('A percentage cannot be over 100.'); return; }
+    if (value <= 0) { setFormError('Enter a discount above zero.'); return; }
+    if (form.type === 'percent' && value > 100) { setFormError('A percentage can’t be more than 100.'); return; }
+    if (form.expiresAt && form.expiresAt < today()) { setFormError('The expiry date has already passed. Pick a future date or leave it empty.'); return; }
 
     setSaving(true);
-    setError('');
+    setFormError('');
     const payload = {
       ...form,
-      code: form.code.toUpperCase().trim(),
+      code,
       value,
       minOrder: num(form.minOrder),
-      maxDiscount: num(form.maxDiscount),
+      maxDiscount: form.type === 'percent' ? num(form.maxDiscount) : 0,
       usageLimit: num(form.usageLimit),
       expiresAt: form.expiresAt || null,
     };
@@ -56,217 +87,207 @@ export default function Coupons() {
     try {
       if (editId) await axios.put(`/api/coupons/${editId}`, payload);
       else        await axios.post('/api/coupons', payload);
-      setForm(BLANK);
-      setEditId(null);
-      setShowForm(false);
+      setFormOpen(false);
       load();
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not save this code.');
+      setFormError(
+        err.response?.data?.message
+        || (err.response ? `The server refused this code (error ${err.response.status}). The name may already be taken.` : 'Cannot reach the server. Check that it is running.')
+      );
     }
     setSaving(false);
   };
 
-  const edit = (c) => {
-    setForm({
-      code: c.code, description: c.description || '', type: c.type,
-      value: String(c.value ?? ''),
-      minOrder: String(c.minOrder ?? 0),
-      maxDiscount: String(c.maxDiscount ?? 0),
-      usageLimit: String(c.usageLimit ?? 0),
-      expiresAt: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
-      active: c.active,
-    });
-    setEditId(c._id);
-    setShowForm(true);
-    setError('');
-  };
-
   const toggleActive = async (c) => {
-    setCoupons(list => list.map(x => (x._id === c._id ? { ...x, active: !c.active } : x)));
+    setCoupons((list) => list.map((x) => (x._id === c._id ? { ...x, active: !c.active } : x)));
     try {
       await axios.put(`/api/coupons/${c._id}`, { active: !c.active });
     } catch {
-      setCoupons(list => list.map(x => (x._id === c._id ? { ...x, active: c.active } : x)));
-      setError('Could not update that code.');
+      setCoupons((list) => list.map((x) => (x._id === c._id ? { ...x, active: c.active } : x)));
+      setError(`${c.code} could not be ${c.active ? 'paused' : 'turned on'}. Try again.`);
     }
   };
 
   const remove = async (c) => {
-    if (!window.confirm(`Delete the code ${c.code}?`)) return;
+    if (!window.confirm(`Delete ${c.code}? Customers won’t be able to use it any more.`)) return;
     try {
       await axios.delete(`/api/coupons/${c._id}`);
+      setFormOpen(false);
       load();
     } catch {
-      setError('Could not delete that code.');
+      setError(`${c.code} could not be deleted. Try again.`);
     }
   };
 
-  const describe = (c) => {
-    const off = c.type === 'percent' ? `${c.value}% off` : `${fmt(c.value)} off`;
-    const bits = [off];
-    if (c.minOrder > 0) bits.push(`on orders over ${fmt(c.minOrder)}`);
-    if (c.type === 'percent' && c.maxDiscount > 0) bits.push(`up to ${fmt(c.maxDiscount)}`);
-    return bits.join(' ');
+  const state = (c) => {
+    if (isExpired(c)) return { tone: 'grey', label: 'Expired' };
+    if (!c.active) return { tone: 'amber', label: 'Paused' };
+    if (c.usageLimit > 0 && c.usedCount >= c.usageLimit) return { tone: 'grey', label: 'Used up' };
+    return { tone: 'green', label: 'Active' };
   };
 
-  const isExpired = (c) => c.expiresAt && new Date(c.expiresAt) < new Date();
-
-  if (loading) return <div className="cp-loading">Loading discount codes...</div>;
-
   return (
-    <div className="cp-page">
-      <div className="cp-header">
-        <h1 className="cp-title">Discount Codes</h1>
-        <button
-          className="cp-add-btn"
-          onClick={() => { setForm(BLANK); setEditId(null); setShowForm(true); setError(''); }}
-        >
-          + New Code
-        </button>
+    <div className="coupons">
+      <ErrorNote onClose={() => setError('')}>{error}</ErrorNote>
+
+      <div className="toolbar">
+        <p className="cp-intro toolbar-grow">Codes customers type at checkout to get money off.</p>
+        <button type="button" className="btn btn--primary" onClick={openNew}>New discount code</button>
       </div>
 
-      {error && <div className="cp-error">{error}</div>}
-
-      {showForm && (
-        <div className="cp-form">
-          <div className="cp-form-grid">
-            <div className="cp-field">
-              <label>Code *</label>
-              <input
-                value={form.code}
-                onChange={(e) => set('code', e.target.value.toUpperCase())}
-                placeholder="WELCOME10"
-                disabled={!!editId}
-              />
-              <span className="cp-hint">What the customer types at checkout</span>
-            </div>
-
-            <div className="cp-field">
-              <label>Description</label>
-              <input
-                value={form.description}
-                onChange={(e) => set('description', e.target.value)}
-                placeholder="First order discount"
-              />
-            </div>
-
-            <div className="cp-field">
-              <label>Type *</label>
-              <select value={form.type} onChange={(e) => set('type', e.target.value)}>
-                <option value="percent">Percentage off</option>
-                <option value="flat">Flat amount off</option>
-              </select>
-            </div>
-
-            <div className="cp-field">
-              <label>{form.type === 'percent' ? 'Percentage *' : 'Amount off (₹) *'}</label>
-              <input
-                type="text" inputMode="numeric"
-                value={form.value}
-                onChange={(e) => set('value', digits(e.target.value))}
-                onFocus={(e) => e.target.select()}
-                placeholder={form.type === 'percent' ? 'e.g. 10' : 'e.g. 500'}
-              />
-            </div>
-
-            <div className="cp-field">
-              <label>Minimum order (₹)</label>
-              <input
-                type="text" inputMode="numeric"
-                value={form.minOrder}
-                onChange={(e) => set('minOrder', digits(e.target.value))}
-                onFocus={(e) => e.target.select()}
-                placeholder="0"
-              />
-              <span className="cp-hint">0 means no minimum</span>
-            </div>
-
-            {form.type === 'percent' && (
-              <div className="cp-field">
-                <label>Maximum discount (₹)</label>
-                <input
-                  type="text" inputMode="numeric"
-                  value={form.maxDiscount}
-                  onChange={(e) => set('maxDiscount', digits(e.target.value))}
-                  onFocus={(e) => e.target.select()}
-                  placeholder="0"
-                />
-                <span className="cp-hint">Caps a percentage code. 0 means no cap</span>
-              </div>
-            )}
-
-            <div className="cp-field">
-              <label>Usage limit</label>
-              <input
-                type="text" inputMode="numeric"
-                value={form.usageLimit}
-                onChange={(e) => set('usageLimit', digits(e.target.value))}
-                onFocus={(e) => e.target.select()}
-                placeholder="0"
-              />
-              <span className="cp-hint">0 means unlimited</span>
-            </div>
-
-            <div className="cp-field">
-              <label>Expires on</label>
-              <input
-                type="date"
-                value={form.expiresAt}
-                onChange={(e) => set('expiresAt', e.target.value)}
-              />
-              <span className="cp-hint">Leave empty for no expiry</span>
-            </div>
-          </div>
-
-          <div className="cp-form-actions">
-            <button className="cp-btn cp-btn--outline" onClick={() => { setShowForm(false); setError(''); }}>
-              Cancel
-            </button>
-            <button className="cp-btn cp-btn--fill" onClick={save} disabled={saving}>
-              {saving ? 'Saving...' : editId ? 'Save Changes' : 'Create Code'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {coupons.length === 0 ? (
-        <div className="cp-empty">
-          <p>No discount codes yet.</p>
-          <p className="cp-empty-hint">
-            Create one to run a sale or offer first-time customers a discount.
-          </p>
-        </div>
-      ) : (
-        <div className="cp-list">
-          {coupons.map(c => (
-            <div key={c._id} className={`cp-card ${!c.active || isExpired(c) ? 'cp-card--off' : ''}`}>
-              <div className="cp-card-main">
-                <div className="cp-code-row">
+      <div className="panel">
+        {loading ? (
+          <div className="loading">Loading discount codes…</div>
+        ) : coupons.length === 0 ? (
+          <Empty
+            title="No discount codes yet"
+            text="Create one to run a sale or give first-time customers a reason to buy."
+            action={<button type="button" className="btn btn--primary" onClick={openNew}>New discount code</button>}
+          />
+        ) : coupons.map((c) => {
+          const st = state(c);
+          const usedPct = c.usageLimit > 0 ? Math.min(100, Math.round(((c.usedCount || 0) / c.usageLimit) * 100)) : 0;
+          return (
+            <div key={c._id} className={`cp-row ${st.label !== 'Active' ? 'cp-row--off' : ''}`}>
+              <button type="button" className="cp-main" onClick={() => openEdit(c)}>
+                <span className="cp-code-line">
                   <span className="cp-code">{c.code}</span>
-                  {isExpired(c) && <span className="cp-badge cp-badge--warn">Expired</span>}
-                  {!c.active && <span className="cp-badge">Paused</span>}
-                </div>
-                <p className="cp-desc">{describe(c)}</p>
-                {c.description && <p className="cp-note">{c.description}</p>}
+                  <Badge tone={st.tone}>{st.label}</Badge>
+                </span>
+                <span className="cp-rule">{ruleText(c)}</span>
+                {c.description && <span className="cp-desc">{c.description}</span>}
+              </button>
 
-                <p className="cp-meta">
-                  Used {c.usedCount}
-                  {c.usageLimit > 0 ? ` of ${c.usageLimit}` : ' times'}
-                  {c.expiresAt && ` · expires ${new Date(c.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`}
-                </p>
+              <div className="cp-usage">
+                <span className="cp-usage-text">
+                  {c.usageLimit > 0 ? `${c.usedCount || 0} of ${c.usageLimit} used` : `Used ${c.usedCount || 0} ${(c.usedCount || 0) === 1 ? 'time' : 'times'}`}
+                </span>
+                {c.usageLimit > 0 && <span className="cp-bar"><span style={{ width: `${usedPct}%` }} /></span>}
+                <span className="cp-expiry">{c.expiresAt ? `${isExpired(c) ? 'Expired' : 'Ends'} ${fmtDate(c.expiresAt)}` : 'No end date'}</span>
               </div>
 
-              <div className="cp-card-actions">
-                <button onClick={() => toggleActive(c)} className="cp-link">
-                  {c.active ? 'Pause' : 'Activate'}
-                </button>
-                <button onClick={() => edit(c)} className="cp-link">Edit</button>
-                <button onClick={() => remove(c)} className="cp-link cp-link--danger">Delete</button>
+              <div className="cp-controls">
+                <Switch on={c.active} onChange={() => toggleActive(c)} label={`${c.code} active`} />
+                <button type="button" className="btn btn--secondary btn--sm" onClick={() => openEdit(c)}>Edit</button>
               </div>
             </div>
-          ))}
+          );
+        })}
+      </div>
+
+      {/* ── Create / edit panel ── */}
+      <Drawer
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        title={editId ? `Edit ${form.code}` : 'New discount code'}
+        subtitle={editId ? 'Changes apply to the next checkout.' : 'Customers type this code at checkout.'}
+        footer={
+          <>
+            {editId && (
+              <button type="button" className="btn btn--danger btn--lg cp-delete" onClick={() => remove(coupons.find((x) => x._id === editId))}>
+                Delete
+              </button>
+            )}
+            <button type="button" className="btn btn--primary btn--lg" onClick={save} disabled={saving}>
+              {saving ? 'Saving…' : editId ? 'Save changes' : 'Create code'}
+            </button>
+          </>
+        }
+      >
+        <div className="cp-form">
+          {formError && <div className="note-error" role="alert"><span>{formError}</span></div>}
+
+          <div className="field">
+            <label className="field-label" htmlFor="cp-code">Code <span className="req">*</span></label>
+            <input
+              id="cp-code"
+              className="input cp-code-input"
+              value={form.code}
+              onChange={(e) => set('code', e.target.value.toUpperCase().replace(/\s/g, ''))}
+              placeholder="WELCOME10"
+              disabled={!!editId}
+              autoComplete="off"
+            />
+            <span className="field-hint">{editId ? 'A code’s name can’t be changed once it’s created.' : 'Capital letters and numbers, no spaces.'}</span>
+          </div>
+
+          <div className="field">
+            <span className="field-label">Discount type</span>
+            <div className="cp-type" role="radiogroup" aria-label="Discount type">
+              {[
+                ['percent', 'Percentage', 'e.g. 10% off'],
+                ['flat', 'Fixed amount', 'e.g. ₹500 off'],
+              ].map(([val, label, sub]) => (
+                <button
+                  key={val}
+                  type="button"
+                  role="radio"
+                  aria-checked={form.type === val}
+                  className={`cp-type-opt ${form.type === val ? 'cp-type-opt--on' : ''}`}
+                  onClick={() => set('type', val)}
+                >
+                  <strong>{label}</strong>
+                  <span>{sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-grid">
+            <div className="field">
+              <label className="field-label" htmlFor="cp-value">{form.type === 'percent' ? 'Percentage off' : 'Amount off'} <span className="req">*</span></label>
+              <div className="input-group">
+                {form.type === 'flat' && <span className="input-addon">₹</span>}
+                <input id="cp-value" className="input" inputMode="numeric" value={form.value} onChange={(e) => set('value', digits(e.target.value))} placeholder={form.type === 'percent' ? '10' : '500'} />
+                {form.type === 'percent' && <span className="input-addon input-addon--end">%</span>}
+              </div>
+            </div>
+
+            {form.type === 'percent' ? (
+              <div className="field">
+                <label className="field-label" htmlFor="cp-max">Maximum discount</label>
+                <div className="input-group">
+                  <span className="input-addon">₹</span>
+                  <input id="cp-max" className="input" inputMode="numeric" value={form.maxDiscount} onChange={(e) => set('maxDiscount', digits(e.target.value))} placeholder="No limit" />
+                </div>
+              </div>
+            ) : <div className="only-desktop" />}
+
+            <div className="field">
+              <label className="field-label" htmlFor="cp-min">Minimum order</label>
+              <div className="input-group">
+                <span className="input-addon">₹</span>
+                <input id="cp-min" className="input" inputMode="numeric" value={form.minOrder} onChange={(e) => set('minOrder', digits(e.target.value))} placeholder="No minimum" />
+              </div>
+            </div>
+
+            <div className="field">
+              <label className="field-label" htmlFor="cp-limit">Total uses allowed</label>
+              <input id="cp-limit" className="input" inputMode="numeric" value={form.usageLimit} onChange={(e) => set('usageLimit', digits(e.target.value))} placeholder="Unlimited" />
+            </div>
+
+            <div className="field span-2">
+              <label className="field-label" htmlFor="cp-exp">Ends on</label>
+              <input id="cp-exp" className="input" type="date" min={today()} value={form.expiresAt} onChange={(e) => set('expiresAt', e.target.value)} />
+              <span className="field-hint">Leave empty to keep the code running until you pause it.</span>
+            </div>
+
+            <div className="field span-2">
+              <label className="field-label" htmlFor="cp-desc">Note for yourself</label>
+              <input id="cp-desc" className="input" value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="e.g. Instagram giveaway, Diwali sale" />
+            </div>
+          </div>
+
+          {num(form.value) > 0 && (
+            <div className="cp-preview">
+              <span className="cp-preview-label">Customers will get</span>
+              <span className="cp-preview-text">
+                {ruleText({ ...form, value: num(form.value), minOrder: num(form.minOrder), maxDiscount: num(form.maxDiscount) })}
+              </span>
+            </div>
+          )}
         </div>
-      )}
+      </Drawer>
     </div>
   );
 }

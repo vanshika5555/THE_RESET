@@ -4,14 +4,15 @@ import './ImageLightbox.css';
 /**
  * Full-screen image viewer for the product gallery.
  *
- * Click to zoom in; the image then follows the cursor so you can inspect
- * fabric and stitching. Arrow keys and swipe move between photos.
+ * Click (or tap) to zoom in where you pointed. With a mouse the image then
+ * follows the cursor; on a phone you drag a finger to look around.
+ * Arrow keys and swipe move between photos (swipe only when not zoomed).
  */
 export default function ImageLightbox({ images, startIndex = 0, alt, onClose }) {
   const [index, setIndex] = useState(startIndex);
   const [zoomed, setZoomed] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
-  const touchX = useRef(null);
+  const touchStart = useRef(null);
 
   const total = images.length;
 
@@ -46,17 +47,48 @@ export default function ImageLightbox({ images, startIndex = 0, alt, onClose }) 
     setOrigin({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
   };
 
-  const handleTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
+  const pointAt = (el, clientX, clientY) => {
+    const rect = el.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+    return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+  };
+
+  const handleTouchStart = (e) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+
+  // Zoomed: the finger moves the view around the photo.
+  const handleTouchMove = (e) => {
+    if (!zoomed) return;
+    const t = e.touches[0];
+    setOrigin(pointAt(e.currentTarget, t.clientX, t.clientY));
+  };
+
   const handleTouchEnd = (e) => {
-    if (touchX.current === null || total < 2) return;
-    const diff = touchX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 45) go(diff > 0 ? 1 : -1);
-    touchX.current = null;
+    if (!touchStart.current) return;
+    const t = e.changedTouches[0];
+    const dx = touchStart.current.x - t.clientX;
+    const dy = touchStart.current.y - t.clientY;
+    touchStart.current = null;
+    if (zoomed || total < 2) return;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) go(dx > 0 ? 1 : -1);
+  };
+
+  const toggleZoom = (e) => {
+    e.stopPropagation();
+    if (!zoomed) setOrigin(pointAt(e.currentTarget, e.clientX, e.clientY));
+    setZoomed(z => !z);
   };
 
   return (
-    <div className="lb-backdrop" onClick={onClose}>
-      <button className="lb-close" onClick={onClose} aria-label="Close">✕</button>
+    <div className="lb-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Photo viewer">
+      <button className="lb-close" onClick={onClose} aria-label="Close">
+        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
 
       {total > 1 && (
         <span className="lb-counter">{index + 1} / {total}</span>
@@ -79,10 +111,11 @@ export default function ImageLightbox({ images, startIndex = 0, alt, onClose }) 
 
       <div
         className={`lb-stage ${zoomed ? 'lb-stage--zoomed' : ''}`}
-        onClick={(e) => { e.stopPropagation(); setZoomed(z => !z); }}
+        onClick={toggleZoom}
         onMouseMove={handleMove}
-        onMouseLeave={() => setZoomed(false)}
+        onMouseLeave={(e) => { if (e.nativeEvent.pointerType !== 'touch') setZoomed(false); }}
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <img
@@ -98,7 +131,10 @@ export default function ImageLightbox({ images, startIndex = 0, alt, onClose }) 
       </div>
 
       <p className="lb-hint">
-        {zoomed ? 'Click to zoom out' : 'Click the photo to zoom in'}
+        <span className="lb-hint-mouse">{zoomed ? 'Click to zoom out' : 'Click the photo to zoom in'}</span>
+        <span className="lb-hint-touch">
+          {zoomed ? 'Drag to look around · tap to zoom out' : 'Tap to zoom · swipe for more'}
+        </span>
       </p>
 
       {total > 1 && (

@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap');
 
 .footer {
   background: #111;
@@ -37,6 +36,7 @@
 
 /* ── Newsletter ── */
 .footer-nl-label {
+  display: block;
   font-family: 'DM Sans', sans-serif;
   font-size: 11px;
   font-weight: 500;
@@ -193,35 +193,45 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .footer {
-    padding: 40px 24px 28px;
+    padding: 44px 20px calc(28px + env(safe-area-inset-bottom));
   }
+
+  .footer-top { margin-bottom: 32px; gap: 28px; }
+  .footer-logo { font-size: 26px; }
+  .footer-tagline { font-size: 13px; }
+  .footer-divider { margin-bottom: 28px; }
 
   .footer-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 16px;
+    margin-bottom: 28px;
   }
+  .footer-col-title { margin-bottom: 6px; font-size: 11px; }
+  .footer-links { gap: 0; }
 
-  .footer-bottom {
-    flex-direction: column;
-    align-items: flex-start;
+  /* 44px tall rows so links are easy to hit with a thumb */
+  .footer-links a,
+  .footer-soon {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 15px;
   }
+  .footer-soon { font-size: 14px; color: rgba(255,255,255,0.35); }
 
-  .footer-nl-form {
-    flex-direction: column;
-    border: none;
-    gap: 8px;
-  }
+  .footer-bottom { flex-direction: column-reverse; align-items: flex-start; gap: 4px; }
+  .footer-legal a { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; }
+  .footer-copy { font-size: 12px; line-height: 1.6; }
 
+  .footer-nl-form { flex-direction: column; border: none; gap: 8px; }
   .footer-nl-input {
     width: 100%;
-    border: 1px solid rgba(255,255,255,0.15);
-    padding: 12px 14px;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 0 14px;
+    height: 48px;
   }
-
-  .footer-nl-btn {
-    width: 100%;
-    padding: 12px;
-  }
+  .footer-nl-btn { width: 100%; height: 48px; }
+  .footer-newsletter { width: 100%; }
 }

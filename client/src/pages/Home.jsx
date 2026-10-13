@@ -6,6 +6,7 @@ import NewArrivals from "../components/NewArrivals";
 import PromiseStrip from "../components/PromiseStrip";
 import Testimonials from "../components/Testimonials";
 import EditorialGrid from "../components/EditorialGrid";
+import ShopByCategory from "../components/ShopByCategory";
 
 export default function Home() {
   usePageMeta({
@@ -18,6 +19,7 @@ export default function Home() {
       <Hero />
       <FeaturedCollection />
       <NewArrivals />
+      <ShopByCategory />
       <PromiseStrip />
       <Testimonials />
       <EditorialGrid />

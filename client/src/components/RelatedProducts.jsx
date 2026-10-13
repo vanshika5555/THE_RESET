@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getProducts } from '../utils/fetchCache';
 import { Link } from 'react-router-dom';
 import './RelatedProducts.css';
 
@@ -10,10 +10,10 @@ export default function RelatedProducts({ product }) {
     if (!product) return;
     let active = true;
 
-    axios.get(`/api/products?category=${product.category}`)
-      .then(res => {
+    getProducts(product.category)
+      .then(data => {
         if (!active) return;
-        const all = (res.data || []).filter(p => p._id !== product._id);
+        const all = (data || []).filter(p => p._id !== product._id);
 
         // Closest matches first: same subcategory, then same season, then the rest.
         const score = (p) => {

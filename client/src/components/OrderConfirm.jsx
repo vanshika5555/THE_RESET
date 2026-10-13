@@ -45,7 +45,7 @@ export default function OrderConfirm({ orderId, order: passedOrder }) {
   return (
     <div className="oc-page">
       <div className="oc-box">
-        <div className="oc-icon">✓</div>
+        <div className="oc-icon" aria-hidden="true">✓</div>
         <h1 className="oc-title">Order Confirmed</h1>
         <p className="oc-sub">
           Thank you{firstName ? `, ${firstName}` : ''}. We have received your order
@@ -75,7 +75,7 @@ export default function OrderConfirm({ orderId, order: passedOrder }) {
               {order.items.map((item, i) => (
                 <div key={i} className="oc-item">
                   <div className="oc-item-img" style={{ background: item.color || '#f0f0f0' }}>
-                    {item.image && <img src={item.image} alt={item.name} />}
+                    {item.image && <img src={item.image} alt="" />}
                   </div>
                   <div className="oc-item-info">
                     <p className="oc-item-name">{item.name}</p>
@@ -95,8 +95,14 @@ export default function OrderConfirm({ orderId, order: passedOrder }) {
             <div className="oc-breakdown">
               <div className="oc-line">
                 <span>Subtotal</span>
-                <span>₹{(order.subtotal || 0).toLocaleString('en-IN')}</span>
+                <span>₹{(Number(order.subtotal) || 0).toLocaleString('en-IN')}</span>
               </div>
+              {Number(order.discount) > 0 && (
+                <div className="oc-line">
+                  <span>Discount{order.couponCode ? ` (${order.couponCode})` : ''}</span>
+                  <span>− ₹{Number(order.discount).toLocaleString('en-IN')}</span>
+                </div>
+              )}
               <div className="oc-line">
                 <span>Delivery</span>
                 <span>{order.delivery ? `₹${order.delivery.toLocaleString('en-IN')}` : 'FREE'}</span>
@@ -104,7 +110,7 @@ export default function OrderConfirm({ orderId, order: passedOrder }) {
             </div>
 
             <div className="oc-total">
-              Order Total: <span>₹{(order.total || order.subtotal || 0).toLocaleString('en-IN')}</span>
+              Order Total: <span>₹{(Number(order.total) || Number(order.subtotal) || 0).toLocaleString('en-IN')}</span>
             </div>
 
             <div className="oc-status">

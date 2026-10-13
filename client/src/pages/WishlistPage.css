@@ -150,6 +150,50 @@
 
 .wl-add-btn:hover { background: #333; }
 
-@media (max-width: 1024px) { .wl-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 768px)  { .wl-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 480px)  { .wl-grid { grid-template-columns: repeat(2, 1fr); } }
+.wl-photo-link { position: absolute; inset: 0; display: block; }
+.wl-card-name { display: block; text-decoration: none; }
+.wl-card-name:hover { text-decoration: underline; }
+.wl-size-btn:disabled { color: #ccc; border-color: #eee; background: #fafafa; text-decoration: line-through; cursor: not-allowed; }
+.wl-add-btn:disabled { background: #999; cursor: not-allowed; }
+.wl-warn { margin: -4px 0 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #b91c1c; }
+
+.wl-soldout {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(17,17,17,.88);
+  color: #fff;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  z-index: 2;
+}
+
+.wl-empty-hint { margin: -8px 0 0; font-size: 14px; color: #999; }
+.wl-empty-actions { display: flex; gap: 12px; margin-top: 4px; }
+.wl-empty-actions .wl-shop-btn {
+  border: 1px solid #111;
+  padding: 14px 26px;
+  display: inline-flex;
+  align-items: center;
+}
+.wl-shop-btn--fill { background: #111; color: #fff !important; }
+
+@media (max-width: 1024px) { .wl-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+@media (max-width: 768px) {
+  .wl-page { padding: 28px 12px 48px; }
+  .wl-header { padding: 0 4px; margin-bottom: 20px; }
+  .wl-title { font-size: 30px; }
+  .wl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 10px; }
+  .wl-card-info { padding: 10px 2px 0; }
+  .wl-card-name { font-size: 16px; line-height: 1.3; }
+  .wl-card-price { font-size: 14px; }
+  .wl-remove-btn { top: 6px; right: 6px; width: 40px; height: 40px; }
+  .wl-sizes { gap: 6px; }
+  .wl-size-btn { min-width: 40px; min-height: 40px; padding: 0 8px; font-size: 13px; }
+  .wl-add-btn { min-height: 46px; font-size: 12px; }
+  .wl-empty-actions { flex-direction: column; width: 100%; max-width: 320px; }
+  .wl-empty-actions .wl-shop-btn { justify-content: center; min-height: 50px; }
+}

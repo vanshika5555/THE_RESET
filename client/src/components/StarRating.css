@@ -1,8 +1,10 @@
+/* min-height keeps the card from jumping when the stars arrive */
 .sr-wrap {
   display: flex;
   align-items: center;
   gap: 4px;
   margin-top: 3px;
+  min-height: 15px;
 }
 
 .sr-stars {
@@ -22,6 +24,6 @@
 
 .sr-count {
   font-family: 'DM Sans', sans-serif;
-  font-size: 10px;
-  color: #aaa;
+  font-size: 11px;
+  color: #777;
 }

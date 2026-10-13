@@ -1,203 +1,269 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import {
+  inr, fmtShort, shortId, plural,
+  StatusBadge, Thumb, Chevron, Empty,
+} from './ui';
 import './Dashboard.css';
 
-const STATUS_COLORS = {
-  Pending:   '#f59e0b',
-  Confirmed: '#3b82f6',
-  Shipped:   '#8b5cf6',
-  Delivered: '#22c55e',
-  Cancelled: '#ef4444',
+// A size is "low" when it can still be ordered but only just — 1 to 5 left.
+const LOW_THRESHOLD = 5;
+
+const orderTotal = (o) => Number(o.total) || Number(o.subtotal) || 0;
+const customerName = (o) => o.shippingAddress?.fullName || o.user?.name || 'Unknown customer';
+
+/*
+  A trimmed copy of what the dashboard shows, kept in this browser only.
+  No addresses, emails or phone numbers are stored. Cleared on log out.
+*/
+export const DASH_CACHE_KEY = 'theresetDashCache';
+
+function readCache() {
+  try {
+    const raw = localStorage.getItem(DASH_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function writeCache(products, orders) {
+  try {
+    localStorage.setItem(DASH_CACHE_KEY, JSON.stringify({
+      products: (products || []).map((p) => ({
+        _id: p._id, name: p.name, inStock: p.inStock, stock: p.stock, sizes: p.sizes,
+        category: p.category, subcategory: p.subcategory, image: p.image, color: p.color,
+      })),
+      orders: (orders || []).map((o) => ({
+        _id: o._id, status: o.status, createdAt: o.createdAt, total: o.total, subtotal: o.subtotal,
+        user: { name: o.user?.name },
+        shippingAddress: { fullName: o.shippingAddress?.fullName },
+      })),
+    }));
+  } catch { /* storage full or blocked — the dashboard still works without it */ }
+}
+
+const greeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 };
 
-const inr = (n) => '₹' + (n || 0).toLocaleString('en-IN');
+function stockProblem(p) {
+  const tracked = (p.stock || []).filter((s) => (p.sizes || []).includes(s.size));
+  if (tracked.length === 0) return null;
+  const total = tracked.reduce((n, s) => n + (Number(s.qty) || 0), 0);
+  if (total === 0) return { level: 'out', text: 'Sold out in every size' };
+  const out = tracked.filter((s) => s.qty === 0).map((s) => s.size);
+  const low = tracked.filter((s) => s.qty > 0 && s.qty <= LOW_THRESHOLD);
+  if (!out.length && !low.length) return null;
+  const parts = [];
+  if (out.length) parts.push(`${out.join(', ')} sold out`);
+  if (low.length) parts.push(low.map((s) => `${s.size}: ${s.qty} left`).join(', '));
+  return { level: out.length ? 'some-out' : 'low', text: parts.join(' · ') };
+}
 
-export default function Dashboard() {
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders]     = useState([]);
-  const [loading, setLoading]   = useState(true);
+export default function Dashboard({ name }) {
+  // Show the last numbers instantly (saved from the previous visit), then
+  // refresh them in the background. No blank screen, nothing jumps.
+  const cached = readCache();
+  const [products, setProducts] = useState(cached?.products || []);
+  const [orders, setOrders]     = useState(cached?.orders || []);
+  const [loading, setLoading]   = useState(!cached);
+  const [failed, setFailed]     = useState(false);
 
   useEffect(() => {
+    let ok = true;
     Promise.all([
-      axios.get('/api/products').catch(() => ({ data: [] })),
-      axios.get('/api/orders').catch(() => ({ data: [] })),
+      axios.get('/api/products').catch(() => { ok = false; return { data: null }; }),
+      axios.get('/api/orders').catch(() => { ok = false; return { data: null }; }),
     ]).then(([p, o]) => {
-      setProducts(p.data || []);
-      setOrders(o.data || []);
+      if (p.data) setProducts(p.data);
+      if (o.data) setOrders(o.data);
+      setFailed(!ok);
       setLoading(false);
+      if (ok) writeCache(p.data, o.data);
     });
   }, []);
 
-  const pending    = orders.filter(o => o.status === 'Pending');
-  const active     = orders.filter(o => o.status !== 'Cancelled');
-  const revenue    = active.reduce((sum, o) => sum + (o.subtotal || 0), 0);
-  const outOfStock = products.filter(p => !p.inStock);
+  const hello = (
+    <div className="dash-hello">
+      <div>
+        <p className="dash-greet">{greeting()}{name ? `, ${name}` : ''}</p>
+        <p className="dash-date">
+          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </p>
+      </div>
+      <Link to="/products/add" className="btn btn--primary only-desktop">Add product</Link>
+    </div>
+  );
 
-  const recentOrders = [...orders]
+  // The greeting paints straight away; grey placeholders hold the space for the numbers.
+  if (loading) {
+    return (
+      <div className="dash" aria-busy="true">
+        {hello}
+        <div className="dash-tasks">
+          {[0, 1, 2].map((i) => <div key={i} className="skel skel--task" />)}
+        </div>
+        <div className="skel skel--sales" />
+        <div className="dash-cols">
+          <div className="skel skel--panel" />
+          <div className="skel skel--panel" />
+        </div>
+      </div>
+    );
+  }
+
+  const pending   = orders.filter((o) => o.status === 'Pending');
+  const toShip    = orders.filter((o) => o.status === 'Confirmed');
+  const live      = orders.filter((o) => o.status !== 'Cancelled');
+  const revenue   = live.reduce((s, o) => s + orderTotal(o), 0);
+  const weekAgo   = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const lastWeek  = live.filter((o) => new Date(o.createdAt).getTime() >= weekAgo);
+  const weekSales = lastWeek.reduce((s, o) => s + orderTotal(o), 0);
+  const avgOrder  = live.length ? revenue / live.length : 0;
+
+  const stockAlerts = products
+    .filter((p) => p.inStock)
+    .map((p) => ({ product: p, problem: stockProblem(p) }))
+    .filter((x) => x.problem)
+    .sort((a, b) => (a.problem.level === 'out' ? -1 : 0) - (b.problem.level === 'out' ? -1 : 0));
+  const hidden = products.filter((p) => !p.inStock).length;
+
+  const oldest = (list) =>
+    list.length ? list.reduce((a, b) => (new Date(a.createdAt) < new Date(b.createdAt) ? a : b)) : null;
+
+  const recent = [...orders]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 6);
 
-  if (loading) return <div className="dash-loading">Loading...</div>;
+  const tasks = [
+    {
+      key: 'confirm',
+      to: '/orders?status=Pending',
+      count: pending.length,
+      label: 'Orders to confirm',
+      detail: pending.length ? `Oldest waiting since ${fmtShort(oldest(pending).createdAt)}` : 'No new orders waiting',
+      tone: 'amber',
+    },
+    {
+      key: 'ship',
+      to: '/orders?status=Confirmed',
+      count: toShip.length,
+      label: 'Orders to pack and ship',
+      detail: toShip.length ? `Oldest confirmed on ${fmtShort(oldest(toShip).createdAt)}` : 'Nothing to pack right now',
+      tone: 'blue',
+    },
+    {
+      key: 'stock',
+      to: '/products',
+      count: stockAlerts.length,
+      label: 'Products running out',
+      detail: stockAlerts.length ? 'Restock or hide them from the shop' : 'Every listed product has stock',
+      tone: 'red',
+    },
+  ];
 
   return (
-    <div className="dashboard">
-      <div className="dash-header">
-        <h1 className="dash-title">Dashboard</h1>
-        <Link to="/products/add" className="dash-add-btn">+ Add Product</Link>
-      </div>
+    <div className="dash">
+      {hello}
 
-      {/* Numbers you can act on */}
-      <div className="dash-stats">
-        <Link to="/orders" className={`stat-card ${pending.length ? 'stat-card--alert' : ''}`}>
-          <p className="stat-label">Pending Orders</p>
-          <p className="stat-num">{pending.length}</p>
-          <p className="stat-hint">{pending.length ? 'Needs action' : 'All caught up'}</p>
-        </Link>
-
-        <div className="stat-card">
-          <p className="stat-label">Revenue</p>
-          <p className="stat-num stat-num--sm">{inr(revenue)}</p>
-          <p className="stat-hint">{active.length} order{active.length !== 1 ? 's' : ''}</p>
-        </div>
-
-        <Link to="/products" className="stat-card">
-          <p className="stat-label">Products</p>
-          <p className="stat-num">{products.length}</p>
-          <p className="stat-hint">
-            {products.filter(p => p.category === 'Men').length} men ·{' '}
-            {products.filter(p => p.category === 'Women').length} women
-          </p>
-        </Link>
-
-        <Link to="/products" className={`stat-card ${outOfStock.length ? 'stat-card--alert' : ''}`}>
-          <p className="stat-label">Out of Stock</p>
-          <p className="stat-num">{outOfStock.length}</p>
-          <p className="stat-hint">{outOfStock.length ? 'Restock or hide' : 'Nothing to fix'}</p>
-        </Link>
-      </div>
-
-      {/* Recent orders — the actual daily job */}
-      <div className="dash-section">
-        <div className="dash-section-head">
-          <h2 className="dash-section-title">Recent Orders</h2>
-          {orders.length > 0 && <Link to="/orders" className="dash-see-all">View all →</Link>}
-        </div>
-
-        {recentOrders.length === 0 ? (
-          <div className="dash-empty">
-            <p>No orders yet.</p>
-          </div>
-        ) : (
-          <table className="dash-table">
-            <thead>
-              <tr>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.map(o => (
-                <tr key={o._id}>
-                  <td className="dash-mono">#{o._id.slice(-6).toUpperCase()}</td>
-                  <td>{o.user?.name || 'Unknown'}</td>
-                  <td>{o.items?.length || 0}</td>
-                  <td>{inr(o.subtotal)}</td>
-                  <td>
-                    <span
-                      className="dash-status"
-                      style={{ color: STATUS_COLORS[o.status], borderColor: STATUS_COLORS[o.status] }}
-                    >
-                      {o.status}
-                    </span>
-                  </td>
-                  <td className="dash-muted">
-                    {new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-
-      {/* All products at a glance */}
-      <div className="dash-section">
-        <div className="dash-section-head">
-          <h2 className="dash-section-title">All Products ({products.length})</h2>
-          <Link to="/products" className="dash-see-all">Manage →</Link>
-        </div>
-
-        {products.length === 0 ? (
-          <div className="dash-empty">
-            <p>No products yet.</p>
-          </div>
-        ) : (
-          <table className="dash-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Sizes</th>
-                <th>Stock</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map(p => (
-                <tr key={p._id}>
-                  <td>{p.name}</td>
-                  <td>
-                    <span className={`dash-badge dash-badge--${p.category.toLowerCase()}`}>
-                      {p.category}
-                    </span>
-                  </td>
-                  <td>{p.price}</td>
-                  <td className="dash-muted">{(p.sizes || []).join(', ') || '—'}</td>
-                  <td>
-                    <span
-                      className="dash-status"
-                      style={{
-                        color: p.inStock ? '#15803d' : '#b45309',
-                        borderColor: p.inStock ? '#86efac' : '#f4c9a0',
-                      }}
-                    >
-                      {p.inStock ? 'In Stock' : 'Out of Stock'}
-                    </span>
-                  </td>
-                  <td>
-                    <Link to={`/products/edit/${p._id}`} className="dash-edit-link">Edit</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Only appears when something is wrong */}
-      {outOfStock.length > 0 && (
-        <div className="dash-section">
-          <div className="dash-section-head">
-            <h2 className="dash-section-title">Needs Attention</h2>
-          </div>
-          <div className="dash-alert-list">
-            {outOfStock.slice(0, 6).map(p => (
-              <Link key={p._id} to={`/products/edit/${p._id}`} className="dash-alert-row">
-                <span className="dash-alert-name">{p.name}</span>
-                <span className="dash-alert-meta">{p.category} · {p.subcategory}</span>
-                <span className="dash-alert-tag">Out of stock</span>
-              </Link>
-            ))}
-          </div>
+      {failed && (
+        <div className="note-error" role="alert">
+          <span>Some data could not be loaded. Check that the server is running, then refresh.</span>
         </div>
       )}
+
+      {/* What needs doing */}
+      <div className="dash-tasks">
+        {tasks.map((t) => (
+          <Link key={t.key} to={t.to} className={`task ${t.count ? `task--${t.tone}` : 'task--clear'}`}>
+            <span className="task-count">{t.count}</span>
+            <span className="task-text">
+              <span className="task-label">{t.label}</span>
+              <span className="task-detail">{t.detail}</span>
+            </span>
+            <Chevron />
+          </Link>
+        ))}
+      </div>
+
+      {/* Sales */}
+      <div className="panel dash-sales">
+        <div className="sale">
+          <span className="sale-label">Total sales</span>
+          <span className="sale-value">{inr(revenue)}</span>
+          <span className="sale-sub">{plural(live.length, 'order')}, cancellations excluded</span>
+        </div>
+        <div className="sale">
+          <span className="sale-label">Last 7 days</span>
+          <span className="sale-value">{inr(weekSales)}</span>
+          <span className="sale-sub">{plural(lastWeek.length, 'order')}</span>
+        </div>
+        <div className="sale">
+          <span className="sale-label">Average order</span>
+          <span className="sale-value">{inr(avgOrder)}</span>
+          <span className="sale-sub">{plural(products.length, 'product')} in the catalogue</span>
+        </div>
+      </div>
+
+      <div className="dash-cols">
+        {/* Recent orders */}
+        <section className="panel">
+          <div className="panel-head">
+            <h2 className="panel-title">Latest orders</h2>
+            {orders.length > 0 && <Link to="/orders" className="panel-link">All orders</Link>}
+          </div>
+          {recent.length === 0 ? (
+            <Empty title="No orders yet" text="New orders from the shop will show up here." />
+          ) : recent.map((o) => (
+            <Link key={o._id} to={`/orders?order=${o._id}`} className="row dash-orow">
+              <span className="cell">
+                <span className="cell-main">{customerName(o)}</span>
+                <span className="cell-sub">
+                  <span>{shortId(o._id)}</span>
+                  <span>{fmtShort(o.createdAt)}</span>
+                </span>
+              </span>
+              <span className="dash-orow-side">
+                <span className="cell-num">{inr(orderTotal(o))}</span>
+                <StatusBadge status={o.status} />
+              </span>
+            </Link>
+          ))}
+        </section>
+
+        {/* Stock */}
+        <section className="panel">
+          <div className="panel-head">
+            <h2 className="panel-title">Stock to check</h2>
+            <Link to="/products" className="panel-link">All products</Link>
+          </div>
+          {stockAlerts.length === 0 ? (
+            <Empty
+              title="Stock looks healthy"
+              text={hidden ? `${plural(hidden, 'product')} hidden from the shop.` : 'No listed product is low or sold out.'}
+            />
+          ) : (
+            <>
+              {stockAlerts.slice(0, 7).map(({ product: p, problem }) => (
+                <Link key={p._id} to={`/products/edit/${p._id}`} className="row dash-srow">
+                  <Thumb src={p.image} color={p.color} size="sm" />
+                  <span className="cell">
+                    <span className="cell-main">{p.name}</span>
+                    <span className={`dash-stock dash-stock--${problem.level}`}>{problem.text}</span>
+                  </span>
+                  <Chevron />
+                </Link>
+              ))}
+              {hidden > 0 && (
+                <p className="dash-hidden">{plural(hidden, 'product')} hidden from the shop.</p>
+              )}
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

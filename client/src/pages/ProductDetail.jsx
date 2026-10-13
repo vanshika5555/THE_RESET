@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
@@ -13,33 +13,14 @@ import ImageLightbox from '../components/ImageLightbox';
 import './ProductDetail.css';
 import usePageMeta from '../hooks/usePageMeta';
 
-const pdNav = {
-  position: 'absolute',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  border: 'none',
-  background: 'rgba(255,255,255,.92)',
-  color: '#111',
-  fontSize: '22px',
-  lineHeight: '40px',
-  textAlign: 'center',
-  cursor: 'pointer',
-  padding: 0,
-  zIndex: 3,
-  boxShadow: '0 2px 8px rgba(0,0,0,.18)',
-};
-
 function Accordion({ title, children }) {
   const [open, setOpen] = useState(false);
   if (!children) return null;
   return (
     <div className="pd-acc">
-      <button type="button" className="pd-acc-head" onClick={() => setOpen(o => !o)}>
+      <button type="button" className="pd-acc-head" onClick={() => setOpen(o => !o)} aria-expanded={open}>
         <span>{title}</span>
-        <span className={`pd-acc-chev ${open ? 'pd-acc-chev--open' : ''}`}>⌄</span>
+        <span className={`pd-acc-chev ${open ? 'pd-acc-chev--open' : ''}`} aria-hidden="true">⌄</span>
       </button>
       {open && <div className="pd-acc-body">{children}</div>}
     </div>
@@ -57,6 +38,10 @@ export default function ProductDetail() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [sizeWarning, setSizeWarning] = useState(false);
+  const [showBar, setShowBar] = useState(false);   // phone: sticky Add to Bag
+  const actionsRef = useRef(null);
+  const sizesRef = useRef(null);
+  const touch = useRef(null);
 
   usePageMeta({
     title: product ? product.name : 'Loading product',
@@ -101,9 +86,36 @@ export default function ProductDetail() {
     return () => { active = false; };
   }, [id]);
 
+  // Phone: once the real buttons scroll off the top, a bar takes over at the bottom.
+  useEffect(() => {
+    if (!product) return undefined;
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const el = actionsRef.current;
+      if (el) setShowBar(el.getBoundingClientRect().bottom < 0);
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(check); };
+    check();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [product, loading]);
+
+  const askForSize = () => {
+    setSizeWarning(true);
+    if (sizesRef.current) {
+      sizesRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   const handleAdd = () => {
     if (!chosenSize) {
-      setSizeWarning(true);
+      askForSize();
       return;
     }
     setSizeWarning(false);
@@ -114,7 +126,7 @@ export default function ProductDetail() {
 
   const handleBuyNow = () => {
     if (!chosenSize) {
-      setSizeWarning(true);
+      askForSize();
       return;
     }
     setSizeWarning(false);
@@ -161,6 +173,28 @@ export default function ProductDetail() {
   };
 
 
+  // Swipe the main photo on a phone.
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    touch.current = { x: t.clientX, y: t.clientY, moved: false };
+  };
+  const onTouchEnd = (e) => {
+    if (!touch.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touch.current.x;
+    const dy = t.clientY - touch.current.y;
+    if (gallery.length > 1 && Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      touch.current.moved = true;
+      step(dx < 0 ? 1 : -1);
+    }
+  };
+  const openZoom = () => {
+    if (touch.current && touch.current.moved) { touch.current = null; return; }
+    touch.current = null;
+    if (mainImg) setZoomOpen(true);
+  };
+
+  const soldOut = !product.inStock || product.sizes.every(s => qtyFor(s) <= 0);
   const mainImg = gallery[activeImg] || gallery[0];
   const backTo = product.category === 'Women' ? '/women' : '/men';
 
@@ -189,16 +223,23 @@ export default function ProductDetail() {
           <div
             className="pd-media"
             style={{ background: product.color || '#f0f0f0', cursor: mainImg ? 'zoom-in' : 'default' }}
-            onClick={() => mainImg && setZoomOpen(true)}
+            onClick={openZoom}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
             role={mainImg ? 'button' : undefined}
+            aria-label={mainImg ? 'Open full-screen photos' : undefined}
             tabIndex={mainImg ? 0 : undefined}
             onKeyDown={(e) => { if (mainImg && e.key === 'Enter') setZoomOpen(true); }}
           >
             {mainImg
-              ? <img src={mainImg} alt={product.name} className="pd-photo" />
+              ? <img src={mainImg} alt={product.name} className="pd-photo" draggable="false" />
               : <div className="pd-photo-empty">No image</div>}
 
-            {mainImg && <span className="pd-zoom-hint">Click to zoom</span>}
+            {mainImg && (
+              <span className="pd-zoom-hint">
+                <span className="pd-hint-mouse">Click</span><span className="pd-hint-touch">Tap</span> to zoom
+              </span>
+            )}
             {product.tag && <span className="pd-tag">{product.tag}</span>}
 
             {gallery.length > 1 && (
@@ -206,7 +247,7 @@ export default function ProductDetail() {
                 <button
                   type="button"
                   aria-label="Previous image"
-                  style={{ ...pdNav, left: '12px' }}
+                  className="pd-nav pd-nav--prev"
                   onClick={(e) => { e.stopPropagation(); step(-1); }}
                 >
                   ‹
@@ -214,17 +255,16 @@ export default function ProductDetail() {
                 <button
                   type="button"
                   aria-label="Next image"
-                  style={{ ...pdNav, right: '12px' }}
+                  className="pd-nav pd-nav--next"
                   onClick={(e) => { e.stopPropagation(); step(1); }}
                 >
                   ›
                 </button>
-                <span style={{
-                  position: 'absolute', bottom: '12px', right: '14px',
-                  background: 'rgba(0,0,0,.6)', color: '#fff', fontSize: '12px',
-                  padding: '3px 9px', borderRadius: '11px', zIndex: 3,
-                }}>
-                  {activeImg + 1} / {gallery.length}
+                <span className="pd-counter">{activeImg + 1} / {gallery.length}</span>
+                <span className="pd-dots" aria-hidden="true">
+                  {gallery.map((_, i) => (
+                    <span key={i} className={`pd-dot ${i === activeImg ? 'pd-dot--on' : ''}`} />
+                  ))}
                 </span>
               </>
             )}
@@ -251,7 +291,7 @@ export default function ProductDetail() {
             <p className="pd-desc-text">{product.description}</p>
           )}
 
-          <div className="pd-sizes-block">
+          <div className="pd-sizes-block" ref={sizesRef}>
             <div className="pd-sizes-head">
               <p className="pd-sizes-label">Size</p>
               <button
@@ -270,6 +310,8 @@ export default function ProductDetail() {
                   className={`pd-size-btn ${chosenSize === s ? 'pd-size-btn--active' : ''} ${qtyFor(s) <= 0 ? 'pd-size-btn--gone' : ''}`}
                   onClick={() => pickSize(s)}
                   disabled={qtyFor(s) <= 0}
+                  aria-pressed={chosenSize === s}
+                  aria-label={qtyFor(s) <= 0 ? `${s}, sold out` : `Size ${s}`}
                   title={qtyFor(s) <= 0 ? 'Sold out in this size' : undefined}
                 >
                   {s}
@@ -288,27 +330,29 @@ export default function ProductDetail() {
             <p className="pd-warn">Please select a size first.</p>
           )}
 
-          {(!product.inStock || product.sizes.every(s => qtyFor(s) <= 0)) && (
+          {soldOut && (
             <p className="pd-oos">Currently sold out.</p>
           )}
 
-          <button
-            type="button"
-            className="pd-add-btn"
-            onClick={handleAdd}
-            disabled={!product.inStock}
-          >
-            {added ? '✓ Added to Bag' : 'Add to Bag'}
-          </button>
+          <div className="pd-actions" ref={actionsRef}>
+            <button
+              type="button"
+              className="pd-add-btn"
+              onClick={handleAdd}
+              disabled={soldOut}
+            >
+              {soldOut ? 'Sold Out' : added ? '✓ Added to Bag' : 'Add to Bag'}
+            </button>
 
-          <button
-            type="button"
-            className="pd-buy-btn"
-            onClick={handleBuyNow}
-            disabled={!product.inStock}
-          >
-            Buy Now
-          </button>
+            <button
+              type="button"
+              className="pd-buy-btn"
+              onClick={handleBuyNow}
+              disabled={soldOut}
+            >
+              Buy Now
+            </button>
+          </div>
 
           {added && (
             <div className="pd-added-row">
@@ -329,11 +373,6 @@ export default function ProductDetail() {
           </button>
 
           <div className="pd-accordions">
-            <Accordion title="Details">
-              {product.description
-                ? <p className="pd-acc-text">{product.description}</p>
-                : null}
-            </Accordion>
             <Accordion title="Materials &amp; Wash Care">
               {product.materials
                 ? <p className="pd-acc-text">{product.materials}</p>
@@ -353,6 +392,26 @@ export default function ProductDetail() {
       <ProductReviews productId={product._id} />
 
       <RelatedProducts product={product} />
+
+      {/* Phone: Add to Bag stays in reach after scrolling down */}
+      {!soldOut && (
+        <div className={`pd-bar ${showBar ? 'pd-bar--show' : ''}`} aria-hidden={!showBar}>
+          <div className="pd-bar-text">
+            <span className="pd-bar-name">{product.name}</span>
+            <span className="pd-bar-meta">
+              {product.price}{chosenSize ? ` · Size ${chosenSize}` : ''}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="pd-bar-btn"
+            onClick={handleAdd}
+            tabIndex={showBar ? 0 : -1}
+          >
+            {added ? '✓ Added' : chosenSize ? 'Add to Bag' : 'Select Size'}
+          </button>
+        </div>
+      )}
 
       {zoomOpen && gallery.length > 0 && (
         <ImageLightbox

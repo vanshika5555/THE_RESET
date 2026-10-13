@@ -28,6 +28,10 @@ const orderSchema = new mongoose.Schema({
   couponCode: { type: String, default: '' },
   delivery: { type: Number, required: true, default: 0 },
   total:    { type: Number, required: true, default: 0 },
+  // A private note for the shop's own use — packing reminders, customer
+  // calls, delivery instructions. Never shown to the customer.
+  adminNote: { type: String, default: '' },
+
   status:   {
     type: String,
     enum: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],

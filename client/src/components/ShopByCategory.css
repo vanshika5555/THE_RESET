@@ -93,5 +93,8 @@
   .sbc-section { padding: 56px 18px; }
   .sbc-title { font-size: 24px; }
   .sbc-grid { gap: 10px; }
+  .sbc-tile { aspect-ratio: 1 / 1; }
+  .sbc-label { left: 12px; right: 12px; bottom: 12px; }
   .sbc-name { font-size: 16px; }
+  .sbc-head { margin-bottom: 20px; }
 }

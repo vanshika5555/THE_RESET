@@ -1,220 +1,142 @@
-.dashboard {
-  padding: 8px 32px 60px;
-  max-width: 1200px;
-}
+.dash { display: flex; flex-direction: column; gap: 20px; }
 
-.dash-loading {
-  padding: 80px 32px;
-  color: #888;
-  font-size: 14px;
-}
-
-.dash-header {
+.dash-hello {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 28px;
-}
-
-.dash-title {
-  font-size: 28px;
-  font-weight: 600;
-  margin: 0;
-  color: #111;
-}
-
-.dash-add-btn {
-  background: #111;
-  color: #fff;
-  padding: 11px 20px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-}
-.dash-add-btn:hover { background: #333; }
-
-/* ---------- stat cards ---------- */
-.dash-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 16px;
-  margin-bottom: 36px;
+}
+.dash-greet { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.dash-date { margin-top: 4px; font-size: 14.5px; color: var(--text-2); }
+
+/* ── To-do tiles ── */
+.dash-tasks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.stat-card {
-  background: #fff;
-  border: 1px solid #ececec;
-  border-radius: 10px;
-  padding: 20px 22px;
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  transition: border-color .15s ease, box-shadow .15s ease;
-}
-a.stat-card:hover {
-  border-color: #ccc;
-  box-shadow: 0 2px 10px rgba(0,0,0,.05);
-}
-
-.stat-card--alert {
-  border-color: #f4c9a0;
-  background: #fffaf4;
-}
-
-.stat-label {
-  font-size: 12px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: #888;
-  margin: 0 0 10px;
-}
-
-.stat-num {
-  font-size: 34px;
-  font-weight: 600;
-  line-height: 1;
-  margin: 0 0 8px;
-  color: #111;
-}
-.stat-num--sm { font-size: 25px; }
-
-.stat-hint {
-  font-size: 12px;
-  color: #999;
-  margin: 0;
-}
-
-/* ---------- sections ---------- */
-.dash-section { margin-bottom: 36px; }
-
-.dash-section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.dash-section-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin: 0;
-  color: #111;
-}
-
-.dash-see-all {
-  font-size: 13px;
-  color: #666;
-  text-decoration: none;
-}
-.dash-see-all:hover { color: #111; }
-
-/* ---------- table ---------- */
-.dash-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  border: 1px solid #ececec;
-  border-radius: 10px;
-  overflow: hidden;
-  font-size: 14px;
-}
-
-.dash-table th {
-  text-align: left;
-  padding: 13px 18px;
-  font-size: 11px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: #999;
-  font-weight: 500;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fbfbfb;
-}
-
-.dash-table td {
-  padding: 15px 18px;
-  border-bottom: 1px solid #f4f4f4;
-  color: #222;
-}
-.dash-table tr:last-child td { border-bottom: none; }
-.dash-table tbody tr:hover { background: #fafafa; }
-
-.dash-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  color: #666;
-}
-.dash-muted { color: #999; font-size: 13px; }
-
-.dash-status {
-  display: inline-block;
-  padding: 4px 11px;
-  border: 1px solid;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-/* ---------- alerts ---------- */
-.dash-alert-list {
-  background: #fff;
-  border: 1px solid #ececec;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.dash-alert-row {
+.task {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 18px;
-  border-bottom: 1px solid #f4f4f4;
+  padding: 16px 14px 16px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
   text-decoration: none;
   color: inherit;
+  transition: border-color .15s ease;
 }
-.dash-alert-row:last-child { border-bottom: none; }
-.dash-alert-row:hover { background: #fafafa; }
+.task:hover { border-color: #b8b8b4; }
 
-.dash-alert-name { font-size: 14px; font-weight: 500; }
-.dash-alert-meta { font-size: 13px; color: #999; flex: 1; }
-.dash-alert-tag {
-  font-size: 12px;
-  color: #b45309;
-  background: #fef3e2;
-  padding: 4px 10px;
-  border-radius: 999px;
+.task-count {
+  flex-shrink: 0;
+  min-width: 52px;
+  height: 52px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--grey-bg);
+  color: var(--text-2);
+}
+.task--amber .task-count { background: var(--amber-bg); color: var(--amber); }
+.task--blue  .task-count { background: var(--blue-bg);  color: var(--blue); }
+.task--red   .task-count { background: var(--red-bg);   color: var(--red); }
+
+.task-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.task-label { font-size: 15px; font-weight: 600; }
+.task-detail { font-size: 13.5px; color: var(--text-2); }
+.task--clear .task-label { color: var(--text-2); font-weight: 500; }
+
+/* ── Sales strip ── */
+.dash-sales {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.sale {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 22px;
+  min-width: 0;
+}
+.sale + .sale { border-left: 1px solid var(--line-soft); }
+.sale-label { font-size: 13.5px; font-weight: 500; color: var(--text-2); }
+.sale-value { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; overflow-wrap: anywhere; }
+.sale-sub { font-size: 13px; color: var(--text-3); }
+
+/* ── Two columns ── */
+.dash-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
 }
 
-/* ---------- empty ---------- */
-.dash-empty {
-  background: #fff;
-  border: 1px solid #ececec;
-  border-radius: 10px;
-  padding: 40px;
-  text-align: center;
-  color: #999;
-  font-size: 14px;
+.dash-orow { grid-template-columns: minmax(0, 1fr) auto; }
+.dash-orow-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+
+.dash-srow { grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; }
+.dash-stock { display: block; margin-top: 3px; font-size: 13px; font-weight: 500; }
+.dash-stock--out      { color: var(--red); }
+.dash-stock--some-out { color: var(--red); }
+.dash-stock--low      { color: var(--amber); }
+
+.dash-hidden {
+  padding: 12px 20px 14px;
+  font-size: 13px;
+  color: var(--text-3);
+  border-top: 1px solid var(--line-soft);
 }
-.dash-empty p { margin: 0; }
 
-/* keep old badge styles working for the Products page */
-.dash-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  background: #111;
-  color: #fff;
+/* ── Tablet ── */
+@media (max-width: 1100px) {
+  .dash-tasks { grid-template-columns: minmax(0, 1fr); }
+  .dash-cols { grid-template-columns: minmax(0, 1fr); }
 }
-.dash-badge--women { background: #7c3aed; }
 
-.dash-edit-link { color: #111; font-size: 13px; }
+/* ── Phone ── */
+@media (max-width: 768px) {
+  .dash { gap: 14px; }
+  .dash-greet { font-size: 22px; }
+  .dash-date { font-size: 14px; }
 
-@media (max-width: 700px) {
-  .dashboard { padding: 8px 16px 40px; }
-  .dash-table { font-size: 13px; }
-  .dash-table th, .dash-table td { padding: 11px 12px; }
+  .dash-tasks { gap: 8px; }
+  .task { padding: 12px 10px 12px 12px; gap: 12px; border-radius: 14px; }
+  .task-count { min-width: 46px; height: 46px; font-size: 22px; border-radius: 11px; }
+  .task-label { font-size: 15px; }
+
+  /* Sales: total on top full width, two smaller figures below. */
+  .dash-sales { grid-template-columns: 1fr 1fr; }
+  .sale { padding: 14px 16px; }
+  .sale:first-child { grid-column: 1 / -1; border-bottom: 1px solid var(--line-soft); }
+  .sale:nth-child(2) { border-left: none; }
+  .sale-value { font-size: 22px; }
+  .sale:first-child .sale-value { font-size: 28px; }
+  .sale-label { font-size: 13px; }
+  .sale-sub { font-size: 12.5px; }
+
+  .dash-hidden { padding: 12px 16px 14px; }
+}
+
+/* ── Loading placeholders (same size as the real blocks, so nothing jumps) ── */
+.skel {
+  background: #e9e9e6;
+  border-radius: var(--r-lg);
+  animation: skel 1.2s ease-in-out infinite alternate;
+}
+.skel--task  { height: 86px; }
+.skel--sales { height: 118px; }
+.skel--panel { height: 320px; }
+@keyframes skel { from { opacity: 1; } to { opacity: .55; } }   /* opacity only: cheap to animate */
+
+@media (max-width: 768px) {
+  .skel--task  { height: 72px; }
+  .skel--sales { height: 210px; }
 }

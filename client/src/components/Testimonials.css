@@ -123,9 +123,28 @@
   .tm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* Phone: one row you swipe through, instead of a long stack of cards */
 @media (max-width: 640px) {
-  .tm-section { padding: 60px 18px; }
-  .tm-title { font-size: 25px; }
-  .tm-grid { grid-template-columns: 1fr; gap: 12px; }
-  .tm-quote { font-size: 17px; }
+  .tm-section { padding: 56px 0; }
+  .tm-head { padding: 0 20px; margin-bottom: 28px; }
+  .tm-title { font-size: 26px; }
+  .tm-grid {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 20px;
+    padding: 0 20px 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tm-grid::-webkit-scrollbar { display: none; }
+  .tm-card {
+    flex: 0 0 84%;
+    scroll-snap-align: start;
+    padding: 24px 20px;
+  }
+  .tm-grid:has(.tm-card:only-child) .tm-card { flex-basis: 100%; }
+  .tm-quote { font-size: 18px; }
+  .tm-product { display: inline-block; padding: 4px 0; font-size: 13px; }
 }

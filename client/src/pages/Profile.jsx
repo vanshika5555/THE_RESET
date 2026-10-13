@@ -79,9 +79,9 @@ const STATUS_COLORS = {
 };
 
 function Orders({ user }) {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     axios.get(`/api/orders/myorders`, {
       headers: { Authorization: `Bearer ${user.token}` }
@@ -104,7 +104,14 @@ function Orders({ user }) {
           {orders.map(order => {
             const s = STATUS_COLORS[order.status] || STATUS_COLORS.Pending;
             return (
-              <div key={order._id} className="prof-order-card">
+             <div
+                key={order._id}
+                className="prof-order-card prof-order-card--link"
+                onClick={() => navigate(`/orders/${order._id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/orders/${order._id}`); }}
+              >
                 <div className="prof-order-header">
                   <div>
                     <p className="prof-order-id">Order #{order._id.slice(-8).toUpperCase()}</p>
@@ -118,7 +125,7 @@ function Orders({ user }) {
                   {order.items.map((item, i) => (
                     <div key={i} className="prof-order-item">
                       <div className="prof-order-img" style={{ background: item.color || '#f0f0f0' }}>
-                        {item.image && <img src={item.image} alt={item.name} />}
+                        {item.image && <img src={item.image} alt="" loading="lazy" />}
                       </div>
                       <div>
                         <p className="prof-order-name">{item.name}</p>
@@ -129,7 +136,7 @@ function Orders({ user }) {
                 </div>
                 <div className="prof-order-footer">
                   <span>📍 {order.shippingAddress?.city}</span>
-                  <span><strong>₹{order.subtotal?.toLocaleString('en-IN')}</strong></span>
+                  <span><strong>₹{(Number(order.total) || Number(order.subtotal) || 0).toLocaleString('en-IN')}</strong></span>
                 </div>
               </div>
             );
@@ -346,10 +353,12 @@ export default function Profile() {
       <aside className="prof-sidebar">
         <div className="prof-sidebar-top">
           <div className="prof-sidebar-avatar">{user.name?.charAt(0).toUpperCase()}</div>
-          <p className="prof-sidebar-name">{user.name}</p>
-          <p className="prof-sidebar-email">{user.email}</p>
+          <div className="prof-sidebar-who">
+            <p className="prof-sidebar-name">{user.name}</p>
+            <p className="prof-sidebar-email">{user.email}</p>
+          </div>
         </div>
-        <nav className="prof-nav">
+        <nav className="prof-nav" aria-label="Account">
           {navItems.map(item => (
             <NavLink
               key={item.to}
@@ -357,7 +366,7 @@ export default function Profile() {
               end={item.to === '/profile'}
               className={({ isActive }) => `prof-nav-link ${isActive ? 'prof-nav-link--active' : ''}`}
             >
-              <span className="prof-nav-icon">{item.icon}</span>
+              <span className="prof-nav-icon" aria-hidden="true">{item.icon}</span>
               {item.label}
             </NavLink>
           ))}

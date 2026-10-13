@@ -184,6 +184,12 @@
 }
 
 @media (max-width: 640px) {
-  .pr-section { margin-top: 44px; }
+  .pr-section { margin: 40px 16px 0; padding-top: 28px; }
   .pr-date { margin-left: 0; width: 100%; }
+  .pr-form { padding: 16px; }
+  .pr-star-btn { width: 44px; height: 44px; font-size: 28px; padding: 0; }
+  .pr-textarea { font-size: 16px; }
+  .pr-form-actions > button { flex: 1; min-height: 48px; }
+  .pr-write-btn { width: 100%; min-height: 48px; }
+  .pr-login-link { display: inline-block; padding: 8px 0; }
 }

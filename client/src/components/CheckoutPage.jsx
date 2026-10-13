@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { cartSubtotal, deliveryCharge, amountToFreeDelivery, FREE_DELIVERY_ABOVE } from '../utils/price';
+import { cartSubtotal, deliveryCharge, amountToFreeDelivery } from '../utils/price';
 import AddressFields, { BLANK_ADDRESS, validateAddress } from './AddressFields';
 import './AddressFields.css';
 import './CheckoutPage.css';
 
 export default function CheckoutPage({ cart, onOrderSuccess }) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1=address, 2=payment, 3=processing
   const [address, setAddress] = useState({ ...BLANK_ADDRESS, fullName: user?.name || '' });
   const [fieldErrors, setFieldErrors] = useState({});
@@ -25,6 +24,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   const [saveAddress, setSaveAddress] = useState(true);
   const [guestEmail, setGuestEmail] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [summaryOpen, setSummaryOpen] = useState(false);   // phone: collapsed by default
 
   const subtotal = cartSubtotal(cart);
   const discount = coupon ? coupon.discount : 0;
@@ -32,6 +32,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   const delivery = deliveryCharge(afterDiscount);
   const total = afterDiscount + delivery;
   const toFree = amountToFreeDelivery(afterDiscount);
+  const itemCount = cart.reduce((n, i) => n + i.qty, 0);
 
 
   // Pull in whatever the customer has already saved so they
@@ -291,8 +292,11 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 </label>
               </div>
               <button
-                className="co-btn"
-                onClick={() => { if (checkAddress()) setStep(2); }}
+                className="co-btn co-btn--sticky"
+                onClick={() => {
+                  if (checkAddress()) { setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+                  else window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               >
                 Continue to Payment
               </button>
@@ -308,7 +312,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
               <div className="co-address-summary">
                 <div className="co-address-summary-header">
                   <span>Delivering to</span>
-                  <button onClick={() => setStep(1)}>Change</button>
+                  <button type="button" onClick={() => setStep(1)}>Change</button>
                 </div>
                 <p><strong>{address.fullName}</strong> — +91 {address.phone}</p>
                 <p>{address.address}, {address.city} - {address.pincode}</p>
@@ -332,7 +336,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 </div>
               </div>
 
-              <button className="co-btn co-btn--place" onClick={handlePlaceOrder} disabled={loading}>
+              <button className="co-btn co-btn--place co-btn--sticky" onClick={handlePlaceOrder} disabled={loading}>
                 Place Order — ₹{total.toLocaleString('en-IN')}
               </button>
               <p className="co-disclaimer">By placing this order you agree to our Terms & Conditions</p>
@@ -341,13 +345,30 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
         </div>
 
         {/* Right — Order summary */}
-        <div className="co-right">
-          <h3 className="co-summary-title">Order Summary ({cart.length} items)</h3>
+        <div className={`co-right ${summaryOpen ? 'co-right--open' : ''}`}>
+          {/* Phone: the summary folds into one line at the top */}
+          <button
+            type="button"
+            className="co-summary-toggle"
+            onClick={() => setSummaryOpen(o => !o)}
+            aria-expanded={summaryOpen}
+          >
+            <span className="co-summary-toggle-label">
+              {summaryOpen ? 'Hide' : 'Show'} order summary
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </span>
+            <span className="co-summary-toggle-total">₹{total.toLocaleString('en-IN')}</span>
+          </button>
+
+          <div className="co-summary-body">
+          <h3 className="co-summary-title">Order Summary ({itemCount} item{itemCount !== 1 ? 's' : ''})</h3>
           <div className="co-items">
             {cart.map((item, i) => (
               <div key={i} className="co-item">
                 <div className="co-item-img" style={{ background: item.color || '#f0f0f0' }}>
-                  {item.image && <img src={item.image} alt={item.name} />}
+                  {(item.image || (item.images && item.images[0])) && <img src={item.image || item.images[0]} alt="" />}
                 </div>
                 <div className="co-item-info">
                   <p className="co-item-name">{item.name}</p>
@@ -379,6 +400,8 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                     onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
                     placeholder="Discount code"
+                    aria-label="Discount code"
+                    autoCapitalize="characters"
                   />
                   <button
                     type="button"
@@ -423,6 +446,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
               <span>Total</span>
               <span>₹{total.toLocaleString('en-IN')}</span>
             </div>
+          </div>
           </div>
         </div>
 

@@ -10,6 +10,10 @@ const SOCIAL = [
   { label: 'YouTube',     url: '' },
 ];
 
+// The newsletter box is hidden until there is a backend to save emails.
+// Switch to true once /api/newsletter (or a mail service) is wired up.
+const NEWSLETTER_ON = false;
+
 export default function Footer() {
   const [email, setEmail] = useState("");
 
@@ -22,19 +26,24 @@ export default function Footer() {
           <span className="footer-logo">THE RESET</span>
           <p className="footer-tagline">Dressed in silence. Built with intention.</p>
         </div>
-        <div className="footer-newsletter">
-          <p className="footer-nl-label">Stay in the loop</p>
-          <div className="footer-nl-form">
-            <input
-              type="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="footer-nl-input"
-            />
-            <button className="footer-nl-btn">Subscribe</button>
-          </div>
-        </div>
+        {NEWSLETTER_ON && (
+          <form className="footer-newsletter" onSubmit={(e) => e.preventDefault()}>
+            <label className="footer-nl-label" htmlFor="footer-email">Stay in the loop</label>
+            <div className="footer-nl-form">
+              <input
+                id="footer-email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="footer-nl-input"
+              />
+              <button type="submit" className="footer-nl-btn">Subscribe</button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Divider */}

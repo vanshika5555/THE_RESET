@@ -85,7 +85,7 @@ export default function MyOrders() {
                   {order.items.map((item, i) => (
                     <div key={i} className="mo-item">
                       <div className="mo-item-img" style={{ background: item.color || '#f0f0f0' }}>
-                        {item.image && <img src={item.image} alt={item.name} />}
+                        {item.image && <img src={item.image} alt="" loading="lazy" />}
                       </div>
                       <div className="mo-item-info">
                         <p className="mo-item-name">{item.name}</p>
@@ -99,10 +99,10 @@ export default function MyOrders() {
                 <div className="mo-card-footer">
                   <div className="mo-address">
                     <span>Delivering to: </span>
-                    {order.shippingAddress.fullName}, {order.shippingAddress.city}
+                    {order.shippingAddress?.fullName}, {order.shippingAddress?.city}
                   </div>
                   <div className="mo-total">
-                    Total: <strong>₹{(order.total || order.subtotal).toLocaleString('en-IN')}</strong>
+                    Total: <strong>₹{(Number(order.total) || Number(order.subtotal) || 0).toLocaleString('en-IN')}</strong>
                     {order.delivery > 0 && (
                       <span className="mo-delivery-note"> (incl. ₹{order.delivery} delivery)</span>
                     )}
@@ -110,6 +110,9 @@ export default function MyOrders() {
                 </div>
 
                 <div className="mo-card-actions">
+                  <Link to={`/orders/${order._id}`} className="mo-view-link">
+                    View details →
+                  </Link>
                   {order.status === 'Pending' ? (
                     <>
                       <span className="mo-action-note">

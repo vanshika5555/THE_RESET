@@ -1,33 +1,38 @@
 .lb-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(12,12,12,.94);
+  background: rgba(10,10,10,.97);
   z-index: 2000;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 60px 20px 24px;
+  padding-top: max(60px, calc(env(safe-area-inset-top) + 52px));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
 }
 
 .lb-close {
   position: absolute;
-  top: 18px;
-  right: 22px;
+  top: max(10px, env(safe-area-inset-top));
+  right: 10px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
-  color: rgba(255,255,255,.75);
-  font-size: 22px;
+  color: rgba(255,255,255,.8);
   cursor: pointer;
-  padding: 6px 10px;
-  line-height: 1;
+  padding: 0;
   z-index: 3;
 }
 .lb-close:hover { color: #fff; }
 
 .lb-counter {
   position: absolute;
-  top: 24px;
+  top: max(24px, calc(env(safe-area-inset-top) + 14px));
   left: 24px;
   color: rgba(255,255,255,.6);
   font-size: 13px;
@@ -57,6 +62,8 @@
 .lb-stage {
   flex: 1;
   max-height: calc(100vh - 190px);
+  max-height: calc(100dvh - 190px);
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,6 +75,7 @@
 .lb-img {
   max-width: 100%;
   max-height: calc(100vh - 190px);
+  max-height: calc(100dvh - 190px);
   object-fit: contain;
   transition: transform .25s ease;
   user-select: none;
@@ -90,6 +98,15 @@
   padding-bottom: 4px;
 }
 
+.lb-hint-touch { display: none; }
+@media (hover: none) {
+  .lb-hint-mouse { display: none; }
+  .lb-hint-touch { display: inline; }
+  .lb-nav { display: none; }
+  .lb-stage { touch-action: none; }
+  .lb-img { transition: transform .15s ease; }
+}
+
 .lb-thumb {
   width: 52px;
   height: 66px;
@@ -104,7 +121,8 @@
 .lb-thumb--on { border-color: #fff; }
 
 @media (max-width: 640px) {
-  .lb-backdrop { padding: 50px 10px 18px; }
+  .lb-backdrop { padding-left: 0; padding-right: 0; }
+  .lb-thumbs { padding: 0 12px 4px; }
   .lb-nav { width: 38px; height: 38px; font-size: 22px; line-height: 38px; }
   .lb-nav--prev { left: 8px; }
   .lb-nav--next { right: 8px; }

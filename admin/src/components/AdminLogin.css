@@ -1,0 +1,61 @@
+.login {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 24px 16px;
+  background: #000;
+}
+
+.login-brand { text-align: center; color: #fff; }
+.login-logo {
+  display: block;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  margin-right: -0.28em; /* optical centring for the tracked word */
+}
+.login-sub {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 32px 28px;
+  background: #fff;
+  border-radius: 18px;
+}
+.login-card .note-error { margin: 0; }
+
+.login-title { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.login-text { margin-top: -10px; font-size: 14px; color: var(--text-2); }
+
+.login-show {
+  flex-shrink: 0;
+  padding: 0 14px;
+  border: none;
+  border-left: 1px solid var(--line);
+  background: var(--hover);
+  color: var(--text-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.login-show:hover { color: var(--text); }
+
+.login-card .btn { margin-top: 4px; }
+
+@media (max-width: 480px) {
+  .login { justify-content: flex-start; padding-top: 64px; }
+  .login-card { padding: 26px 20px; }
+}

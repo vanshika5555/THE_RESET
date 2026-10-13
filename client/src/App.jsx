@@ -19,6 +19,7 @@ import SearchPage from './pages/SearchPage';
 import Help from './pages/Help';
 import Legal from './pages/Legal';
 import NotFound from './pages/NotFound';
+import OrderDetail from './pages/OrderDetail';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -47,6 +48,8 @@ function App() {
                 <Route path="/privacy" element={<Legal />} />
                 <Route path="/terms" element={<Legal />} />
                 <Route path="/profile/*" element={<Profile />} />
+
+                <Route path="/orders/:id" element={<OrderDetail />} />
 
                 {/* anything else */}
                 <Route path="*" element={<NotFound />} />

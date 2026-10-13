@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
 
 /* ── Reset / Base ── */
 .about-page {
@@ -466,4 +465,24 @@
   .creator-img-block {
     min-height: 320px;
   }
+}
+/* ═════════ Phone ═════════ */
+@media (max-width: 600px) {
+  .about-hero { height: 360px; }
+  .about-brand, .about-creator { min-height: 0; }
+
+  /* The image blocks are decorative — keep them short on a small screen */
+  .about-brand-img { min-height: 220px; }
+  .creator-img-block { min-height: 240px; }
+  .creator-img-placeholder { width: 120px; height: 120px; }
+  .creator-img-placeholder span { font-size: 54px; }
+  .creator-img-accent { width: 210px; height: 210px; }
+
+  .about-brand-text,
+  .creator-text { padding: 36px 20px; }
+  .about-philosophy { padding: 44px 20px; }
+  .about-collections { padding: 44px 16px; }
+  .collection-card-img { height: 220px; }
+  .collection-link { display: inline-block; padding: 10px 0; }
+  .about-stats { padding-top: 40px; padding-bottom: 40px; }
 }

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import axios from "axios";
+import { getProducts } from "../utils/fetchCache";
 import "./FeaturedCollection.css";
 
 // Sold out pieces are left out — there is no point featuring what cannot be bought.
@@ -25,9 +25,9 @@ export default function FeaturedCollection() {
 
   // Real pieces from the shop, newest first.
   useEffect(() => {
-    axios.get('/api/products')
-      .then(res => {
-        const live = (res.data || [])
+    getProducts()
+      .then(data => {
+        const live = (data || [])
           .filter(p => !isSoldOut(p))
           .slice(0, 9)
           .map(p => ({
@@ -50,8 +50,8 @@ export default function FeaturedCollection() {
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
-      if (w < 480)       setCardW(130);
-      else if (w < 768)  setCardW(165);
+      if (w < 480)       setCardW(Math.min(190, Math.round(w * 0.46)));
+      else if (w < 768)  setCardW(190);
       else               setCardW(220);
     };
     update();
@@ -155,7 +155,7 @@ export default function FeaturedCollection() {
                   {p.tag && <span className="fc-card-tag">{p.tag}</span>}
 
                   <div className="fc-card-img">
-                    <img src={p.img} alt={p.name} className="fc-card-photo" />
+                    <img src={p.img} alt={p.name} className="fc-card-photo" loading="lazy" draggable="false" />
                   </div>
 
                   {isActive && (

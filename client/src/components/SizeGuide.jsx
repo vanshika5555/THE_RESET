@@ -131,20 +131,28 @@ export default function SizeGuide({ category, fitType, sizes, availableSizes, on
 
   return (
     <div className="sg-backdrop" onClick={onClose}>
-      <div className="sg-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Size guide">
+      <div className="sg-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Size guide">
         <div className="sg-head">
           <h2 className="sg-title">Size Guide</h2>
-          <button className="sg-close" onClick={onClose} aria-label="Close size guide">✕</button>
+          <button className="sg-close" onClick={onClose} aria-label="Close size guide">
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
 
         <div className="sg-toolbar">
           <span className="sg-cat">{category} · {chart === MEN_BOTTOMS || chart === WOMEN_NUMERIC ? 'Bottoms' : 'Tops'}</span>
           <div className="sg-units">
             <button
+              type="button"
+              aria-pressed={unit === 'in'}
               className={unit === 'in' ? 'sg-unit sg-unit--on' : 'sg-unit'}
               onClick={() => setUnit('in')}
             >Inches</button>
             <button
+              type="button"
+              aria-pressed={unit === 'cm'}
               className={unit === 'cm' ? 'sg-unit sg-unit--on' : 'sg-unit'}
               onClick={() => setUnit('cm')}
             >CM</button>

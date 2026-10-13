@@ -180,8 +180,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding-top: 14px;
-  margin-top: 14px;
+  padding: 14px 24px 18px;
   border-top: 1px solid #f0f0f0;
 }
 
@@ -214,8 +213,26 @@
 }
 
 @media (max-width: 560px) {
-  .mo-card-actions { flex-direction: column; align-items: flex-start; }
-  .mo-cancel-btn { width: 100%; }
+  .mo-page { padding: 28px 16px 40px; }
+  .mo-card-header { padding: 16px; gap: 12px; }
+  .mo-items { padding-left: 16px; padding-right: 16px; }
+  .mo-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 12px 16px;
+  }
+  .mo-address { font-size: 13px; }
+  .mo-card-actions { flex-direction: column; align-items: stretch; padding-left: 16px; padding-right: 16px; }
+  .mo-view-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    font-size: 14px;
+  }
+  .mo-cancel-btn { width: 100%; min-height: 46px; }
+  .mo-action-note { font-size: 13px; line-height: 1.5; }
 }
 
 .mo-delivery-note {
@@ -223,3 +240,16 @@
   color: #999;
   font-weight: 400;
 }
+
+/* Append to client/src/pages/MyOrders.css */
+
+.mo-view-link {
+  font-size: 13px;
+  color: #111;
+  text-decoration: none;
+  border: 1px solid #111;
+  padding: 9px 16px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.mo-view-link:hover { background: #111; color: #fff; }

@@ -9,10 +9,55 @@ html, body {
   background: #fff;
   color: #111;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
   max-width: 100vw;
 }
 
 .App {
   min-height: 100vh;
+}
+
+/* Visible keyboard focus everywhere, never on mouse/touch clicks. */
+:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
+}
+
+/* Text only screen readers hear. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Phone-wide rules
+   ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /*
+    iOS Safari zooms the whole page when you tap a field whose text is
+    under 16px. One rule here covers every form on the site (checkout,
+    address, login, search, reviews, profile) — including the fields that
+    set a smaller size inline.
+  */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* People who ask their phone for less motion get less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

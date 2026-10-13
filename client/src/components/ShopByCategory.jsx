@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getProducts } from '../utils/fetchCache';
 import { useNavigate } from 'react-router-dom';
 import './ShopByCategory.css';
 
@@ -18,9 +18,9 @@ export default function ShopByCategory() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('/api/products')
-      .then(res => {
-        const live = (res.data || []).filter(p => !isSoldOut(p));
+    getProducts()
+      .then(data => {
+        const live = (data || []).filter(p => !isSoldOut(p));
 
         // Group what is actually in stock by subcategory.
         const map = new Map();
@@ -75,7 +75,7 @@ export default function ShopByCategory() {
             onClick={() => open(g)}
             style={{ background: g.color }}
           >
-            {g.image && <img src={g.image} alt={g.subcategory} className="sbc-img" />}
+            {g.image && <img src={g.image} alt={g.subcategory} className="sbc-img" loading="lazy" />}
             <span className="sbc-veil" />
             <span className="sbc-label">
               <span className="sbc-cat">{g.category}</span>

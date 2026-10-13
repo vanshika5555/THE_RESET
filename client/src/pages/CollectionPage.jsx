@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useRef } from "react";
+import { getProducts } from "../utils/fetchCache";
 import { useWishlist } from "../context/WishlistContext";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import "../components/CollectionPage.css";
@@ -91,6 +91,8 @@ export default function CollectionPage({ category = 'Men' }) {
   const [activeSizes, setActiveSizes]     = useState([]);  // empty means any size
   const [sort, setSort]                   = useState('newest');
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
+  const [sheetOpen, setSheetOpen]         = useState(false);   // phone: Filter & sort
+  const priceRef = useRef(null);
 
   const { toggleWishlist, isWished }      = useWishlist();
   const navigate                          = useNavigate();
@@ -111,11 +113,36 @@ export default function CollectionPage({ category = 'Men' }) {
       setActiveSeason('All');
       setActiveSub('All');
     }
-    axios.get(`/api/products?category=${category}`)
-      .then(res => { setProducts(res.data); setLoading(false); })
+    getProducts(category)
+      .then(data => { setProducts(data || []); setLoading(false); })
       .catch(() => { setLoadError(true); setLoading(false); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, searchParams]);
+
+  // Price menu closes on a click anywhere else.
+  useEffect(() => {
+    if (!showPriceDropdown) return undefined;
+    const close = (e) => { if (priceRef.current && !priceRef.current.contains(e.target)) setShowPriceDropdown(false); };
+    const esc = (e) => { if (e.key === 'Escape') setShowPriceDropdown(false); };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('touchstart', close);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('touchstart', close);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [showPriceDropdown]);
+
+  // Phone filter sheet: page behind stays still, Escape closes.
+  useEffect(() => {
+    if (!sheetOpen) return undefined;
+    const esc = (e) => { if (e.key === 'Escape') setSheetOpen(false); };
+    document.addEventListener('keydown', esc);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', esc); document.body.style.overflow = prev; };
+  }, [sheetOpen]);
 
   const handleSeasonClick = (season) => {
     setActiveSeason(season);
@@ -165,6 +192,10 @@ export default function CollectionPage({ category = 'Men' }) {
   };
   const activeRange = PRICE_RANGES[priceRange];
 
+  // Filters that live in the phone sheet (season/category stay on the page).
+  const sheetCount = activeSizes.length + (priceRange !== 0 ? 1 : 0) + (sort !== 'newest' ? 1 : 0);
+  const clearSheet = () => { setActiveSizes([]); setPriceRange(0); setSort('newest'); };
+
   return (
     <div className="cp-page">
       <div className="cp-hero">
@@ -204,7 +235,7 @@ export default function CollectionPage({ category = 'Men' }) {
         )}
 
         {offeredSizes.length > 0 && (
-          <div className="cp-size-filter">
+          <div className="cp-size-filter cp-desktop-only">
             <span className="cp-size-filter-label">Size</span>
             {offeredSizes.map(sz => {
               const anyLeft = products.some(p => sizeAvailable(p, sz));
@@ -238,10 +269,24 @@ export default function CollectionPage({ category = 'Men' }) {
           {activeSizes.length > 0 && <span className="cp-count-filter"> · size {activeSizes.join(', ')}</span>}
         </p>
 
-        <div className="cp-toolbar-right">
+        {/* Phone: one button opens size, price and sort */}
+        <button
+          type="button"
+          className={`cp-sheet-btn cp-mobile-only ${sheetCount ? 'cp-sheet-btn--on' : ''}`}
+          onClick={() => setSheetOpen(true)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/>
+          </svg>
+          Filter &amp; sort
+          {sheetCount > 0 && <span className="cp-sheet-count">{sheetCount}</span>}
+        </button>
+
+        <div className="cp-toolbar-right cp-desktop-only">
           {/* Price filter dropdown */}
-          <div className="cp-dropdown-wrap">
+          <div className="cp-dropdown-wrap" ref={priceRef}>
             <button
+              aria-expanded={showPriceDropdown}
               className={`cp-dropdown-btn ${priceRange !== 0 ? 'cp-dropdown-btn--active' : ''}`}
               onClick={() => setShowPriceDropdown(p => !p)}
             >
@@ -254,7 +299,7 @@ export default function CollectionPage({ category = 'Men' }) {
               </svg>
             </button>
             {showPriceDropdown && (
-              <div className="cp-dropdown-menu">
+              <div className="cp-dropdown-menu" role="menu">
                 {PRICE_RANGES.map((r, i) => (
                   <button
                     key={i}
@@ -272,6 +317,7 @@ export default function CollectionPage({ category = 'Men' }) {
           {/* Sort dropdown */}
           <div className="cp-dropdown-wrap">
             <select
+              aria-label="Sort by"
               className="cp-sort-select"
               value={sort}
               onChange={e => setSort(e.target.value)}
@@ -283,6 +329,74 @@ export default function CollectionPage({ category = 'Men' }) {
           </div>
         </div>
       </div>
+
+      {sheetOpen && (
+        <div className="cp-sheet-root">
+          <div className="cp-sheet-scrim" onClick={() => setSheetOpen(false)} />
+          <div className="cp-sheet" role="dialog" aria-modal="true" aria-label="Filter and sort">
+            <div className="cp-sheet-head">
+              <span className="cp-sheet-title">Filter &amp; sort</span>
+              <button type="button" className="cp-sheet-close" onClick={() => setSheetOpen(false)} aria-label="Close">
+                <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="cp-sheet-body">
+              <fieldset className="cp-sheet-group">
+                <legend>Sort by</legend>
+                {SORT_OPTIONS.map(o => (
+                  <label key={o.value} className={`cp-sheet-option ${sort === o.value ? 'is-on' : ''}`}>
+                    <input type="radio" name="cp-sort" checked={sort === o.value} onChange={() => setSort(o.value)} />
+                    <span>{o.label}</span>
+                  </label>
+                ))}
+              </fieldset>
+
+              {offeredSizes.length > 0 && (
+                <fieldset className="cp-sheet-group">
+                  <legend>Size</legend>
+                  <div className="cp-sheet-sizes">
+                    {offeredSizes.map(sz => {
+                      const anyLeft = products.some(p => sizeAvailable(p, sz));
+                      return (
+                        <button
+                          key={sz}
+                          type="button"
+                          aria-pressed={activeSizes.includes(sz)}
+                          className={`cp-size-chip ${activeSizes.includes(sz) ? 'cp-size-chip--on' : ''} ${!anyLeft ? 'cp-size-chip--gone' : ''}`}
+                          onClick={() => toggleSize(sz)}
+                          disabled={!anyLeft}
+                        >
+                          {sz}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )}
+
+              <fieldset className="cp-sheet-group">
+                <legend>Price</legend>
+                {PRICE_RANGES.map((r, i) => (
+                  <label key={r.label} className={`cp-sheet-option ${priceRange === i ? 'is-on' : ''}`}>
+                    <input type="radio" name="cp-price" checked={priceRange === i} onChange={() => setPriceRange(i)} />
+                    <span>{r.label}</span>
+                  </label>
+                ))}
+              </fieldset>
+            </div>
+
+            <div className="cp-sheet-foot">
+              <button type="button" className="cp-sheet-clear" onClick={clearSheet} disabled={!sheetCount}>Clear</button>
+              <button type="button" className="cp-sheet-apply" onClick={() => setSheetOpen(false)}>
+                Show {filtered.length} piece{filtered.length !== 1 ? 's' : ''}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <Loading label="Loading collection..." />
@@ -299,7 +413,18 @@ export default function CollectionPage({ category = 'Men' }) {
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="cp-empty">No products found in this category.</div>
+        <div className="cp-empty">
+          <p>Nothing matches these filters.</p>
+          {(activeSeason !== 'All' || sheetCount > 0) && (
+            <button
+              type="button"
+              className="cp-empty-reset"
+              onClick={() => { clearSheet(); handleSeasonClick('All'); setSearchParams({}); }}
+            >
+              Clear all filters
+            </button>
+          )}
+        </div>
       ) : (
         <div className="cp-grid">
           {filtered.map((p) => (
@@ -318,12 +443,17 @@ export default function CollectionPage({ category = 'Men' }) {
                 {p.season && p.season !== 'All Season' && (
                   <span className="cp-season-tag">{p.season}</span>
                 )}
-                <button className="cp-wish-btn" onClick={(e) => { e.stopPropagation(); toggleWishlist(p); }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill={isWished(p._id) ? "#111" : "none"} stroke="#111" strokeWidth="1.5">
+                <button
+                  className={`cp-wish-btn ${isWished(p._id) ? 'cp-wish-btn--on' : ''}`}
+                  aria-label={isWished(p._id) ? `Remove ${p.name} from wishlist` : `Save ${p.name} to wishlist`}
+                  aria-pressed={isWished(p._id)}
+                  onClick={(e) => { e.stopPropagation(); toggleWishlist(p); }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill={isWished(p._id) ? "#111" : "none"} stroke="#111" strokeWidth="1.5" aria-hidden="true">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                   </svg>
                 </button>
-                <div className="cp-size-hover">
+                <div className="cp-size-hover" aria-hidden="true">
                   <p className="cp-size-hover-label">{isSoldOut(p) ? 'Sold Out' : 'View Product'}</p>
                 </div>
               </div>

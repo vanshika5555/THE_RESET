@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getProducts } from '../utils/fetchCache';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import CardGallery from '../components/CardGallery';
 import StarRating from '../components/StarRating';
@@ -27,8 +27,8 @@ export default function SearchPage() {
 
   useEffect(() => {
     setLoading(true);
-    axios.get('/api/products')
-      .then(res => { setProducts(res.data || []); setLoading(false); })
+    getProducts()
+      .then(data => { setProducts(data || []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
@@ -60,22 +60,24 @@ export default function SearchPage() {
 
       <form
         onSubmit={submit}
-        style={{ display: 'flex', gap: '10px', maxWidth: '540px', margin: '0 auto 34px' }}
+        style={{ display: 'flex', gap: '10px', maxWidth: '572px', margin: '0 auto 28px', padding: '0 16px' }}
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Search for shirts, dresses, blazers..."
           autoFocus
+          type="search"
+          aria-label="Search the collection"
           style={{
-            flex: 1, padding: '14px 16px', font: 'inherit', fontSize: '15px',
+            flex: 1, minWidth: 0, padding: '14px 16px', font: 'inherit', fontSize: '15px',
             border: '1px solid #ccc', borderRadius: 0, outline: 'none',
           }}
         />
         <button
           type="submit"
           style={{
-            padding: '14px 26px', background: '#111', color: '#fff', border: 'none',
+            padding: '14px 22px', flexShrink: 0, background: '#111', color: '#fff', border: 'none',
             font: 'inherit', fontSize: '13px', letterSpacing: '.1em',
             textTransform: 'uppercase', cursor: 'pointer',
           }}

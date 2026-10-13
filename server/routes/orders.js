@@ -233,4 +233,20 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
+// PUT /api/orders/:id/note — save the shop's private note on an order (admin only)
+router.put('/:id/note', protect, adminOnly, async (req, res) => {
+  try {
+    const note = String(req.body.note ?? '').slice(0, 2000);
+    const updated = await Order.findByIdAndUpdate(
+      req.params.id,
+      { adminNote: note },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ message: 'Order not found' });
+    res.json({ adminNote: updated.adminNote });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 module.exports = router;

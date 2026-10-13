@@ -1,37 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-
-const wrap = {
-  minHeight: '100vh', display: 'flex', alignItems: 'center',
-  justifyContent: 'center', background: '#111', fontFamily: 'inherit',
-};
-const card = {
-  background: '#fff', padding: '40px', width: '100%', maxWidth: '380px',
-  borderRadius: '6px', boxShadow: '0 10px 40px rgba(0,0,0,.3)',
-};
-const label = {
-  display: 'block', fontSize: '11px', letterSpacing: '.08em',
-  textTransform: 'uppercase', color: '#666', marginBottom: '6px',
-};
-const input = {
-  width: '100%', padding: '12px', marginBottom: '18px', font: 'inherit',
-  border: '1px solid #ddd', borderRadius: '4px', boxSizing: 'border-box',
-};
-const button = {
-  width: '100%', padding: '13px', background: '#111', color: '#fff',
-  border: 'none', borderRadius: '4px', font: 'inherit', letterSpacing: '.06em',
-  textTransform: 'uppercase', cursor: 'pointer',
-};
-const errBox = {
-  background: '#fef2f2', color: '#b91c1c', padding: '12px',
-  borderRadius: '4px', marginBottom: '18px', fontSize: '14px',
-};
+import './AdminLogin.css';
 
 export default function AdminLogin({ onLogin }) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [show, setShow]         = useState(false);
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,52 +16,70 @@ export default function AdminLogin({ onLogin }) {
     try {
       const res = await axios.post('/api/auth/login', { email, password });
       if (res.data.role !== 'admin') {
-        setError('That account is not an admin.');
+        setError('This account is a customer account. Sign in with an admin account.');
         setLoading(false);
         return;
       }
       onLogin(res.data.token, res.data.name);
     } catch (err) {
       const msg = err.response
-        ? (err.response.data?.message || `Server error (${err.response.status}).`)
-        : 'Cannot reach the server. Is the backend running?';
+        ? (err.response.data?.message || `The server returned an error (${err.response.status}).`)
+        : 'Cannot reach the server. Start it with npm start in the server folder.';
       setError(msg);
       setLoading(false);
     }
   };
 
   return (
-    <div style={wrap}>
-      <form style={card} onSubmit={handleSubmit}>
-        <h1 style={{ margin: '0 0 4px', fontSize: '22px', letterSpacing: '.1em' }}>THE RESET</h1>
-        <p style={{ margin: '0 0 28px', fontSize: '12px', letterSpacing: '.1em', color: '#888', textTransform: 'uppercase' }}>
-          Admin Access
-        </p>
+    <div className="login">
+      <div className="login-brand">
+        <span className="login-logo">THE RESET</span>
+        <span className="login-sub">Shop admin</span>
+      </div>
 
-        {error && <div style={errBox}>{error}</div>}
+      <form className="login-card" onSubmit={handleSubmit}>
+        <h1 className="login-title">Sign in</h1>
+        <p className="login-text">Manage orders, products and discount codes.</p>
 
-        <label style={label} htmlFor="admin-email">Email</label>
-        <input
-          id="admin-email"
-          style={input}
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="username"
-        />
+        {error && <div className="note-error" role="alert"><span>{error}</span></div>}
 
-        <label style={label} htmlFor="admin-password">Password</label>
-        <input
-          id="admin-password"
-          style={input}
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-        />
+        <div className="field">
+          <label className="field-label" htmlFor="admin-email">Email</label>
+          <input
+            id="admin-email"
+            className="input"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="username"
+            required
+          />
+        </div>
 
-        <button style={button} type="submit" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign In'}
+        <div className="field">
+          <label className="field-label" htmlFor="admin-password">Password</label>
+          <div className="input-group">
+            <input
+              id="admin-password"
+              className="input"
+              type={show ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              className="login-show"
+              onClick={() => setShow((s) => !s)}
+            >
+              {show ? 'Hide' : 'Show'}
+            </button>
+          </div>
+        </div>
+
+        <button className="btn btn--primary btn--lg btn--block" type="submit" disabled={loading}>
+          {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
     </div>

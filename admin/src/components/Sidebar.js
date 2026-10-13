@@ -5,104 +5,125 @@ import './Sidebar.css';
 // Where the customer-facing shop lives. Set REACT_APP_SITE_URL in Vercel.
 const SITE_URL = process.env.REACT_APP_SITE_URL || 'http://localhost:3001';
 
+const icons = {
+  dashboard: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  ),
+  orders: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+      <rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/>
+      <line x1="9" y1="16" x2="13" y2="16"/>
+    </svg>
+  ),
+  customers: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  ),
+  discounts: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M20 12a2 2 0 0 1 2-2V7a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v3a2 2 0 0 1 0 4v3a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-3a2 2 0 0 1-2-2z"/>
+      <path d="M9 9l6 6M9.5 9.5h.01M14.5 14.5h.01"/>
+    </svg>
+  ),
+  products: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <path d="M16 10a4 4 0 0 1-8 0"/>
+    </svg>
+  ),
+  add: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="16"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+  ),
+};
+
+// Desktop sidebar
 const links = [
-  {
-    to: '/',
-    label: 'Dashboard',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-      </svg>
-    ),
-  },
-  {
-    to: '/orders',
-    label: 'Orders',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-        <rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/>
-        <line x1="9" y1="16" x2="13" y2="16"/>
-      </svg>
-    ),
-  },
-  {
-    to: '/customers',
-    label: 'Customers',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ),
-  },
-  {
-    to: '/coupons',
-    label: 'Discounts',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M20 12a2 2 0 0 1 2-2V7a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v3a2 2 0 0 1 0 4v3a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-3a2 2 0 0 1-2-2z"/>
-        <path d="M9 9l6 6M9.5 9.5h.01M14.5 14.5h.01"/>
-      </svg>
-    ),
-  },
-  {
-    to: '/products',
-    label: 'Products',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <path d="M16 10a4 4 0 0 1-8 0"/>
-      </svg>
-    ),
-  },
-  {
-    to: '/products/add',
-    label: 'Add Product',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="16"/>
-        <line x1="8" y1="12" x2="16" y2="12"/>
-      </svg>
-    ),
-  },
+  { to: '/',             label: 'Dashboard',   icon: icons.dashboard },
+  { to: '/orders',       label: 'Orders',      icon: icons.orders },
+  { to: '/customers',    label: 'Customers',   icon: icons.customers },
+  { to: '/coupons',      label: 'Discount codes', icon: icons.discounts },
+  { to: '/products',     label: 'Products',    icon: icons.products },
+  { to: '/products/add', label: 'Add product', icon: icons.add },
 ];
+
+// Phone bottom tab bar — five tabs, thumb-reachable. "Add Product" lives
+// as a floating button on the Products tab instead.
+const tabs = [
+  { to: '/',          label: 'Home',      icon: icons.dashboard },
+  { to: '/orders',    label: 'Orders',    icon: icons.orders },
+  { to: '/products',  label: 'Products',  icon: icons.products },
+  { to: '/customers', label: 'Customers', icon: icons.customers },
+  { to: '/coupons',   label: 'Discounts', icon: icons.discounts },
+];
+
+const isActive = (pathname, to) => {
+  if (to === '/') return pathname === '/';
+  if (to === '/products') return pathname === '/products' || pathname.startsWith('/products/edit');
+  return pathname === to;
+};
 
 export default function Sidebar() {
   const { pathname } = useLocation();
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-brand">
-        <span className="sidebar-logo">THE RESET</span>
-        <span className="sidebar-sub">Admin</span>
-      </div>
+    <>
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <span className="sidebar-logo">THE RESET</span>
+          <span className="sidebar-sub">Shop admin</span>
+        </div>
 
-      <nav className="sidebar-nav">
-        {links.map((l) => (
-          <Link
-            key={l.to}
-            to={l.to}
-            className={`sidebar-link ${pathname === l.to ? 'sidebar-link--active' : ''}`}
-          >
-            {l.icon}
-            <span>{l.label}</span>
-          </Link>
-        ))}
+        <nav className="sidebar-nav">
+          {links.map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              className={`sidebar-link ${isActive(pathname, l.to) ? 'sidebar-link--active' : ''}`}
+            >
+              {l.icon}
+              <span>{l.label}</span>
+            </Link>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <a href={SITE_URL} target="_blank" rel="noreferrer" className="sidebar-view-site">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Open the shop
+          </a>
+        </div>
+      </aside>
+
+      <nav className="bottom-nav" aria-label="Main">
+        {tabs.map((t) => {
+          const active = isActive(pathname, t.to);
+          return (
+            <Link
+              key={t.to}
+              to={t.to}
+              className={`bottom-nav-item ${active ? 'bottom-nav-item--active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+            >
+              {t.icon}
+              <span>{t.label}</span>
+            </Link>
+          );
+        })}
       </nav>
-
-      <div className="sidebar-footer">
-        <a href={SITE_URL} target="_blank" rel="noreferrer" className="sidebar-view-site">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-          View Website
-        </a>
-      </div>
-    </aside>
+    </>
   );
 }

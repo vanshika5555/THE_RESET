@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getProducts } from '../utils/fetchCache';
 import { Link, useNavigate } from 'react-router-dom';
 import CardGallery from './CardGallery';
 import { useWishlist } from '../context/WishlistContext';
@@ -23,8 +23,8 @@ export default function NewArrivals() {
   const { toggleWishlist, isWished } = useWishlist();
 
   useEffect(() => {
-    axios.get('/api/products')
-      .then(res => { setProducts(res.data || []); setLoading(false); })
+    getProducts()
+      .then(data => { setProducts(data || []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 

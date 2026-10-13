@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getProducts } from '../utils/fetchCache';
 import { useNavigate } from 'react-router-dom';
 import './StyleAnalyser.css';
 
@@ -208,8 +208,21 @@ export default function StyleAnalyser({ onClose }) {
   const [picksLoading, setPicksLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Escape closes; the page behind stays still while the panel is open.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
   const isFormValid = form.gender && form.skinTone && form.eyeColor && form.hairColor && form.bodyType && form.occasion;
+  const answered = Object.values(form).filter(Boolean).length;
 
   const analyse = () => {
     setStep(2);
@@ -217,8 +230,8 @@ export default function StyleAnalyser({ onClose }) {
 
     // Use the pause to actually fetch something useful.
     setPicksLoading(true);
-    axios.get(`/api/products?category=${form.gender}`)
-      .then(res => setPicks(matchProducts(res.data || [], form, generated)))
+    getProducts(form.gender)
+      .then(data => setPicks(matchProducts(data || [], form, generated)))
       .catch(() => setPicks([]))
       .finally(() => setPicksLoading(false));
 
@@ -238,7 +251,7 @@ export default function StyleAnalyser({ onClose }) {
   return (
     <>
       <div className="sa-overlay" onClick={onClose} />
-      <div className="sa-panel">
+      <div className="sa-panel" role="dialog" aria-modal="true" aria-label="Style Analyser">
 
         {/* Header */}
         <div className="sa-header">
@@ -246,8 +259,8 @@ export default function StyleAnalyser({ onClose }) {
             <p className="sa-eyebrow">THE RESET</p>
             <h2 className="sa-title">Style Analyser</h2>
           </div>
-          <button className="sa-close" onClick={onClose}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <button className="sa-close" onClick={onClose} aria-label="Close Style Analyser">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
@@ -258,63 +271,65 @@ export default function StyleAnalyser({ onClose }) {
           <div className="sa-body">
             <p className="sa-intro">Tell us about yourself and we'll recommend the perfect black & white styles for you.</p>
 
-            <div className="sa-field">
-              <label className="sa-label">I'm shopping for</label>
+            <div className="sa-field" role="group" aria-label="I'm shopping for">
+              <p className="sa-label">I'm shopping for</p>
               <div className="sa-pills">
                 {GENDERS.map(g => (
-                  <button key={g} className={`sa-pill ${form.gender === g ? 'sa-pill--active' : ''}`} onClick={() => set('gender', g)}>{g}</button>
+                  <button key={g} type="button" className={`sa-pill ${form.gender === g ? 'sa-pill--active' : ''}`} onClick={() => set('gender', g)}>{g}</button>
                 ))}
               </div>
             </div>
 
-            <div className="sa-field">
-              <label className="sa-label">Skin Tone</label>
+            <div className="sa-field" role="group" aria-label="Skin Tone">
+              <p className="sa-label">Skin Tone</p>
               <div className="sa-pills">
                 {SKIN_TONES.map(s => (
-                  <button key={s} className={`sa-pill ${form.skinTone === s ? 'sa-pill--active' : ''}`} onClick={() => set('skinTone', s)}>{s}</button>
+                  <button key={s} type="button" className={`sa-pill ${form.skinTone === s ? 'sa-pill--active' : ''}`} onClick={() => set('skinTone', s)}>{s}</button>
                 ))}
               </div>
             </div>
 
-            <div className="sa-field">
-              <label className="sa-label">Eye Color</label>
+            <div className="sa-field" role="group" aria-label="Eye Color">
+              <p className="sa-label">Eye Color</p>
               <div className="sa-pills">
                 {EYE_COLORS.map(e => (
-                  <button key={e} className={`sa-pill ${form.eyeColor === e ? 'sa-pill--active' : ''}`} onClick={() => set('eyeColor', e)}>{e}</button>
+                  <button key={e} type="button" className={`sa-pill ${form.eyeColor === e ? 'sa-pill--active' : ''}`} onClick={() => set('eyeColor', e)}>{e}</button>
                 ))}
               </div>
             </div>
 
-            <div className="sa-field">
-              <label className="sa-label">Hair Color</label>
+            <div className="sa-field" role="group" aria-label="Hair Color">
+              <p className="sa-label">Hair Color</p>
               <div className="sa-pills">
                 {HAIR_COLORS.map(h => (
-                  <button key={h} className={`sa-pill ${form.hairColor === h ? 'sa-pill--active' : ''}`} onClick={() => set('hairColor', h)}>{h}</button>
+                  <button key={h} type="button" className={`sa-pill ${form.hairColor === h ? 'sa-pill--active' : ''}`} onClick={() => set('hairColor', h)}>{h}</button>
                 ))}
               </div>
             </div>
 
-            <div className="sa-field">
-              <label className="sa-label">Body Type</label>
+            <div className="sa-field" role="group" aria-label="Body Type">
+              <p className="sa-label">Body Type</p>
               <div className="sa-pills">
                 {BODY_TYPES.map(b => (
-                  <button key={b} className={`sa-pill ${form.bodyType === b ? 'sa-pill--active' : ''}`} onClick={() => set('bodyType', b)}>{b}</button>
+                  <button key={b} type="button" className={`sa-pill ${form.bodyType === b ? 'sa-pill--active' : ''}`} onClick={() => set('bodyType', b)}>{b}</button>
                 ))}
               </div>
             </div>
 
-            <div className="sa-field">
-              <label className="sa-label">Occasion</label>
+            <div className="sa-field" role="group" aria-label="Occasion">
+              <p className="sa-label">Occasion</p>
               <div className="sa-pills">
                 {OCCASIONS.map(o => (
-                  <button key={o} className={`sa-pill ${form.occasion === o ? 'sa-pill--active' : ''}`} onClick={() => set('occasion', o)}>{o}</button>
+                  <button key={o} type="button" className={`sa-pill ${form.occasion === o ? 'sa-pill--active' : ''}`} onClick={() => set('occasion', o)}>{o}</button>
                 ))}
               </div>
             </div>
 
-            <button className="sa-submit" onClick={analyse} disabled={!isFormValid}>
-              Analyse My Style ✦
-            </button>
+            <div className="sa-submit-bar">
+              <button className="sa-submit" onClick={analyse} disabled={!isFormValid}>
+                {isFormValid ? 'Analyse My Style ✦' : `Answer all 6 · ${answered} done`}
+              </button>
+            </div>
           </div>
         )}
 
@@ -395,7 +410,7 @@ export default function StyleAnalyser({ onClose }) {
                           onClick={() => { onClose(); navigate(`/product/${p._id}`); }}
                         >
                           <span className="sa-pick-img" style={{ background: p.color || '#f0f0f0' }}>
-                            {img && <img src={img} alt={p.name} />}
+                            {img && <img src={img} alt="" loading="lazy" />}
                           </span>
                           <span className="sa-pick-sub">{p.subcategory}</span>
                           <span className="sa-pick-name">{p.name}</span>

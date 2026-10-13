@@ -1,171 +1,88 @@
-.ao-page { max-width: 1000px; }
+.orders-summary { font-size: 14px; color: var(--text-2); white-space: nowrap; }
 
-.ao-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.ao-title { font-size: 26px; font-weight: 600; color: #111; }
-.ao-count { font-size: 13px; color: #aaa; }
-.ao-loading, .ao-empty { padding: 48px; text-align: center; color: #aaa; font-size: 14px; }
+.orders-tabs { margin-bottom: 14px; }
+.orders-hint { margin: 0 0 14px; }
 
-.ao-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 20px; }
-.ao-tab { background: #fff; border: 1px solid #e0e0e0; padding: 7px 14px; font-size: 12px; cursor: pointer; border-radius: 4px; color: #666; transition: all 0.2s; font-family: inherit; }
-.ao-tab--active { background: #111; color: #fff; border-color: #111; }
-
-.ao-list { display: flex; flex-direction: column; gap: 16px; }
-
-.ao-card { background: #fff; border: 1px solid #ebebeb; border-radius: 8px; overflow: hidden; }
-
-.ao-card-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 16px;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f5f5f5;
-  background: #fafafa;
+/* Columns: customer | progress | placed | total | chevron */
+.orow-grid {
+  grid-template-columns: minmax(0, 2.2fr) minmax(150px, 1.2fr) 120px 100px 18px;
 }
 
-.ao-order-id { font-size: 13px; font-weight: 600; color: #111; letter-spacing: 0.06em; display: block; margin-bottom: 3px; }
-.ao-order-date { font-size: 11px; color: #aaa; }
-.ao-customer-name { display: block; font-size: 13px; font-weight: 500; color: #111; margin-bottom: 2px; }
-.ao-customer-email { font-size: 11px; color: #aaa; }
-
-.ao-status-select {
-  border: 1.5px solid #ddd;
-  border-radius: 4px;
-  padding: 7px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  outline: none;
-  font-family: inherit;
-  background: #fff;
-  transition: border-color 0.2s;
-}
-
-.ao-items { padding: 14px 20px; display: flex; flex-direction: column; gap: 12px; }
-
-.ao-item { display: flex; gap: 12px; align-items: center; }
-
-.ao-item-img { width: 48px; height: 58px; flex-shrink: 0; border-radius: 3px; overflow: hidden; }
-.ao-item-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
-
-.ao-item-name { font-size: 14px; font-weight: 500; color: #111; margin-bottom: 3px; }
-.ao-item-meta { font-size: 12px; color: #888; }
-
-.ao-card-footer {
+.orow-status {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  background: #fafafa;
-  border-top: 1px solid #f5f5f5;
-}
-
-.ao-address { font-size: 12px; color: #888; }
-.ao-total { font-size: 15px; font-weight: 600; color: #111; }
-
-@media (max-width: 600px) {
-  .ao-card-header { grid-template-columns: 1fr; }
-}
-/* ---- search + errors ---- */
-.ao-error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
-  padding: 12px 15px;
-  border-radius: 6px;
-  font-size: 14px;
-  margin-bottom: 16px;
-}
-
-.ao-search {
-  width: 100%;
-  max-width: 460px;
-  padding: 11px 14px;
-  font: inherit;
-  font-size: 14px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  box-sizing: border-box;
-  outline: none;
-}
-.ao-search:focus { border-color: #111; }
-
-/* ---- shipping block ---- */
-.ao-ship {
-  display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  flex-wrap: wrap;
-  background: #fafafa;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  padding: 14px 16px;
-  margin: 14px 0;
-}
-
-.ao-ship-label {
-  font-size: 10px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: #999;
-  margin: 0 0 7px;
-}
-
-.ao-ship-name {
-  margin: 0 0 3px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #111;
-}
-
-.ao-ship-line {
-  margin: 0 0 2px;
-  font-size: 13px;
-  color: #555;
-  line-height: 1.5;
-}
-
-.ao-ship-phone {
-  margin: 6px 0 0;
-  font-size: 14px;
-  font-weight: 500;
-}
-.ao-ship-phone a { color: #111; text-decoration: none; }
-.ao-ship-phone a:hover { text-decoration: underline; }
-
-.ao-ship-actions {
-  display: flex;
   gap: 8px;
-  flex-shrink: 0;
 }
+.orow-rail { width: 100%; max-width: 168px; }
 
-.ao-mini-btn {
-  background: #fff;
-  border: 1px solid #ddd;
-  padding: 8px 13px;
-  font: inherit;
-  font-size: 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  color: #333;
-  white-space: nowrap;
-}
-.ao-mini-btn:hover { border-color: #111; }
-
-/* ---- money breakdown ---- */
-.ao-money {
+/* ── Order panel ── */
+.od-status-row {
   display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  font-size: 12px;
-  color: #999;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 10px 12px 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--hover);
 }
-.ao-money-discount { color: #15803d; }
+.od-status-label { font-size: 13.5px; color: var(--text-2); }
+.od-status-select { width: auto; min-width: 150px; height: 38px; font-size: 14px; }
 
-@media (max-width: 700px) {
-  .ao-ship { flex-direction: column; }
-  .ao-ship-actions { width: 100%; }
-  .ao-mini-btn { flex: 1; }
+.od-address p { font-size: 14.5px; color: var(--text); line-height: 1.55; }
+.od-address .od-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+.od-address .od-phone { margin-top: 6px; font-weight: 500; }
+
+.od-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+.od-items { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.od-item { display: flex; align-items: center; gap: 12px; }
+.od-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.od-item-name { font-size: 14.5px; font-weight: 500; }
+.od-item-meta { font-size: 13px; color: var(--text-2); }
+.od-item-price { font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+
+.od-account { display: flex; flex-direction: column; gap: 2px; }
+.od-account-name { font-size: 14.5px; font-weight: 500; }
+.od-account-email { font-size: 13.5px; color: var(--text-2); overflow-wrap: anywhere; }
+.od-account-link { margin: 8px 0 0 -12px; }
+
+.od-note-hint { margin: -6px 0 10px; font-size: 13px; color: var(--text-3); }
+.od-note-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+.od-cancel { flex: 0 0 auto !important; }
+
+/* ── Phone ── */
+@media (max-width: 768px) {
+  .orders-tabs { margin-bottom: 12px; }
+
+  /*
+    Row on a phone:
+      Name ............... ₹5,980
+      #E6F7A8  2 items  Delhi  12 Oct
+      [Pending]  ▬▬▭▭
+  */
+  .orow-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'cust   total'
+      'status status';
+    gap: 10px 12px;
+  }
+  .orow-cust   { grid-area: cust; }
+  .orow-total  { grid-area: total; align-self: start; font-size: 15.5px; }
+  .orow-status {
+    grid-area: status;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .orow-rail { max-width: none; flex: 1; }
+
+  .od-status-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .od-status-select { width: 100%; height: 46px; }
+
+  .od-actions .btn { flex: 1 1 calc(50% - 4px); height: 46px; }
+  .od-actions .btn:last-child { flex-basis: 100%; }
 }

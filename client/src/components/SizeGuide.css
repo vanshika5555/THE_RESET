@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.45);
-  z-index: 1000;
+  z-index: 1500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -36,11 +36,16 @@
 .sg-close {
   background: none;
   border: none;
-  font-size: 17px;
-  color: #888;
+  color: #666;
   cursor: pointer;
-  padding: 2px 4px;
-  line-height: 1;
+  width: 44px;
+  height: 44px;
+  margin: -10px -12px 0 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .sg-close:hover { color: #111; }
 
@@ -159,7 +164,20 @@
   line-height: 1.6;
 }
 
+/* Phone: slides up from the bottom like a sheet */
 @media (max-width: 560px) {
-  .sg-panel { padding: 20px 18px 24px; max-height: 92vh; }
-  .sg-table th, .sg-table td { padding: 10px 8px; font-size: 13px; }
+  .sg-backdrop { align-items: flex-end; padding: 0; }
+  .sg-panel {
+    max-width: none;
+    max-height: 90vh;
+    max-height: 90dvh;
+    border-radius: 16px 16px 0 0;
+    padding: 18px 16px calc(24px + env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    animation: sgUp .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .sg-head { margin-bottom: 12px; }
+  .sg-unit { min-height: 40px; padding: 0 16px; font-size: 13px; }
+  .sg-table th, .sg-table td { padding: 11px 8px; font-size: 14px; }
 }
+@keyframes sgUp { from { transform: translateY(100%); } to { transform: none; } }
