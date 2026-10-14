@@ -7,11 +7,17 @@ import { useAuth } from '../context/AuthContext';
 import StarRating from '../components/StarRating';
 import ProductReviews from '../components/ProductReviews';
 import RelatedProducts from '../components/RelatedProducts';
+import RecentlyViewed from '../components/RecentlyViewed';
+import NotifyMe from '../components/NotifyMe';
+import { addRecent } from '../utils/recent';
 import Loading from '../components/Loading';
 import SizeGuide from '../components/SizeGuide';
 import ImageLightbox from '../components/ImageLightbox';
 import './ProductDetail.css';
+import { cdn } from '../utils/img';
 import usePageMeta from '../hooks/usePageMeta';
+import Price from '../components/Price';
+import { formatPrice } from '../utils/price';
 
 function Accordion({ title, children }) {
   const [open, setOpen] = useState(false);
@@ -48,12 +54,12 @@ export default function ProductDetail() {
     description: product
       ? (product.description
           ? product.description.slice(0, 155)
-          : `${product.name} — ${product.subcategory} for ${product.category.toLowerCase()}. ${product.price} at THE RESET.`)
+          : `${product.name} — ${product.subcategory} for ${product.category.toLowerCase()}. ${formatPrice(product.price)} at THE RESET.`)
       : undefined,
     image: product ? ((product.images && product.images[0]) || product.image) : undefined,
   });
 
-  const { addToCart, setCartOpen } = useCart();
+  const { addToCart, setCartOpen, setJustAdded } = useCart();
   const { toggleWishlist, isWished } = useWishlist();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -69,6 +75,7 @@ export default function ProductDetail() {
       .then(res => {
         if (!active) return;
         setProduct(res.data);
+        addRecent(res.data);
         setLoading(false);
       })
       .catch(() => {
@@ -106,6 +113,14 @@ export default function ProductDetail() {
     };
   }, [product, loading]);
 
+  // Same as qtyFor below, but safe to call from the handlers.
+  const qtyLeft = (size) => {
+    if (!product) return 0;
+    if (!product.stock || product.stock.length === 0) return product.inStock ? Infinity : 0;
+    const entry = product.stock.find(s => s.size === size);
+    return entry ? entry.qty : 0;
+  };
+
   const askForSize = () => {
     setSizeWarning(true);
     if (sizesRef.current) {
@@ -114,7 +129,7 @@ export default function ProductDetail() {
   };
 
   const handleAdd = () => {
-    if (!chosenSize) {
+    if (!chosenSize || qtyLeft(chosenSize) <= 0) {
       askForSize();
       return;
     }
@@ -125,13 +140,14 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = () => {
-    if (!chosenSize) {
+    if (!chosenSize || qtyLeft(chosenSize) <= 0) {
       askForSize();
       return;
     }
     setSizeWarning(false);
     addToCart(product, chosenSize);
     setCartOpen(false);
+    setJustAdded(null);        // going straight to checkout — no pop-up needed
     // The item is already in the bag, so after signing in they land on
     // checkout with it waiting — not back at the start.
     if (!user) {
@@ -195,6 +211,8 @@ export default function ProductDetail() {
   };
 
   const soldOut = !product.inStock || product.sizes.every(s => qtyFor(s) <= 0);
+  // A sold-out size can still be picked — it opens "Notify me" instead.
+  const chosenGone = !!chosenSize && qtyFor(chosenSize) <= 0;
   const mainImg = gallery[activeImg] || gallery[0];
   const backTo = product.category === 'Women' ? '/women' : '/men';
 
@@ -214,7 +232,7 @@ export default function ProductDetail() {
                   onClick={() => setActiveImg(i)}
                   onMouseEnter={() => setActiveImg(i)}
                 >
-                  <img src={url} alt={`${product.name} view ${i + 1}`} />
+                  <img src={cdn(url, 120)} alt={`${product.name} view ${i + 1}`} />
                 </button>
               ))}
             </div>
@@ -232,7 +250,7 @@ export default function ProductDetail() {
             onKeyDown={(e) => { if (mainImg && e.key === 'Enter') setZoomOpen(true); }}
           >
             {mainImg
-              ? <img src={mainImg} alt={product.name} className="pd-photo" draggable="false" />
+              ? <img src={cdn(mainImg, 900)} alt={product.name} className="pd-photo" draggable="false" />
               : <div className="pd-photo-empty">No image</div>}
 
             {mainImg && (
@@ -282,7 +300,7 @@ export default function ProductDetail() {
           </nav>
 
           <h1 className="pd-name">{product.name}</h1>
-          <p className="pd-price">{product.price}</p>
+          <p className="pd-price"><Price value={product.price} mrp={product.mrp} /></p>
           <p className="pd-tax">MRP inclusive of all taxes</p>
 
           <StarRating productId={product._id} />
@@ -309,10 +327,9 @@ export default function ProductDetail() {
                   type="button"
                   className={`pd-size-btn ${chosenSize === s ? 'pd-size-btn--active' : ''} ${qtyFor(s) <= 0 ? 'pd-size-btn--gone' : ''}`}
                   onClick={() => pickSize(s)}
-                  disabled={qtyFor(s) <= 0}
                   aria-pressed={chosenSize === s}
-                  aria-label={qtyFor(s) <= 0 ? `${s}, sold out` : `Size ${s}`}
-                  title={qtyFor(s) <= 0 ? 'Sold out in this size' : undefined}
+                  aria-label={qtyFor(s) <= 0 ? `${s}, sold out — get notified` : `Size ${s}`}
+                  title={qtyFor(s) <= 0 ? 'Sold out — tap to get notified' : undefined}
                 >
                   {s}
                 </button>
@@ -326,12 +343,14 @@ export default function ProductDetail() {
             </p>
           )}
 
-          {sizeWarning && (
+          {chosenGone && <NotifyMe key={chosenSize} productId={product._id} size={chosenSize} />}
+
+          {sizeWarning && !chosenGone && (
             <p className="pd-warn">Please select a size first.</p>
           )}
 
-          {soldOut && (
-            <p className="pd-oos">Currently sold out.</p>
+          {soldOut && !chosenGone && (
+            <p className="pd-oos">Sold out right now. Pick your size to hear when it's back.</p>
           )}
 
           <div className="pd-actions" ref={actionsRef}>
@@ -339,16 +358,16 @@ export default function ProductDetail() {
               type="button"
               className="pd-add-btn"
               onClick={handleAdd}
-              disabled={soldOut}
+              disabled={soldOut || chosenGone}
             >
-              {soldOut ? 'Sold Out' : added ? '✓ Added to Bag' : 'Add to Bag'}
+              {soldOut ? 'Sold Out' : chosenGone ? `Sold out in ${chosenSize}` : added ? '✓ Added to Bag' : 'Add to Bag'}
             </button>
 
             <button
               type="button"
               className="pd-buy-btn"
               onClick={handleBuyNow}
-              disabled={soldOut}
+              disabled={soldOut || chosenGone}
             >
               Buy Now
             </button>
@@ -393,13 +412,15 @@ export default function ProductDetail() {
 
       <RelatedProducts product={product} />
 
+      <RecentlyViewed excludeId={product._id} />
+
       {/* Phone: Add to Bag stays in reach after scrolling down */}
       {!soldOut && (
         <div className={`pd-bar ${showBar ? 'pd-bar--show' : ''}`} aria-hidden={!showBar}>
           <div className="pd-bar-text">
             <span className="pd-bar-name">{product.name}</span>
             <span className="pd-bar-meta">
-              {product.price}{chosenSize ? ` · Size ${chosenSize}` : ''}
+              {formatPrice(product.price)}{chosenSize ? ` · Size ${chosenSize}` : ''}
             </span>
           </div>
           <button
@@ -408,7 +429,7 @@ export default function ProductDetail() {
             onClick={handleAdd}
             tabIndex={showBar ? 0 : -1}
           >
-            {added ? '✓ Added' : chosenSize ? 'Add to Bag' : 'Select Size'}
+            {added ? '✓ Added' : chosenSize && !chosenGone ? 'Add to Bag' : 'Select Size'}
           </button>
         </div>
       )}

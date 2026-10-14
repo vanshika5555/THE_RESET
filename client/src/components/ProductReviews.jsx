@@ -170,6 +170,12 @@ export default function ProductReviews({ productId }) {
                     {r.userName || r.user?.name || 'Customer'}
                     {isMine && <span className="pr-you">you</span>}
                   </span>
+                  {r.verified && (
+                    <span className="pr-verified" title="Bought and received this piece">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+                      Verified buyer
+                    </span>
+                  )}
                   <span className="pr-date">
                     {new Date(r.createdAt).toLocaleDateString('en-IN', {
                       day: 'numeric', month: 'short', year: 'numeric',

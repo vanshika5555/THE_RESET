@@ -36,7 +36,6 @@ export default function Testimonials() {
   return (
     <section className="tm-section">
       <div className="tm-head">
-        <p className="tm-eyebrow">In Their Words</p>
         <h2 className="tm-title">What people are saying</h2>
         <p className="tm-summary">
           <Stars value={Math.round(average)} />

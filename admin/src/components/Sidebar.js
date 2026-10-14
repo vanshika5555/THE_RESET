@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
 // Where the customer-facing shop lives. Set REACT_APP_SITE_URL in Vercel.
-const SITE_URL = process.env.REACT_APP_SITE_URL || 'http://localhost:3001';
+const SITE_URL = import.meta.env.REACT_APP_SITE_URL || 'http://localhost:3001';
 
 const icons = {
   dashboard: (
@@ -38,6 +38,12 @@ const icons = {
       <path d="M16 10a4 4 0 0 1-8 0"/>
     </svg>
   ),
+  returns: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <polyline points="9 14 4 9 9 4"/>
+      <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+    </svg>
+  ),
   add: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <circle cx="12" cy="12" r="10"/>
@@ -51,6 +57,7 @@ const icons = {
 const links = [
   { to: '/',             label: 'Dashboard',   icon: icons.dashboard },
   { to: '/orders',       label: 'Orders',      icon: icons.orders },
+  { to: '/returns',      label: 'Returns',     icon: icons.returns },
   { to: '/customers',    label: 'Customers',   icon: icons.customers },
   { to: '/coupons',      label: 'Discount codes', icon: icons.discounts },
   { to: '/products',     label: 'Products',    icon: icons.products },
@@ -64,6 +71,7 @@ const tabs = [
   { to: '/orders',    label: 'Orders',    icon: icons.orders },
   { to: '/products',  label: 'Products',  icon: icons.products },
   { to: '/customers', label: 'Customers', icon: icons.customers },
+  { to: '/returns',   label: 'Returns',   icon: icons.returns },
   { to: '/coupons',   label: 'Discounts', icon: icons.discounts },
 ];
 

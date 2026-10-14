@@ -3,11 +3,12 @@ import { getProducts } from "../utils/fetchCache";
 import { useWishlist } from "../context/WishlistContext";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import "../components/CollectionPage.css";
-import StarRating from "../components/StarRating";
 import CardGallery from "../components/CardGallery";
+import QuickAdd from '../components/QuickAdd';
 import { parsePrice } from "../utils/price";
 import Loading from "../components/Loading";
 import usePageMeta from '../hooks/usePageMeta';
+import Price from '../components/Price';
 
 
 const SEASONS = ['All', 'Summer', 'Winter', 'Monsoon', 'All Season'];
@@ -199,7 +200,6 @@ export default function CollectionPage({ category = 'Men' }) {
   return (
     <div className="cp-page">
       <div className="cp-hero">
-        <p className="cp-hero-eyebrow">THE RESET</p>
         <h1 className="cp-hero-title">{category}</h1>
         <p className="cp-hero-sub">{config.subtitle}</p>
       </div>
@@ -438,6 +438,7 @@ export default function CollectionPage({ category = 'Men' }) {
                 onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/product/${p._id}`); }}
               >
                 <CardGallery product={p} />
+                <QuickAdd product={p} />
                 {isSoldOut(p) && <span className="cp-soldout">Sold Out</span>}
                 {p.tag && !isSoldOut(p) && <span className="cp-tag">{p.tag}</span>}
                 {p.season && p.season !== 'All Season' && (
@@ -462,8 +463,7 @@ export default function CollectionPage({ category = 'Men' }) {
                 <Link to={`/product/${p._id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                   <p className="cp-card-name">{p.name}</p>
                 </Link>
-                <p className="cp-card-price">{p.price}</p>
-                <StarRating productId={p._id} />
+                <p className="cp-card-price"><Price value={p.price} mrp={p.mrp} /></p>
               </div>
             </div>
           ))}

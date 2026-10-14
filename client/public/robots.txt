@@ -5,5 +5,7 @@ Allow: /
 Disallow: /profile
 Disallow: /checkout
 Disallow: /orders
+Disallow: /reset-password
+Disallow: /forgot-password
 
 Sitemap: https://the-reset-snowy.vercel.app/sitemap.xml

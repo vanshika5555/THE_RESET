@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom';
 
 /* ───────────── formatting ───────────── */
 
-export const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+// Accepts numbers or older price text like "₹2,990".
+const toNumber = (n) => (typeof n === 'number' ? n : Number(String(n ?? '').replace(/[^0-9.]/g, '')));
+export const inr = (n) => '₹' + Math.round(toNumber(n) || 0).toLocaleString('en-IN');
 
 export const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
@@ -164,8 +166,13 @@ export function ErrorNote({ children, onClose }) {
   Thumbnails are at most ~100px wide, so never download the full-size photo.
   Pinterest serves smaller copies at /236x/ — swap the size segment in.
 */
-export const smallImage = (url = '') =>
-  url.replace(/(i\.pinimg\.com\/)(originals|\d+x(\d+)?)\//, '$1236x/');
+// Small copies for thumbnails: Cloudinary resizes on the fly; Pinterest has fixed sizes.
+export const smallImage = (url = '') => {
+  if (/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url) && !/\/upload\/[a-z]_/.test(url)) {
+    return url.replace('/image/upload/', '/image/upload/f_auto,q_auto,w_240,c_limit/');
+  }
+  return url.replace(/(i\.pinimg\.com\/)(originals|\d+x(\d+)?)\//, '$1236x/');
+};
 
 export function Thumb({ src, color, size = 'md' }) {
   return (

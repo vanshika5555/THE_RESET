@@ -1,17 +1,29 @@
 const express = require('express');
 const router  = express.Router();
 const Review  = require('../models/Review');
+const Order   = require('../models/Order');
 const { protect } = require('../middleware/authMiddleware');
 
 // POST /api/reviews — add review (logged in)
 router.post('/', protect, async (req, res) => {
-  const { product, rating, review } = req.body;
+  const product = typeof req.body.product === 'string' ? req.body.product : '';
+  const rating = Math.round(Number(req.body.rating));
+  const review = typeof req.body.review === 'string' ? req.body.review.trim() : '';
+
+  if (!product) return res.status(400).json({ message: 'Which piece is this review for?' });
+  if (!(rating >= 1 && rating <= 5)) return res.status(400).json({ message: 'Pick a rating from 1 to 5 stars.' });
+  if (review.length < 3) return res.status(400).json({ message: 'Write a few words about the piece.' });
+  if (review.length > 2000) return res.status(400).json({ message: 'Please keep the review under 2000 characters.' });
+
   try {
+    // "Verified buyer" = this customer has a delivered order with this piece.
+    const verified = !!(await Order.exists({ user: req.user._id, 'items.product': product, status: 'Delivered' }));
+
     const existing = await Review.findOne({ user: req.user._id, product });
     if (existing) {
-      // update existing
       existing.rating = rating;
       existing.review = review;
+      existing.verified = verified;
       const updated = await existing.save();
       return res.json(updated);
     }
@@ -21,6 +33,7 @@ router.post('/', protect, async (req, res) => {
       product,
       rating,
       review,
+      verified,
     });
     res.status(201).json(created);
   } catch (err) {

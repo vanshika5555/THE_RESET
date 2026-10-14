@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './MyOrders.css';
+import { formatPrice } from '../utils/price';
 
 const STATUS_COLORS = {
   Pending:   { bg: '#fefce8', color: '#854d0e', border: '#fde68a' },
@@ -90,7 +91,7 @@ export default function MyOrders() {
                       <div className="mo-item-info">
                         <p className="mo-item-name">{item.name}</p>
                         <p className="mo-item-meta">Size: {item.size} · Qty: {item.qty}</p>
-                        <p className="mo-item-price">{item.price}</p>
+                        <p className="mo-item-price">{formatPrice(item.price)}</p>
                       </div>
                     </div>
                   ))}

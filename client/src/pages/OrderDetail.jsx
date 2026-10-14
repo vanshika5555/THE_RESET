@@ -3,6 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import usePageMeta from '../hooks/usePageMeta';
 import './OrderDetail.css';
+import { cdn } from '../utils/img';
+import ReturnPanel from '../components/ReturnPanel';
+import { formatPrice } from '../utils/price';
 
 const inr = (n) => '₹' + (n || 0).toLocaleString('en-IN');
 
@@ -111,18 +114,20 @@ export default function OrderDetail() {
               <div key={i} className="od-item">
                 <Link to={`/product/${item.product || item._id}`} className="od-item-img"
                       style={{ background: item.color || '#f0f0f0' }}>
-                  {item.image && <img src={item.image} alt={item.name} />}
+                  {item.image && <img src={cdn(item.image, 200)} alt="" />}
                 </Link>
                 <div className="od-item-info">
                   <Link to={`/product/${item.product || item._id}`} className="od-item-name">
                     {item.name}
                   </Link>
                   <p className="od-item-meta">Size {item.size} · Qty {item.qty}</p>
-                  <p className="od-item-price">{item.price}</p>
+                  <p className="od-item-price">{formatPrice(item.price)}</p>
                 </div>
               </div>
             ))}
           </div>
+
+          <ReturnPanel orderId={order._id} delivered={order.status === 'Delivered'} />
         </div>
 
         <aside className="od-side">

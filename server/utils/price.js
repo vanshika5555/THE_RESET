@@ -1,9 +1,9 @@
 /**
  * Server-side price handling.
  *
- * Prices are stored as strings like "₹1,299". Anything that decides how
- * much a customer owes must parse them here, on the server — never trust
- * a total that arrived from the browser.
+ * Product prices are stored as plain numbers (2990). Older data and older
+ * admin builds used text like "₹2,990", so everything still goes through
+ * parsePrice, which accepts both. Never trust a total from the browser.
  */
 
 function parsePrice(value) {
@@ -22,4 +22,9 @@ function parsePrice(value) {
   return Number.isFinite(num) ? num : 0;
 }
 
-module.exports = { parsePrice };
+// 2990 -> "₹2,990" (used for the price text frozen onto order lines)
+function formatINR(value) {
+  return '₹' + parsePrice(value).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
+module.exports = { parsePrice, formatINR };

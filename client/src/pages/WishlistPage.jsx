@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import './WishlistPage.css';
+import { cdn } from '../utils/img';
+import Price from '../components/Price';
 
 // Is this size still available? Pieces saved before stock tracking fall back
 // to the simple in/out switch.
@@ -58,7 +60,7 @@ export default function WishlistPage() {
               <div key={product._id} className="wl-card">
                 <div className="wl-card-img" style={{ background: product.color || '#f0f0f0' }}>
                   <Link to={`/product/${product._id}`} className="wl-photo-link" aria-label={`View ${product.name}`}>
-                    {photoOf(product) && <img src={photoOf(product)} alt="" className="wl-photo" loading="lazy" />}
+                    {photoOf(product) && <img src={cdn(photoOf(product), 600)} alt="" className="wl-photo" loading="lazy" />}
                   </Link>
                   {allGone && <span className="wl-soldout">Sold Out</span>}
                   <button
@@ -74,7 +76,7 @@ export default function WishlistPage() {
                 </div>
                 <div className="wl-card-info">
                   <Link to={`/product/${product._id}`} className="wl-card-name">{product.name}</Link>
-                  <p className="wl-card-price">{product.price}</p>
+                  <p className="wl-card-price"><Price value={product.price} mrp={product.mrp} /></p>
 
                   {!allGone && sizes.length > 0 && (
                     <div className="wl-sizes" role="group" aria-label="Choose a size">

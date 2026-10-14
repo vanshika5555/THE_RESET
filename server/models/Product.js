@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { parsePrice } = require('../utils/price');
 
 // How many of each size are on the shelf.
 const stockSchema = new mongoose.Schema({
@@ -8,7 +9,12 @@ const stockSchema = new mongoose.Schema({
 
 const productSchema = new mongoose.Schema({
   name:        { type: String, required: true },
-  price:       { type: String, required: true },
+  // Selling price in rupees, as a number. Text like "₹2,990" is accepted
+  // and converted, so an older admin build can still save.
+  price:       { type: Number, required: true, min: 0, set: parsePrice },
+  // Optional original price. When higher than price, the shop shows it
+  // struck through with the % off.
+  mrp:         { type: Number, default: 0, min: 0, set: parsePrice },
   description: { type: String, default: '' },
   materials:   { type: String, default: '' },
   delivery:    { type: String, default: '' },

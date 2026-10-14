@@ -8,11 +8,12 @@ import OrderConfirm from '../components/OrderConfirm';
 export default function CheckoutRoute() {
   const { cart, clearCart } = useCart();
   const { user } = useAuth();
-  const [orderId, setOrderId] = useState(null);
+  // The placed order itself (CheckoutPage hands over the full order).
+  const [placed, setPlaced] = useState(null);
 
   // Checked first: by this point the cart is empty, and that emptiness must
   // not bounce someone away from their own receipt.
-  if (orderId) return <OrderConfirm orderId={orderId} />;
+  if (placed) return <OrderConfirm orderId={placed._id} order={placed} />;
 
   // An account is required to buy. Passing `from` means signing in returns
   // them here rather than dropping them on the homepage.
@@ -23,7 +24,7 @@ export default function CheckoutRoute() {
   return (
     <CheckoutPage
       cart={cart}
-      onOrderSuccess={(id) => { setOrderId(id); clearCart(); }}
+      onOrderSuccess={(order) => { setPlaced(order); clearCart(); window.scrollTo(0, 0); }}
     />
   );
 }

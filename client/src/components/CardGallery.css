@@ -1,37 +1,14 @@
-/* Photo carousel inside product cards (collection, search, home) */
+/* Photos inside product cards (collection, search, home) */
 .cg-img { -webkit-user-drag: none; user-select: none; }
 
-.cg-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255,255,255,.92);
-  color: #111;
-  font-size: 18px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0 0 2px;
-  z-index: 3;
-  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+.cg-hover {
   opacity: 0;
-  transition: opacity .2s ease;
+  transition: opacity .35s ease;
+  pointer-events: none;
 }
-.cg-nav--prev { left: 10px; }
-.cg-nav--next { right: 10px; }
-
-/* Mouse: arrows appear on hover. Touch: swipe the photo instead. */
-*:hover > .cg-nav,
-.cg-nav:focus-visible { opacity: 1; }
-
-@media (hover: none) {
-  .cg-nav { display: none; }
+@media (hover: hover) {
+  *:hover > .cg-hover { opacity: 1; }
+  .cg-dots { display: none; }
 }
 
 .cg-dots {
@@ -53,4 +30,8 @@
   box-shadow: 0 0 0 1px rgba(255,255,255,.6);
   transition: background .2s, width .2s;
 }
-.cg-dot--on { background: #111; width: 14px; border-radius: 3px; }
+.cg-dot--on { background: #000; width: 14px; border-radius: 3px; }
+
+@media (hover: none) {
+  .cg-hover { display: none; }
+}

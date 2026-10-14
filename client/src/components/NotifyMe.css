@@ -1,0 +1,40 @@
+.nm {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1.5px solid #000;
+  font-family: 'Archivo', sans-serif;
+}
+.nm-title { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
+.nm-text { margin: 0 0 12px; font-size: 14px; color: #5e5e5e; }
+.nm-row { display: flex; gap: 8px; }
+.nm-row input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0 12px;
+  border: 1px solid #ccc;
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+.nm-row input:focus { border-color: #000; }
+.nm-row button {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 18px;
+  background: #000;
+  color: #fff;
+  border: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nm-row button:disabled { background: #777; cursor: progress; }
+.nm-error { margin: 8px 0 0; font-size: 13px; color: #b91c1c; }
+.nm--done { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+.nm-dot { width: 10px; height: 10px; border-radius: 50%; background: #e8a75a; flex-shrink: 0; }
+@media (max-width: 480px) {
+  .nm-row { flex-direction: column; }
+  .nm-row input { font-size: 16px; }
+}

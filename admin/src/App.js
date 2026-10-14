@@ -16,6 +16,7 @@ const EditProduct = lazy(() => import('./components/EditProduct'));
 const AdminOrders = lazy(() => import('./components/AdminOrders'));
 const Customers   = lazy(() => import('./components/Customers'));
 const Coupons     = lazy(() => import('./components/Coupons'));
+const Returns     = lazy(() => import('./components/Returns'));
 
 // After the first screen is up, quietly download the other pages so
 // tapping a tab opens instantly instead of flashing "Loading…".
@@ -25,13 +26,14 @@ const preloadPages = () => {
   import('./components/Products');
   import('./components/Customers');
   import('./components/Coupons');
+  import('./components/Returns');
   import('./components/EditProduct');
   import('./components/AddProduct');
 };
 
 const TOKEN_KEY = 'theresetAdminToken';
 const NAME_KEY  = 'theresetAdminName';
-const SITE_URL  = process.env.REACT_APP_SITE_URL || 'http://localhost:3001';
+const SITE_URL  = import.meta.env.REACT_APP_SITE_URL || 'http://localhost:3001';
 
 // Attach the saved token to every request from the moment the app loads.
 const savedToken = localStorage.getItem(TOKEN_KEY);
@@ -47,6 +49,7 @@ const TITLES = [
   ['/orders',            'Orders'],
   ['/customers',         'Customers'],
   ['/coupons',           'Discount codes'],
+  ['/returns',           'Returns'],
   ['/',                  'Dashboard'],
 ];
 
@@ -131,6 +134,7 @@ function Shell({ name, onLogout }) {
             <Route path="/orders" element={<AdminOrders />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/coupons" element={<Coupons />} />
+            <Route path="/returns" element={<Returns />} />
           </Routes>
           </Suspense>
         </div>

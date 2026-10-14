@@ -3,6 +3,7 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const User = require('../models/User');
+const { notifyRestocked } = require('./alerts');
 
 // GET all products  (public — the shop needs this)
 router.get('/', async (req, res) => {
@@ -33,7 +34,8 @@ router.get('/:id', async (req, res) => {
 // POST create product  (admin only)
 router.post('/', protect, adminOnly, async (req, res) => {
   try {
-    const product = new Product(req.body);
+    const { _id, __v, createdAt, updatedAt, ...fields } = req.body || {};
+    const product = new Product(fields);
     const saved = await product.save();
     res.status(201).json(saved);
   } catch (err) {
@@ -44,12 +46,17 @@ router.post('/', protect, adminOnly, async (req, res) => {
 // PUT update product  (admin only)
 router.put('/:id', protect, adminOnly, async (req, res) => {
   try {
+    // Bump the version so an order being placed at this exact moment
+    // re-reads the product instead of overwriting this edit (see orders.js).
+    const { _id, __v, createdAt, updatedAt, ...changes } = req.body || {};
+    const before = await Product.findById(req.params.id).lean();
     const updated = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { $set: changes, $inc: { __v: 1 } },
       { new: true, runValidators: true }
     );
     if (!updated) return res.status(404).json({ message: 'Product not found' });
+    notifyRestocked(before, updated.toObject());   // emails anyone waiting; never blocks the save
     res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });

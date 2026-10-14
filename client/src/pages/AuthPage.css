@@ -18,7 +18,7 @@
 }
 
 .auth-brand {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 22px;
   font-weight: 600;
   letter-spacing: 0.2em;
@@ -39,7 +39,7 @@
   background: none;
   border: none;
   padding: 12px 0;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 400;
   color: #aaa;
@@ -68,7 +68,7 @@
   border: 1px solid #fca5a5;
   color: #dc2626;
   padding: 10px 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   border-radius: 4px;
 }
@@ -80,7 +80,7 @@
 }
 
 .auth-field label {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -91,7 +91,7 @@
 .auth-field input {
   border: 1px solid #e0e0e0;
   padding: 12px 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 14px;
   color: #111;
   outline: none;
@@ -109,7 +109,7 @@
   color: #fff;
   border: none;
   padding: 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -127,7 +127,7 @@
 .auth-switch {
   text-align: center;
   margin-top: 20px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   color: #aaa;
 }
@@ -141,7 +141,7 @@
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
 }
 
 /* Append to client/src/pages/AuthPage.css — mobile refinement */
@@ -159,4 +159,90 @@
   .auth-field input {
     font-size: 16px;
   }
+}
+/* ---- password show/hide, forgot link, reset screens ---- */
+.auth-pw { position: relative; display: flex; }
+.auth-pw input { flex: 1; min-width: 0; padding-right: 64px; }
+.auth-pw-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  min-width: 56px;
+  padding: 0 12px;
+  background: none;
+  border: none;
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: #666;
+  cursor: pointer;
+}
+.auth-pw-toggle:hover { color: #111; }
+
+.auth-hint {
+  margin: 0;
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px;
+  color: #888;
+}
+
+.auth-forgot {
+  align-self: flex-end;
+  margin-top: -8px;
+  padding: 6px 0;
+  font-family: 'Archivo', sans-serif;
+  font-size: 13px;
+  color: #555;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth-forgot:hover { color: #111; }
+
+.auth-heading {
+  font-family: 'Archivo', sans-serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: #111;
+  margin: 0 0 10px;
+  text-align: center;
+}
+.auth-lead {
+  font-family: 'Archivo', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666;
+  text-align: center;
+  margin: 0 0 24px;
+}
+.auth-lead--small { font-size: 13px; color: #999; margin-top: -14px; }
+
+.auth-done { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.auth-done .auth-switch-btn { margin-bottom: 18px; padding: 8px 0; }
+.auth-done-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.auth-submit--link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+.auth-switch a.auth-switch-btn { display: inline; }
+
+@media (max-width: 480px) {
+  .auth-submit { min-height: 50px; }
+  .auth-field input { min-height: 48px; }
 }

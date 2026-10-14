@@ -1,23 +1,47 @@
-/* ── Announcement Bar ── */
+/* ── Announcement bar: slow marquee of store promises ── */
 .announcement-bar {
-  background: #111;
+  background: #000;
   color: #fff;
-  text-align: center;
-  padding: 10px 20px;
-  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
-  font-weight: 300;
-  letter-spacing: 0.06em;
-}
-
-.announcement-bar a {
-  color: #fff;
-  text-decoration: underline;
-  text-underline-offset: 3px;
   font-weight: 500;
-  transition: opacity 0.2s;
+  height: 36px;
+  display: flex;
+  align-items: center;
 }
-.announcement-bar a:hover { opacity: 0.7; }
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+}
+.announcement-bar:hover .marquee { animation-play-state: paused; }
+.marquee-strip {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+.marquee-strip li {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  padding-right: 28px;
+}
+.marquee-strip li::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-left: 28px;
+  border-radius: 50%;
+  background: #e8a75a;            /* lens amber, the one accent */
+}
+@keyframes marquee { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee { animation: none; }
+  .announcement-bar { justify-content: flex-start; }
+}
 
 /* ── Main Navbar ── */
 .navbar {
@@ -34,12 +58,15 @@
   z-index: 1000;
 }
 
-/* ── Logo ── */
+/* ── Logo: the same condensed cut as the hero wordmark ── */
 .navbar-logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 30px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
+  font-family: 'Archivo', sans-serif;
+  font-stretch: 62%;
+  font-variation-settings: 'wdth' 62;
+  font-size: 34px;
+  font-weight: 850;
+  letter-spacing: 0.01em;
+  line-height: 1;
   color: #111;
   flex-shrink: 0;
   user-select: none;
@@ -58,7 +85,7 @@
 }
 
 .nav-links li a {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13.5px;
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -124,7 +151,7 @@
 }
 
 .navbar-username {
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: #111;
@@ -139,7 +166,7 @@
   right: 1px;
   background: #111;
   color: #fff;
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   font-weight: 600;
   min-width: 17px;
@@ -156,7 +183,7 @@
 
 /* ── Style Analyser button (desktop) ── */
 .sa-nav-btn {
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -192,7 +219,7 @@
   min-width: 0;
   height: 46px;
   padding: 0 14px;
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 15px;
   border: 1px solid #ccc;
   border-radius: 2px;
@@ -203,7 +230,7 @@
 
 .navbar-search-go {
   height: 46px;
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -246,7 +273,7 @@
   }
 
   .nav-menu-btn { display: flex; justify-self: start; }
-  .navbar-logo { font-size: 22px; letter-spacing: 0.14em; justify-self: center; }
+  .navbar-logo { font-size: 28px; justify-self: center; }
   .navbar-icons { justify-self: end; gap: 0; }
 
   .icon-btn { width: 44px; height: 44px; }
@@ -258,12 +285,16 @@
   .navbar-search { top: 58px; padding: 10px 12px; gap: 8px; }
   .navbar-search-go { padding: 0 16px; }
 
-  .announcement-bar { font-size: 12px; padding: 8px 12px; }
+  .announcement-bar { font-size: 12px; height: 32px; }
 }
 
 @media (max-width: 380px) {
-  .navbar-logo { font-size: 19px; letter-spacing: 0.12em; }
+  .navbar-logo { font-size: 25px; }
 }
+
+.navbar-badge--bump { animation: badgeBump .45s cubic-bezier(.3,1.6,.5,1); }
+@keyframes badgeBump { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .navbar-badge--bump { animation: none; } }
 
 /* ═════════════ Phone menu drawer ═════════════ */
 .mnav-root { position: fixed; inset: 0; z-index: 1300; }
@@ -302,10 +333,11 @@
   flex-shrink: 0;
 }
 .mnav-logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-family: 'Archivo', sans-serif;
+  font-stretch: 62%;
+  font-variation-settings: 'wdth' 62;
+  font-size: 26px;
+  font-weight: 850;
 }
 
 .mnav-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 8px 0 16px; }
@@ -330,7 +362,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 20px;
   font-weight: 600;
   flex-shrink: 0;
@@ -368,7 +400,7 @@
   padding: 0 20px;
   background: none;
   border: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 15px;
   color: #111;
   text-decoration: none;
@@ -381,7 +413,7 @@
 .mnav-link.active { font-weight: 500; }
 
 .mnav-link--big {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 24px;
   min-height: 56px;
 }
@@ -412,9 +444,62 @@
   border: 1px solid #e5e5e5;
   background: #fff;
   color: #555;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 14px;
   cursor: pointer;
   border-radius: 2px;
   flex-shrink: 0;
+}
+
+/* ── Search suggestions ── */
+.navbar-search { position: sticky; }
+.sugg {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  top: calc(100% - 4px);
+  max-width: 720px;
+  background: #fff;
+  border: 1.5px solid #000;
+  box-shadow: 6px 6px 0 #000;
+  z-index: 5;
+  font-family: 'Archivo', sans-serif;
+}
+.sugg-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  background: #fff;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.sugg-item--on { background: #f2f2f1; }
+.sugg-img { width: 44px; height: 54px; overflow: hidden; display: block; }
+.sugg-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sugg-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sugg-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sugg-meta { font-size: 12.5px; color: #5e5e5e; }
+.sugg-price { font-size: 14px; font-weight: 600; }
+.sugg-all {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  background: #000;
+  color: #fff;
+  border: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.sugg-empty { margin: 0; padding: 16px 12px; font-size: 14px; color: #5e5e5e; }
+@media (max-width: 960px) {
+  .sugg { left: 12px; right: 12px; box-shadow: 4px 4px 0 #000; max-height: 70vh; overflow-y: auto; }
 }

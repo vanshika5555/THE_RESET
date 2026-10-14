@@ -8,7 +8,7 @@
 .mo-header { margin-bottom: 32px; }
 
 .mo-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 36px;
   font-weight: 400;
   color: #111;
@@ -16,7 +16,7 @@
 }
 
 .mo-sub {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   color: #aaa;
 }
@@ -24,7 +24,7 @@
 .mo-loading, .mo-empty {
   text-align: center;
   padding: 80px 20px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 14px;
   color: #aaa;
   display: flex;
@@ -34,7 +34,7 @@
 }
 
 .mo-shop-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -67,7 +67,7 @@
 }
 
 .mo-order-id {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #111;
@@ -76,13 +76,13 @@
 }
 
 .mo-date {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   color: #aaa;
 }
 
 .mo-status {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -120,21 +120,21 @@
 }
 
 .mo-item-name {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 15px;
   color: #111;
   margin-bottom: 3px;
 }
 
 .mo-item-meta {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   color: #aaa;
   margin-bottom: 3px;
 }
 
 .mo-item-price {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 500;
   color: #111;
@@ -149,7 +149,7 @@
 }
 
 .mo-address {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   color: #888;
 }
@@ -157,7 +157,7 @@
 .mo-address span { font-weight: 500; color: #555; }
 
 .mo-total {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   color: #555;
 }

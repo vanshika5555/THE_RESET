@@ -1,0 +1,56 @@
+.qa-open {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 4;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #000;
+  border: 1.5px solid #000;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, opacity .2s ease;
+}
+.qa-open:hover { background: #000; color: #fff; }
+
+/* Mouse: the + appears with the hover. Touch: always visible. */
+@media (hover: hover) {
+  .qa-open { opacity: 0; }
+  *:hover > .qa-open, .qa-open:focus-visible { opacity: 1; }
+}
+
+.qa-panel {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 5;
+  padding: 10px;
+  background: #fff;
+  border: 1.5px solid #000;
+  font-family: 'Archivo', sans-serif;
+  animation: qaUp .2s ease;
+  cursor: default;
+}
+@keyframes qaUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.qa-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+.qa-close { width: 32px; height: 32px; margin: -6px -6px -6px 0; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; }
+.qa-sizes { display: flex; flex-wrap: wrap; gap: 6px; }
+.qa-size {
+  flex: 1 0 40px;
+  height: 38px;
+  padding: 0 6px;
+  background: #fff;
+  border: 1px solid #ccc;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.qa-size:hover:not(:disabled) { background: #000; color: #fff; border-color: #000; }
+.qa-size:disabled { color: #bbb; border-color: #eee; text-decoration: line-through; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .qa-panel { animation: none; } }

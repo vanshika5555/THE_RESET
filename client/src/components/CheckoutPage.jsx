@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { cartSubtotal, deliveryCharge, amountToFreeDelivery } from '../utils/price';
+import { cartSubtotal, deliveryCharge, amountToFreeDelivery, formatPrice } from '../utils/price';
 import AddressFields, { BLANK_ADDRESS, validateAddress } from './AddressFields';
 import './AddressFields.css';
 import './CheckoutPage.css';
@@ -373,7 +373,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 <div className="co-item-info">
                   <p className="co-item-name">{item.name}</p>
                   <p className="co-item-meta">Size: {item.size} · Qty: {item.qty}</p>
-                  <p className="co-item-price">{item.price}</p>
+                  <p className="co-item-price">{formatPrice(item.price)}</p>
                 </div>
               </div>
             ))}

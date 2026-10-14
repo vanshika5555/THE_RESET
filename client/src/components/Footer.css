@@ -17,7 +17,7 @@
 }
 
 .footer-logo {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 32px;
   font-weight: 600;
   letter-spacing: 0.18em;
@@ -27,7 +27,7 @@
 }
 
 .footer-tagline {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 300;
   letter-spacing: 0.06em;
@@ -37,7 +37,7 @@
 /* ── Newsletter ── */
 .footer-nl-label {
   display: block;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.16em;
@@ -57,7 +57,7 @@
   border: none;
   outline: none;
   color: #fff;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 300;
   padding: 12px 16px;
@@ -72,7 +72,7 @@
   background: #fff;
   color: #111;
   border: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -104,7 +104,7 @@
 }
 
 .footer-col-title {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.2em;
@@ -123,7 +123,7 @@
 }
 
 .footer-links a {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 14px;
   font-weight: 300;
   color: rgba(255,255,255,0.65);
@@ -146,7 +146,7 @@
 }
 
 .footer-copy {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 300;
   color: rgba(255,255,255,0.3);
@@ -160,7 +160,7 @@
 }
 
 .footer-legal a {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 300;
   color: rgba(255,255,255,0.3);
@@ -235,3 +235,13 @@
   .footer-nl-btn { width: 100%; height: 48px; }
   .footer-newsletter { width: 100%; }
 }
+
+/* ---- newsletter ---- */
+.footer-newsletter { max-width: 420px; }
+.footer-nl-label { color: #fff; font-size: 15px; letter-spacing: 0; text-transform: none; font-weight: 700; margin-bottom: 4px; }
+.footer-nl-sub { margin: 0 0 14px; font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.5; }
+.footer-nl-input { font-size: 15px; height: 48px; }
+.footer-nl-btn { height: 48px; font-size: 13px; text-transform: none; letter-spacing: 0; font-weight: 700; }
+.footer-nl-btn:disabled { opacity: .6; cursor: progress; }
+.footer-nl-ok { margin: 12px 0 0; font-size: 14px; color: #e8a75a; }
+.footer-nl-err { margin: 12px 0 0; font-size: 14px; color: #ff9a8a; }

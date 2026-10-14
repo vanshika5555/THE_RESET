@@ -12,7 +12,7 @@
 }
 
 .cp-hero-eyebrow {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -21,7 +21,7 @@
 }
 
 .cp-hero-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: clamp(48px, 7vw, 80px);
   font-weight: 300;
   letter-spacing: 0.1em;
@@ -30,7 +30,7 @@
 }
 
 .cp-hero-sub {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 300;
   color: #aaa;
@@ -47,7 +47,7 @@
 }
 
 .cp-count {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   color: #aaa;
   letter-spacing: 0.06em;
@@ -73,7 +73,7 @@
   right: -4px;
   background: #111;
   color: #fff;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 9px;
   font-weight: 500;
   width: 16px;
@@ -111,7 +111,7 @@
   top: 14px;
   left: 14px;
   z-index: 2;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -155,7 +155,7 @@
 }
 
 .cp-size-hover-label {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -172,7 +172,7 @@
 }
 
 .cp-size-btn {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 400;
   border: 1px solid #ddd;
@@ -197,7 +197,7 @@
 }
 
 .cp-card-name {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 15px;
   font-weight: 400;
   color: #111;
@@ -205,7 +205,7 @@
 }
 
 .cp-card-price {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 400;
   color: #111;
@@ -231,7 +231,7 @@
 .cp-loading, .cp-empty {
   text-align: center;
   padding: 80px 20px;
-  font-family: "Cormorant Garamond", serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 20px;
   color: #aaa;
   letter-spacing: 0.1em;
@@ -274,7 +274,7 @@
 }
 
 .cp-filter-btn {
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.06em;
@@ -328,7 +328,7 @@
 
 /* Subcategory label on card */
 .cp-card-sub {
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -343,7 +343,7 @@
   bottom: 52px;
   left: 14px;
   z-index: 2;
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -445,7 +445,7 @@
 .cp-dropdown-btn,
 .cp-sort-select {
   height: 40px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12.5px;
   letter-spacing: 0.04em;
   color: #333;
@@ -496,7 +496,7 @@
   background: none;
   border: none;
   border-radius: 3px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   color: #444;
   text-align: left;
@@ -513,7 +513,7 @@
   background: #111;
   color: #fff;
   border: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -590,7 +590,7 @@
     background: #fff;
     border: 1px solid #ddd;
     border-radius: 999px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Archivo', sans-serif;
     font-size: 13px;
     color: #111;
     cursor: pointer;
@@ -650,7 +650,7 @@
   border-bottom: 1px solid #eee;
   flex-shrink: 0;
 }
-.cp-sheet-title { font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 500; }
+.cp-sheet-title { font-family: 'Archivo', sans-serif; font-size: 16px; font-weight: 500; }
 .cp-sheet-close {
   width: 48px; height: 48px;
   display: flex; align-items: center; justify-content: center;
@@ -664,7 +664,7 @@
 .cp-sheet-group legend {
   padding: 0;
   margin-bottom: 6px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -676,7 +676,7 @@
   align-items: center;
   gap: 12px;
   min-height: 46px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 15px;
   color: #333;
   cursor: pointer;
@@ -699,7 +699,7 @@
 .cp-sheet-apply {
   min-height: 50px;
   padding: 0 22px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: uppercase;

@@ -141,7 +141,7 @@
 }
 
 .hero-eyebrow-text {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -158,7 +158,11 @@
 }
 
 .hero-headline-line {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Archivo', sans-serif;
+  font-stretch: 62%;                     /* condensed cut, same feel as before */
+  font-variation-settings: 'wdth' 62;
+  font-weight: 800;
+  text-transform: uppercase;
   font-size: clamp(64px, 8vw, 108px);
   line-height: 0.95;
   color: #fff;
@@ -173,7 +177,7 @@
 
 /* ── Sub ── */
 .hero-sub {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 14px;
   font-weight: 300;
   line-height: 1.8;
@@ -190,7 +194,7 @@
   background: transparent;
   border: 1px solid rgba(255,255,255,0.6);
   color: #fff;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.14em;
@@ -259,7 +263,7 @@
 
 .hero-nav-num {
   display: block;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   color: rgba(255,255,255,0.3);
   letter-spacing: 0.1em;
@@ -268,7 +272,7 @@
 
 .hero-nav-label {
   display: block;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 300;
   color: rgba(255,255,255,0.35);

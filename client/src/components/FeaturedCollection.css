@@ -15,7 +15,7 @@
 
 .fc-eyebrow {
   display: block;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0.2em;
@@ -25,7 +25,7 @@
 }
 
 .fc-title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: clamp(28px, 5vw, 52px);
   font-weight: 400;
   letter-spacing: 0.18em;
@@ -96,7 +96,7 @@
   top: 12px;
   left: 12px;
   z-index: 10;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -125,7 +125,7 @@
 }
 
 .fc-card-category {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -134,7 +134,7 @@
 }
 
 .fc-card-name {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 16px;
   font-weight: 300;
   color: #fff;
@@ -143,7 +143,7 @@
 }
 
 .fc-card-price {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 400;
   color: rgba(255,255,255,0.75);
@@ -199,7 +199,7 @@
 }
 
 .fc-view-all {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -245,7 +245,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 14px;
   color: #999;
 }

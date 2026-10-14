@@ -92,7 +92,7 @@
 
 /* ── Typography ── */
 .eg-eyebrow {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.2em;
@@ -106,7 +106,7 @@
 }
 
 .eg-heading {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: clamp(26px, 3vw, 40px);
   font-weight: 300;
   line-height: 1.15;
@@ -120,7 +120,7 @@
 }
 
 .eg-body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 300;
   line-height: 1.75;
@@ -135,7 +135,7 @@
 
 /* ── Links ── */
 .eg-link {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -166,7 +166,7 @@
   gap: 10px;
   background: #fff;
   color: #111;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -191,7 +191,7 @@
 }
 
 .eg-stat-eyebrow {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.2em;
@@ -208,7 +208,7 @@
 }
 
 .eg-stat-num {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 42px;
   font-weight: 300;
   color: #111;
@@ -216,7 +216,7 @@
 }
 
 .eg-stat-label {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 300;
   color: #888;

@@ -31,6 +31,8 @@ const orderSchema = new mongoose.Schema({
   // A private note for the shop's own use — packing reminders, customer
   // calls, delivery instructions. Never shown to the customer.
   adminNote: { type: String, default: '' },
+  // When the order reached the customer — starts the 7-day return window.
+  deliveredAt: { type: Date, default: null },
 
   status:   {
     type: String,

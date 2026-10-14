@@ -2,8 +2,9 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/WishlistContext";
-import { cartSubtotal, amountToFreeDelivery } from "../utils/price";
+import { cartSubtotal, amountToFreeDelivery, formatPrice } from "../utils/price";
 import "./CartDrawer.css";
+import { cdn } from "../utils/img";
 
 const MAX_QTY = 5;
 
@@ -89,7 +90,7 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
               <div key={`${item._id}-${item.size}-${i}`} className="cd-item">
                 <button type="button" className="cd-item-img" onClick={() => openProduct(item)} aria-label={`View ${item.name}`}>
                   {item.image || (item.images && item.images[0]) ? (
-                    <img src={item.image || item.images[0]} alt="" />
+                    <img src={cdn(item.image || item.images[0], 200)} alt="" />
                   ) : (
                     <span style={{ display: 'block', width: '100%', height: '100%', background: item.color || '#f0f0f0' }} />
                   )}
@@ -104,7 +105,7 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
                       </svg>
                     </button>
                   </div>
-                  <p className="cd-item-price">{item.price}</p>
+                  <p className="cd-item-price">{formatPrice(item.price)}</p>
                   <p className="cd-item-size">Size {item.size}</p>
 
                   <div className="cd-item-actions">

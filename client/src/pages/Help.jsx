@@ -44,7 +44,6 @@ export default function Help() {
   return (
     <div className="help-page">
       <div className="help-hero">
-        <p className="help-eyebrow">THE RESET</p>
         <h1 className="help-title">Help &amp; Support</h1>
         <p className="help-sub">Everything about ordering, delivery and returns.</p>
       </div>
@@ -96,7 +95,9 @@ export default function Help() {
           <li>Refunds are processed once the piece reaches us and passes a quick check</li>
         </ul>
         <p className="help-note">
-          To start a return, email us at{' '}
+          To start one, open the order in{' '}
+          <Link to="/orders" className="help-link">My Orders</Link> and tap{' '}
+          <strong>Return or exchange</strong>. Stuck? Email{' '}
           <a href={`mailto:${CONTACT.email}`} className="help-link">{CONTACT.email}</a>{' '}
           with your order number.
         </p>

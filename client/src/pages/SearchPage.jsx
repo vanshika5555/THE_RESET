@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { getProducts } from '../utils/fetchCache';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import CardGallery from '../components/CardGallery';
-import StarRating from '../components/StarRating';
+import QuickAdd from '../components/QuickAdd';
 import { useWishlist } from '../context/WishlistContext';
 import '../components/CollectionPage.css';
 import usePageMeta from '../hooks/usePageMeta';
+import Price from '../components/Price';
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
@@ -54,7 +55,6 @@ export default function SearchPage() {
   return (
     <div className="cp-page">
       <div className="cp-hero">
-        <p className="cp-hero-eyebrow">THE RESET</p>
         <h1 className="cp-hero-title">Search</h1>
       </div>
 
@@ -121,6 +121,7 @@ export default function SearchPage() {
                   onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/product/${p._id}`); }}
                 >
                   <CardGallery product={p} />
+                <QuickAdd product={p} />
                   {p.tag && <span className="cp-tag">{p.tag}</span>}
                   {p.season && p.season !== 'All Season' && (
                     <span className="cp-season-tag">{p.season}</span>
@@ -142,8 +143,7 @@ export default function SearchPage() {
                   <Link to={`/product/${p._id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                     <p className="cp-card-name">{p.name}</p>
                   </Link>
-                  <p className="cp-card-price">{p.price}</p>
-                  <StarRating productId={p._id} />
+                  <p className="cp-card-price"><Price value={p.price} mrp={p.mrp} /></p>
                 </div>
               </div>
             ))}

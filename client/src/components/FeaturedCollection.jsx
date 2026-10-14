@@ -2,6 +2,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getProducts } from "../utils/fetchCache";
 import "./FeaturedCollection.css";
+import { cdn } from "../utils/img";
+import Price from './Price';
 
 // Sold out pieces are left out — there is no point featuring what cannot be bought.
 const isSoldOut = (p) => {
@@ -35,6 +37,7 @@ export default function FeaturedCollection() {
             name: p.name,
             category: p.category,
             price: p.price,
+            mrp: p.mrp,
             color: p.color || '#f0f0f0',
             tag: p.tag || null,
             img: (p.images && p.images[0]) || p.image,
@@ -98,8 +101,7 @@ export default function FeaturedCollection() {
   return (
     <section className="fc-section">
       <div className="fc-header">
-        <span className="fc-eyebrow">Hand-Picked For You</span>
-        <h2 className="fc-title">FEATURED COLLECTION</h2>
+        <h2 className="fc-title">Picked for now</h2>
       </div>
 
       {loading ? (
@@ -155,14 +157,14 @@ export default function FeaturedCollection() {
                   {p.tag && <span className="fc-card-tag">{p.tag}</span>}
 
                   <div className="fc-card-img">
-                    <img src={p.img} alt={p.name} className="fc-card-photo" loading="lazy" draggable="false" />
+                    <img src={cdn(p.img, 500)} alt={p.name} className="fc-card-photo" loading="lazy" draggable="false" />
                   </div>
 
                   {isActive && (
                     <div className="fc-card-info">
                       <p className="fc-card-category">{p.category}</p>
                       <p className="fc-card-name">{p.name}</p>
-                      <p className="fc-card-price">{p.price}</p>
+                      <p className="fc-card-price"><Price value={p.price} mrp={p.mrp} /></p>
                       <button
                         className="fc-card-btn"
                         aria-label={`View ${p.name}`}
@@ -196,7 +198,7 @@ export default function FeaturedCollection() {
       )}
 
       <div className="fc-footer">
-        <Link to="/men" className="fc-view-all">View All Collection →</Link>
+        <Link to="/men" className="fc-view-all">See the full collection</Link>
       </div>
     </section>
   );

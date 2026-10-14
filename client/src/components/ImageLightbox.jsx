@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ImageLightbox.css';
+import { cdn } from '../utils/img';
 
 /**
  * Full-screen image viewer for the product gallery.
@@ -119,7 +120,7 @@ export default function ImageLightbox({ images, startIndex = 0, alt, onClose }) 
         onTouchEnd={handleTouchEnd}
       >
         <img
-          src={images[index]}
+          src={cdn(images[index], 1600)}
           alt={alt}
           className="lb-img"
           style={zoomed ? {
@@ -146,7 +147,7 @@ export default function ImageLightbox({ images, startIndex = 0, alt, onClose }) 
               onClick={() => { setZoomed(false); setIndex(i); }}
               aria-label={`View image ${i + 1}`}
             >
-              <img src={src} alt="" />
+              <img src={cdn(src, 120)} alt="" />
             </button>
           ))}
         </div>

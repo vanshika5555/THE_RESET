@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getProducts } from '../utils/fetchCache';
 import { Link } from 'react-router-dom';
 import './RelatedProducts.css';
+import { cdn } from '../utils/img';
+import Price from './Price';
 
 export default function RelatedProducts({ product }) {
   const [items, setItems] = useState([]);
@@ -49,13 +51,13 @@ export default function RelatedProducts({ product }) {
             <Link key={p._id} to={`/product/${p._id}`} className="rp-card">
               <div className="rp-img" style={{ background: p.color || '#f0f0f0' }}>
                 {img
-                  ? <img src={img} alt={p.name} />
+                  ? <img src={cdn(img, 500)} alt={p.name} loading="lazy" />
                   : <span className="rp-img-empty">No image</span>}
                 {!p.inStock && <span className="rp-oos">Out of stock</span>}
               </div>
               <p className="rp-sub">{p.subcategory}</p>
               <p className="rp-name">{p.name}</p>
-              <p className="rp-price">{p.price}</p>
+              <p className="rp-price"><Price value={p.price} mrp={p.mrp} /></p>
             </Link>
           );
         })}

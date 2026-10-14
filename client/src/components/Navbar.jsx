@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { getProducts } from "../utils/fetchCache";
+import { cdn } from "../utils/img";
 import StyleAnalyser from "./StyleAnalyser";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import CartDrawer from "./CartDrawer";
+import AddedToast from "./AddedToast";
 import "./Navbar.css";
+import Price from './Price';
 
 const Icon = {
   search: (
@@ -45,10 +49,21 @@ const Icon = {
   ),
 };
 
+// Facts the shop actually stands behind (see Help page and price.js).
+const MARQUEE = [
+  'Free delivery over ₹1,999',
+  'Dispatched within 2 working days',
+  '7-day returns',
+  'Only black. Only white.',
+  'Size guide on every piece',
+];
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [term, setTerm] = useState("");
+  const [catalog, setCatalog] = useState([]);       // for search suggestions
+  const [hi, setHi] = useState(-1);                 // highlighted suggestion
   const [analyserOpen, setAnalyserOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -72,8 +87,43 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
+  // Load the catalogue once, the first time search opens (shared cache, so
+  // it is usually already there from the page behind).
+  useEffect(() => {
+    if (!searchOpen || catalog.length) return;
+    getProducts().then(d => setCatalog(Array.isArray(d) ? d : [])).catch(() => {});
+  }, [searchOpen, catalog.length]);
+
+  // Every word typed must appear somewhere in the name, type or department.
+  const suggestions = useMemo(() => {
+    const words = term.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length || term.trim().length < 2) return [];
+    return catalog
+      .filter(p => {
+        const hay = `${p.name} ${p.subcategory} ${p.category} ${p.tag || ''} ${p.season || ''}`.toLowerCase();
+        return words.every(w => hay.includes(w));
+      })
+      .slice(0, 6);
+  }, [term, catalog]);
+
+  useEffect(() => { setHi(-1); }, [term]);
+
+  const openProduct = (p) => {
+    setSearchOpen(false);
+    setTerm("");
+    navigate(`/product/${p._id}`);
+  };
+
+  const onSearchKey = (e) => {
+    if (e.key === "Escape") { setSearchOpen(false); return; }
+    if (!suggestions.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setHi(h => (h + 1) % suggestions.length); }
+    if (e.key === "ArrowUp")   { e.preventDefault(); setHi(h => (h <= 0 ? suggestions.length - 1 : h - 1)); }
+  };
+
   const submitSearch = (e) => {
     e.preventDefault();
+    if (hi >= 0 && suggestions[hi]) { openProduct(suggestions[hi]); return; }
     const q = term.trim();
     if (!q) return;
     setSearchOpen(false);
@@ -91,8 +141,15 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="announcement-bar">
-        <span>Discover What's New &nbsp;|&nbsp; <Link to="/men">Shop Now</Link></span>
+      {/* Store promises, scrolling. Two copies of the strip make the loop seamless. */}
+      <div className="announcement-bar" role="region" aria-label="Store information">
+        <div className="marquee">
+          {[0, 1].map(copy => (
+            <ul className="marquee-strip" key={copy} aria-hidden={copy === 1}>
+              {MARQUEE.map(t => <li key={t}>{t}</li>)}
+            </ul>
+          ))}
+        </div>
       </div>
 
       <nav className="navbar" aria-label="Main">
@@ -159,7 +216,8 @@ export default function Navbar() {
             onClick={() => setCartOpen(true)}
           >
             {Icon.bag}
-            {cartCount > 0 && <span className="navbar-badge">{cartCount}</span>}
+            {/* keyed on the count, so the badge replays its little bounce on every add */}
+            {cartCount > 0 && <span className="navbar-badge navbar-badge--bump" key={cartCount}>{cartCount}</span>}
           </button>
         </div>
       </nav>
@@ -172,8 +230,14 @@ export default function Navbar() {
             type="search"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
+            onKeyDown={onSearchKey}
             placeholder="Search shirts, dresses, blazers…"
             aria-label="Search the collection"
+            role="combobox"
+            aria-expanded={suggestions.length > 0}
+            aria-controls="search-suggest"
+            aria-activedescendant={hi >= 0 ? `sugg-${hi}` : undefined}
+            autoComplete="off"
             autoFocus
           />
           <button type="submit" className="navbar-search-go">Search</button>
@@ -185,6 +249,42 @@ export default function Navbar() {
           >
             {Icon.close}
           </button>
+
+          {term.trim().length >= 2 && (
+            <div className="sugg" id="search-suggest" role="listbox" aria-label="Suggestions">
+              {suggestions.length === 0 ? (
+                <p className="sugg-empty">No pieces match “{term.trim()}”. Try “shirt” or “blazer”.</p>
+              ) : (
+                <>
+                  {suggestions.map((p, i) => {
+                    const img = (p.images && p.images[0]) || p.image;
+                    return (
+                      <button
+                        type="button"
+                        key={p._id}
+                        id={`sugg-${i}`}
+                        role="option"
+                        aria-selected={hi === i}
+                        className={`sugg-item ${hi === i ? "sugg-item--on" : ""}`}
+                        onMouseEnter={() => setHi(i)}
+                        onClick={() => openProduct(p)}
+                      >
+                        <span className="sugg-img" style={{ background: p.color || "#f2f2f1" }}>
+                          {img && <img src={cdn(img, 96)} alt="" />}
+                        </span>
+                        <span className="sugg-text">
+                          <span className="sugg-name">{p.name}</span>
+                          <span className="sugg-meta">{p.category} · {p.subcategory}</span>
+                        </span>
+                        <span className="sugg-price"><Price value={p.price} mrp={p.mrp} /></span>
+                      </button>
+                    );
+                  })}
+                  <button type="submit" className="sugg-all">See all results for “{term.trim()}”</button>
+                </>
+              )}
+            </div>
+          )}
         </form>
       )}
 
@@ -255,6 +355,8 @@ export default function Navbar() {
           </aside>
         </div>
       )}
+
+      <AddedToast />
 
       {/* Global Cart Drawer */}
       {cartOpen && (

@@ -5,7 +5,9 @@ const reviewSchema = new mongoose.Schema({
   userName:  { type: String, required: true },
   product:   { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
   rating:    { type: Number, required: true, min: 1, max: 5 },
-  review:    { type: String, required: true },
+  review:    { type: String, required: true, maxlength: 2000 },
+  // True when the reviewer has a delivered order containing this piece.
+  verified:  { type: Boolean, default: false },
 }, { timestamps: true });
 
 // One review per user per product

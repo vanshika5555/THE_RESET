@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sizesFor, guessFitType } from '../utils/sizeOptions';
 import { Switch, Thumb, ErrorNote } from './ui';
+import PhotoDrop from './PhotoDrop';
 import './ProductForm.css';
 
 const CATEGORIES = {
@@ -22,12 +23,15 @@ const CATEGORIES = {
 const SEASONS = ['Summer', 'Winter', 'Monsoon', 'All Season'];
 
 export const BLANK_PRODUCT = {
-  name: '', price: '', description: '', category: 'Men', season: 'All Season',
+  name: '', price: '', mrp: '', description: '', category: 'Men', season: 'All Season',
   subcategory: '', fitType: 'Top', tag: '', color: '#ececea', inStock: true,
   sizes: [], stock: [], image: '', images: [''], materials: '', delivery: '',
 };
 
-const priceDigits = (p) => (p || '').replace(/[^0-9]/g, '');
+// Prices are numbers now (2990); older products may still hold text ("₹2,990").
+const priceDigits = (p) => (typeof p === 'number'
+  ? (p > 0 ? String(Math.round(p)) : '')
+  : String(p ?? '').replace(/\.\d*$/, '').replace(/[^0-9]/g, ''));
 
 function Card({ title, hint, order, children }) {
   return (
@@ -64,10 +68,7 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const setPrice = (value) => {
-    const n = value.replace(/[^0-9]/g, '');
-    set('price', n ? '₹' + Number(n).toLocaleString('en-IN') : '');
-  };
+  const setPrice = (key, value) => set(key, value.replace(/[^0-9]/g, '').slice(0, 7));
 
   const setCategory = (value) =>
     setForm((f) => ({ ...f, category: value, season: 'All Season', subcategory: '', sizes: [], stock: [] }));
@@ -113,6 +114,13 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
     return { ...f, images: list };
   });
   const addImage = () => setForm((f) => ({ ...f, images: [...(f.images || []), ''] }));
+  // An uploaded photo fills the first empty link box, or is added at the end.
+  const addUploaded = (url) => setForm((f) => {
+    const list = [...(f.images || [])];
+    const empty = list.findIndex((u) => !u.trim());
+    if (empty === -1) list.push(url); else list[empty] = url;
+    return { ...f, images: list };
+  });
   const removeImage = (i) => setForm((f) => {
     const list = (f.images || []).filter((_, idx) => idx !== i);
     return { ...f, images: list.length ? list : [''] };
@@ -141,13 +149,18 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
     }
     const priceNum = parseInt(priceDigits(form.price), 10);
     if (priceNum > 1000000) { fail('That price is over ₹10,00,000. Check it for an extra zero.'); return; }
+    const mrpNum = parseInt(priceDigits(form.mrp), 10) || 0;
+    if (mrpNum && mrpNum <= priceNum) {
+      fail('The original price must be higher than the selling price — or leave it empty if this piece is not on sale.');
+      return;
+    }
 
     setSaving(true);
     setError('');
     try {
       const gallery = (form.images || []).map((u) => u.trim()).filter(Boolean);
       const stock = (form.sizes || []).map((size) => ({ size, qty: stockFor(size) }));
-      await onSave({ ...form, name: form.name.trim(), images: gallery, image: gallery[0] || '', stock });
+      await onSave({ ...form, name: form.name.trim(), price: priceNum, mrp: mrpNum, images: gallery, image: gallery[0] || '', stock });
       navigate('/products');
     } catch (err) {
       fail(err.response
@@ -176,8 +189,20 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
                 <label className="field-label" htmlFor="pf-price">Price <span className="req">*</span></label>
                 <div className="input-group">
                   <span className="input-addon">₹</span>
-                  <input id="pf-price" className="input" inputMode="numeric" value={priceDigits(form.price)} onChange={(e) => setPrice(e.target.value)} placeholder="2990" />
+                  <input id="pf-price" className="input" inputMode="numeric" value={priceDigits(form.price)} onChange={(e) => setPrice('price', e.target.value)} placeholder="2990" />
                 </div>
+              </div>
+              <div className="field">
+                <label className="field-label" htmlFor="pf-mrp">Original price <span className="field-opt">for a sale</span></label>
+                <div className="input-group">
+                  <span className="input-addon">₹</span>
+                  <input id="pf-mrp" className="input" inputMode="numeric" value={priceDigits(form.mrp)} onChange={(e) => setPrice('mrp', e.target.value)} placeholder="Leave empty if not on sale" />
+                </div>
+                {priceDigits(form.mrp) && Number(priceDigits(form.mrp)) > Number(priceDigits(form.price)) && Number(priceDigits(form.price)) > 0 && (
+                  <span className="pf-sale-note">
+                    Shows as {Math.round((1 - Number(priceDigits(form.price)) / Number(priceDigits(form.mrp))) * 100)}% off
+                  </span>
+                )}
               </div>
               <div className="field">
                 <label className="field-label" htmlFor="pf-tag">Tag</label>
@@ -190,7 +215,9 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
             </div>
           </Card>
 
-          <Card order={3} title="Photos" hint="Paste image links. The first photo is the one shoppers see first.">
+          <Card order={3} title="Photos" hint="Upload photos or paste links. The first photo is the one shoppers see first.">
+            <PhotoDrop onUploaded={addUploaded} />
+
             {gallery.length > 0 && (
               <div className="pf-gallery">
                 {gallery.map((url, i) => (
@@ -221,7 +248,7 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
                 </div>
               ))}
             </div>
-            <button type="button" className="btn btn--secondary pf-add-photo" onClick={addImage}>Add another photo</button>
+            <button type="button" className="btn btn--secondary pf-add-photo" onClick={addImage}>Paste another link</button>
 
             <div className="pf-colour">
               <input type="color" value={form.color || '#ececea'} onChange={(e) => set('color', e.target.value)} aria-label="Background colour" />

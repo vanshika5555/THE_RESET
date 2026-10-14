@@ -2,10 +2,32 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Product = require('../models/Product');
-const { parsePrice } = require('../utils/price');
+const { parsePrice, formatINR } = require('../utils/price');
 const { deliveryCharge } = require('../utils/shipping');
 const Coupon = require('../models/Coupon');
+const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { sendMailLater } = require('../utils/mailer');
+const emails = require('../utils/emails');
+
+const ADDRESS_FIELDS = ['fullName', 'phone', 'houseNo', 'address', 'landmark', 'city', 'state', 'pincode'];
+const cleanAddress = (a = {}) => Object.fromEntries(
+  ADDRESS_FIELDS.map(k => [k, typeof a[k] === 'string' ? a[k].trim().slice(0, 200) : ''])
+);
+
+const { reserve, restock } = require('../utils/stock');
+
+// Email the customer about their order. Never blocks or fails the request.
+async function notify(order, template) {
+  try {
+    const user = order.user && order.user.email
+      ? order.user
+      : await User.findById(order.user).select('name email');
+    if (!user) return;
+    const msg = template({ name: user.name, order });
+    if (msg) sendMailLater({ to: user.email, ...msg });
+  } catch { /* email is best-effort */ }
+}
 
 /**
  * POST /api/orders — place an order.
@@ -66,7 +88,7 @@ router.post('/', protect, async (req, res) => {
       verifiedItems.push({
         product: product._id,
         name:  product.name,
-        price: product.price,
+        price: formatINR(unitPrice),     // frozen as text on the order, e.g. "₹2,990"
         image: (product.images && product.images[0]) || product.image,
         color: product.color,
         size:  line.size,
@@ -96,30 +118,51 @@ router.post('/', protect, async (req, res) => {
     const delivery = deliveryCharge(afterDiscount);
     const total = afterDiscount + delivery;
 
-    const order = await Order.create({
-      user: req.user._id,
-      items: verifiedItems,
-      subtotal,
-      discount,
-      couponCode: appliedCode,
-      delivery,
-      total,
-      shippingAddress,
-    });
-
-    // count the redemption once the order exists
-    if (coupon) {
-      await Coupon.updateOne({ _id: coupon._id }, { $inc: { usedCount: 1 } });
-    }
-
-    // Take the sold pieces off the shelf.
+    // Reserve stock line by line; if any line has just sold out, put back
+    // what was already taken and tell the customer exactly which piece.
+    const reserved = [];
     for (const item of verifiedItems) {
-      await Product.updateOne(
-        { _id: item.product, 'stock.size': item.size },
-        { $inc: { 'stock.$.qty': -item.qty } }
-      );
+      if (await reserve(item)) {
+        reserved.push(item);
+      } else {
+        await restock(reserved);
+        return res.status(409).json({
+          message: `${item.name} (size ${item.size}) just sold out. Please update your bag.`,
+        });
+      }
     }
 
+    // Count the code's use the same way — only if it still has uses left.
+    if (coupon) {
+      const filter = coupon.usageLimit > 0
+        ? { _id: coupon._id, usedCount: { $lt: coupon.usageLimit } }
+        : { _id: coupon._id };
+      const r = await Coupon.updateOne(filter, { $inc: { usedCount: 1 } });
+      if (r.modifiedCount !== 1) {
+        await restock(reserved);
+        return res.status(409).json({ message: 'That discount code has just been fully claimed.' });
+      }
+    }
+
+    let order;
+    try {
+      order = await Order.create({
+        user: req.user._id,
+        items: verifiedItems,
+        subtotal,
+        discount,
+        couponCode: appliedCode,
+        delivery,
+        total,
+        shippingAddress: cleanAddress(shippingAddress),
+      });
+    } catch (err) {
+      await restock(reserved);
+      if (coupon) await Coupon.updateOne({ _id: coupon._id }, { $inc: { usedCount: -1 } });
+      throw err;
+    }
+
+    notify(order, emails.orderPlaced);
     res.status(201).json(order);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -158,18 +201,19 @@ router.put('/:id/status', protect, adminOnly, async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
-    const wasCancelled = order.status === 'Cancelled';
+    const previous = order.status;
+    if (previous === 'Cancelled' && req.body.status !== 'Cancelled') {
+      return res.status(400).json({ message: 'A cancelled order cannot be reopened — its stock has already gone back on sale.' });
+    }
     order.status = req.body.status;
+    if (req.body.status === 'Delivered' && !order.deliveredAt) order.deliveredAt = new Date();
     const updated = await order.save();
 
-    // Restock if an admin cancels an order that was not already cancelled.
-    if (!wasCancelled && req.body.status === 'Cancelled') {
-      for (const item of order.items) {
-        await Product.updateOne(
-          { _id: item.product, 'stock.size': item.size },
-          { $inc: { 'stock.$.qty': item.qty } }
-        );
-      }
+    if (previous !== 'Cancelled' && req.body.status === 'Cancelled') {
+      await restock(order.items);
+    }
+    if (previous !== req.body.status) {
+      notify(updated, emails.orderStatus);
     }
 
     res.json(updated);
@@ -196,17 +240,19 @@ router.put('/:id/cancel', protect, async (req, res) => {
       });
     }
 
-    order.status = 'Cancelled';
-    const updated = await order.save();
-
-    // Put the pieces back on the shelf.
-    for (const item of order.items) {
-      await Product.updateOne(
-        { _id: item.product, 'stock.size': item.size },
-        { $inc: { 'stock.$.qty': item.qty } }
-      );
+    // Only flip it if it is still Pending at the moment of writing, so a
+    // double-tap cannot put the stock back twice.
+    const updated = await Order.findOneAndUpdate(
+      { _id: order._id, status: 'Pending' },
+      { status: 'Cancelled' },
+      { new: true }
+    );
+    if (!updated) {
+      return res.status(400).json({ message: 'This order has already been processed.' });
     }
 
+    await restock(order.items);
+    notify(updated, emails.orderStatus);
     res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });

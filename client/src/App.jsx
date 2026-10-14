@@ -13,6 +13,8 @@ import AuthPage from './pages/AuthPage';
 import MyOrders from './pages/MyOrders';
 import WishlistPage from './pages/WishlistPage';
 import CheckoutRoute from './pages/CheckoutRoute';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import ProductDetail from './pages/ProductDetail';
 import SearchPage from './pages/SearchPage';
@@ -39,6 +41,8 @@ function App() {
                 <Route path="/women"     element={<Women />} />
                 <Route path="/about"     element={<About />} />
                 <Route path="/login"     element={<AuthPage />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
                 <Route path="/orders"    element={<MyOrders />} />
                 <Route path="/wishlist"  element={<WishlistPage />} />
                 <Route path="/checkout"  element={<CheckoutRoute />} />

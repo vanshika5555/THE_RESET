@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import StockInput from './StockInput';
-import { Switch, SearchInput, FilterTabs, Empty, ErrorNote, Thumb, plural } from './ui';
+import { Switch, SearchInput, FilterTabs, Empty, ErrorNote, Thumb, plural, inr } from './ui';
 import './Products.css';
 
 const LOW = 5;
@@ -196,7 +196,7 @@ export default function Products() {
                           </div>
                         </div>
                       </td>
-                      <td className="ptable-price">{p.price}</td>
+                      <td className="ptable-price">{inr(p.price)}{p.mrp > p.price && <span className="ptable-was">{inr(p.mrp)}</span>}</td>
                       <td>
                         {sizeBoxes(p)}
                         <p className={`pr-stock pr-stock--${line.tone}`}>{line.text}</p>
@@ -234,7 +234,7 @@ export default function Products() {
                     <Thumb src={p.image} color={p.color} size="lg" />
                     <span className="pm-info">
                       <span className="pm-name">{p.name}</span>
-                      <span className="pm-meta">{p.price}<span>{p.category}</span>{p.subcategory && <span>{p.subcategory}</span>}</span>
+                      <span className="pm-meta">{inr(p.price)}<span>{p.category}</span>{p.subcategory && <span>{p.subcategory}</span>}</span>
                       <span className={`pr-stock pr-stock--${line.tone}`}>{line.text}</span>
                     </span>
                     <svg className="pm-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>

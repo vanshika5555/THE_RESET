@@ -1,30 +1,40 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+/**
+ * Checks the "Authorization: Bearer <token>" header.
+ *
+ * A token is only accepted while its version matches the user's current
+ * tokenVersion — changing or resetting the password raises that number,
+ * which signs the account out on every other device at once.
+ */
 const protect = async (req, res, next) => {
-  let token;
-
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
-      if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
-      }
-      return next();
-    } catch (err) {
-      return res.status(401).json({ message: 'Not authorized, token failed' });
-    }
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Please sign in to continue.' });
   }
 
-  return res.status(401).json({ message: 'Not authorized, no token' });
+  try {
+    const token = header.slice(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (!user) {
+      return res.status(401).json({ message: 'Account not found. Please sign in again.' });
+    }
+    if ((decoded.v || 0) !== (user.tokenVersion || 0)) {
+      return res.status(401).json({ message: 'Your session has ended. Please sign in again.' });
+    }
+
+    req.user = user;
+    return next();
+  } catch (err) {
+    return res.status(401).json({ message: 'Your session has expired. Please sign in again.' });
+  }
 };
 
 const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
-    return next();
-  }
+  if (req.user && req.user.role === 'admin') return next();
   return res.status(403).json({ message: 'Admin access only' });
 };
 

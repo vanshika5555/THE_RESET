@@ -498,3 +498,13 @@
     cursor: pointer;
   }
 }
+
+/* Sold-out sizes stay tappable: they open "Notify me" */
+.pd-size-btn--gone { cursor: pointer; }
+.pd-size-btn--gone.pd-size-btn--active {
+  background: #fff;
+  color: #000;
+  border-color: #000;
+  border-style: dashed;
+}
+.pd-size-btn--gone.pd-size-btn--active::after { background: #000; }

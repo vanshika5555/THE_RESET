@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getProducts } from '../utils/fetchCache';
 import { useNavigate } from 'react-router-dom';
 import './ShopByCategory.css';
+import { cdn } from '../utils/img';
 
 const isSoldOut = (p) => {
   if (!p.inStock) return true;
@@ -63,8 +64,7 @@ export default function ShopByCategory() {
   return (
     <section className="sbc-section">
       <div className="sbc-head">
-        <p className="sbc-eyebrow">Browse</p>
-        <h2 className="sbc-title">Shop by Category</h2>
+        <h2 className="sbc-title">Shop by category</h2>
       </div>
 
       <div className="sbc-grid">
@@ -75,7 +75,7 @@ export default function ShopByCategory() {
             onClick={() => open(g)}
             style={{ background: g.color }}
           >
-            {g.image && <img src={g.image} alt={g.subcategory} className="sbc-img" loading="lazy" />}
+            {g.image && <img src={cdn(g.image, 700)} alt={g.subcategory} className="sbc-img" loading="lazy" />}
             <span className="sbc-veil" />
             <span className="sbc-label">
               <span className="sbc-cat">{g.category}</span>

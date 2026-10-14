@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './OrderConfirm.css';
+import { cdn } from '../utils/img';
+import { formatPrice } from '../utils/price';
 
 export default function OrderConfirm({ orderId, order: passedOrder }) {
   const { user } = useAuth();
@@ -75,12 +77,12 @@ export default function OrderConfirm({ orderId, order: passedOrder }) {
               {order.items.map((item, i) => (
                 <div key={i} className="oc-item">
                   <div className="oc-item-img" style={{ background: item.color || '#f0f0f0' }}>
-                    {item.image && <img src={item.image} alt="" />}
+                    {item.image && <img src={cdn(item.image, 200)} alt="" />}
                   </div>
                   <div className="oc-item-info">
                     <p className="oc-item-name">{item.name}</p>
                     <p className="oc-item-meta">Size: {item.size} · Qty: {item.qty}</p>
-                    <p className="oc-item-price">{item.price}</p>
+                    <p className="oc-item-price">{formatPrice(item.price)}</p>
                   </div>
                 </div>
               ))}

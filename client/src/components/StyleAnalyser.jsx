@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getProducts } from '../utils/fetchCache';
 import { useNavigate } from 'react-router-dom';
 import './StyleAnalyser.css';
+import { cdn } from '../utils/img';
+import Price from './Price';
 
 const SKIN_TONES = ['Fair', 'Wheatish', 'Medium', 'Olive', 'Dark'];
 const EYE_COLORS = ['Black', 'Brown', 'Hazel', 'Green', 'Blue'];
@@ -410,11 +412,11 @@ export default function StyleAnalyser({ onClose }) {
                           onClick={() => { onClose(); navigate(`/product/${p._id}`); }}
                         >
                           <span className="sa-pick-img" style={{ background: p.color || '#f0f0f0' }}>
-                            {img && <img src={img} alt="" loading="lazy" />}
+                            {img && <img src={cdn(img, 400)} alt="" loading="lazy" />}
                           </span>
                           <span className="sa-pick-sub">{p.subcategory}</span>
                           <span className="sa-pick-name">{p.name}</span>
-                          <span className="sa-pick-price">{p.price}</span>
+                          <span className="sa-pick-price"><Price value={p.price} mrp={p.mrp} /></span>
                         </button>
                       );
                     })}

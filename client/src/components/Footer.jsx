@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { Link } from "react-router-dom";
 import "./Footer.css";
 
@@ -10,12 +11,28 @@ const SOCIAL = [
   { label: 'YouTube',     url: '' },
 ];
 
-// The newsletter box is hidden until there is a backend to save emails.
-// Switch to true once /api/newsletter (or a mail service) is wired up.
-const NEWSLETTER_ON = false;
+// Newsletter: signing up emails a one-use first-order code (server/routes/newsletter.js).
+const NEWSLETTER_ON = true;
 
 export default function Footer() {
   const [email, setEmail] = useState("");
+  const [nlMsg, setNlMsg] = useState("");
+  const [nlErr, setNlErr] = useState("");
+  const [nlBusy, setNlBusy] = useState(false);
+
+  const subscribe = async (e) => {
+    e.preventDefault();
+    setNlErr("");
+    setNlBusy(true);
+    try {
+      const res = await axios.post("/api/newsletter", { email: email.trim() });
+      setNlMsg(res.data?.message || "Check your inbox for your code.");
+      setEmail("");
+    } catch (err) {
+      setNlErr(err.response?.data?.message || "Could not sign you up just now. Please try again.");
+    }
+    setNlBusy(false);
+  };
 
   return (
     <footer className="footer">
@@ -27,8 +44,9 @@ export default function Footer() {
           <p className="footer-tagline">Dressed in silence. Built with intention.</p>
         </div>
         {NEWSLETTER_ON && (
-          <form className="footer-newsletter" onSubmit={(e) => e.preventDefault()}>
-            <label className="footer-nl-label" htmlFor="footer-email">Stay in the loop</label>
+          <form className="footer-newsletter" onSubmit={subscribe}>
+            <label className="footer-nl-label" htmlFor="footer-email">10% off your first order</label>
+            <p className="footer-nl-sub">Join the list for new pieces and restocks. Your code arrives by email.</p>
             <div className="footer-nl-form">
               <input
                 id="footer-email"
@@ -40,8 +58,10 @@ export default function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="footer-nl-input"
               />
-              <button type="submit" className="footer-nl-btn">Subscribe</button>
+              <button type="submit" className="footer-nl-btn" disabled={nlBusy}>{nlBusy ? "Joining…" : "Get my code"}</button>
             </div>
+            {nlMsg && <p className="footer-nl-ok" role="status">{nlMsg}</p>}
+            {nlErr && <p className="footer-nl-err" role="alert">{nlErr}</p>}
           </form>
         )}
       </div>

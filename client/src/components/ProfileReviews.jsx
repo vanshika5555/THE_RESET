@@ -113,7 +113,7 @@ export default function ProfileReviews() {
 
       {showForm && (
         <div className="prof-addr-form">
-          <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '18px', marginBottom: '20px', color: '#111' }}>
+          <h3 style={{ fontFamily: "'Archivo', sans-serif", fontSize: '18px', marginBottom: '20px', color: '#111' }}>
             Write a Review
           </h3>
           {error && <div className="prof-error">{error}</div>}
@@ -127,7 +127,7 @@ export default function ProfileReviews() {
                   <select
                     value={form.productId}
                     onChange={handleProductSelect}
-                    style={{ border: '1px solid #e0e0e0', padding: '10px 14px', fontFamily: "'DM Sans', sans-serif", fontSize: '13px', borderRadius: '4px', outline: 'none' }}
+                    style={{ border: '1px solid #e0e0e0', padding: '10px 14px', fontFamily: "'Archivo', sans-serif", fontSize: '13px', borderRadius: '4px', outline: 'none' }}
                   >
                     <option value="">— Choose a product you ordered —</option>
                     {orderedProducts.map(p => (
@@ -135,7 +135,7 @@ export default function ProfileReviews() {
                     ))}
                   </select>
                 ) : (
-                  <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '13px', color: '#aaa', padding: '10px 0' }}>
+                  <p style={{ fontFamily: "'Archivo', sans-serif", fontSize: '13px', color: '#aaa', padding: '10px 0' }}>
                     You need to order a product before reviewing it.
                   </p>
                 )}

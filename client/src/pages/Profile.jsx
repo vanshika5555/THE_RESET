@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import ProfileReviews from '../components/ProfileReviews';
 import AddressFields, { BLANK_ADDRESS, validateAddress } from '../components/AddressFields';
 import '../components/AddressFields.css';
-import { Link, useNavigate, Routes, Route, NavLink } from 'react-router-dom';
+import { Link, useNavigate, useLocation, Routes, Route, NavLink } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { passwordProblem } from '../components/PasswordField';
 import './Profile.css';
+import { formatPrice } from '../utils/price';
 
 // ─── Sub pages ───────────────────────────
 
@@ -129,7 +131,7 @@ function Orders({ user }) {
                       </div>
                       <div>
                         <p className="prof-order-name">{item.name}</p>
-                        <p className="prof-order-meta">Size: {item.size} · Qty: {item.qty} · {item.price}</p>
+                        <p className="prof-order-meta">Size: {item.size} · Qty: {item.qty} · {formatPrice(item.price)}</p>
                       </div>
                     </div>
                   ))}
@@ -273,24 +275,36 @@ function Addresses() {
   );
 }
 
-function ChangePassword({ user }) {
+function ChangePassword() {
+  const { user, login } = useAuth();
   const [form, setForm] = useState({ current: '', newPass: '', confirm: '' });
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const set = (k) => (e) => { setForm(f => ({ ...f, [k]: e.target.value })); setError(''); };
+
+  // The server hands back a fresh token for this device and signs every
+  // other device out, so the new token has to be stored straight away.
+  const keepSession = (data) => {
+    if (data?.token) login({ ...user, ...data, token: data.token });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg(''); setError('');
-    if (form.newPass.length < 6) { setError('New password must be at least 6 characters.'); return; }
+    const problem = passwordProblem(form.newPass);
+    if (problem) { setError(problem); return; }
     if (form.newPass !== form.confirm) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
-      await axios.put(`/api/auth/changepassword`, {
+      const res = await axios.put('/api/auth/changepassword', {
         currentPassword: form.current,
-        newPassword: form.newPass
-      }, { headers: { Authorization: `Bearer ${user.token}` } });
-      setMsg('Password changed successfully!');
+        newPassword: form.newPass,
+      });
+      keepSession(res.data);
+      setMsg('Password changed. Any other device you were signed in on has been signed out.');
       setForm({ current: '', newPass: '', confirm: '' });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to change password.');
@@ -298,24 +312,37 @@ function ChangePassword({ user }) {
     setLoading(false);
   };
 
+  const signOutEverywhere = async () => {
+    setMsg(''); setError('');
+    setSigningOut(true);
+    try {
+      const res = await axios.post('/api/auth/logout-all');
+      keepSession(res.data);
+      setMsg('Signed out on every other device. You are still signed in here.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not sign out other devices.');
+    }
+    setSigningOut(false);
+  };
+
   return (
     <div className="prof-section">
-      <h2 className="prof-section-title">Change Password</h2>
+      <h2 className="prof-section-title">Password &amp; security</h2>
       <div className="prof-password-form">
-        {msg   && <div className="prof-success">{msg}</div>}
-        {error && <div className="prof-error">{error}</div>}
+        {msg   && <div className="prof-success" role="status">{msg}</div>}
+        {error && <div className="prof-error" role="alert">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="prof-form-field prof-form-field--full">
-            <label>Current Password</label>
-            <input type="password" value={form.current} onChange={e => setForm(f => ({ ...f, current: e.target.value }))} placeholder="••••••••" />
+            <label htmlFor="pw-current">Current Password</label>
+            <input id="pw-current" type="password" autoComplete="current-password" value={form.current} onChange={set('current')} placeholder="••••••••" required />
           </div>
           <div className="prof-form-field prof-form-field--full">
-            <label>New Password</label>
-            <input type="password" value={form.newPass} onChange={e => setForm(f => ({ ...f, newPass: e.target.value }))} placeholder="At least 6 characters" />
+            <label htmlFor="pw-new">New Password</label>
+            <input id="pw-new" type="password" autoComplete="new-password" value={form.newPass} onChange={set('newPass')} placeholder="8+ characters, a letter and a number" required />
           </div>
           <div className="prof-form-field prof-form-field--full">
-            <label>Confirm New Password</label>
-            <input type="password" value={form.confirm} onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))} placeholder="Repeat new password" />
+            <label htmlFor="pw-confirm">Confirm New Password</label>
+            <input id="pw-confirm" type="password" autoComplete="new-password" value={form.confirm} onChange={set('confirm')} placeholder="Repeat new password" required />
           </div>
           <div className="prof-form-actions">
             <button type="submit" className="prof-btn prof-btn--fill" disabled={loading}>
@@ -323,6 +350,16 @@ function ChangePassword({ user }) {
             </button>
           </div>
         </form>
+
+        <div className="prof-security">
+          <div>
+            <p className="prof-security-title">Signed in somewhere you don't recognise?</p>
+            <p className="prof-security-text">Sign out of every other phone and computer. You'll stay signed in here.</p>
+          </div>
+          <button type="button" className="prof-btn prof-btn--outline" onClick={signOutEverywhere} disabled={signingOut}>
+            {signingOut ? 'Signing out...' : 'Sign out other devices'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -332,6 +369,8 @@ function ChangePassword({ user }) {
 export default function Profile() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const notice = location.state?.notice;
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -344,7 +383,7 @@ export default function Profile() {
     { to: '/profile/orders', label: 'My Orders', icon: '📦' },
     { to: '/profile/addresses', label: 'Addresses', icon: '📍' },
     { to: '/profile/reviews', label: 'Reviews', icon: '⭐' },
-    { to: '/profile/password', label: 'Change Password', icon: '🔒' },
+    { to: '/profile/password', label: 'Security', icon: '🔒' },
   ];
 
   return (
@@ -382,12 +421,13 @@ export default function Profile() {
 
       {/* Content */}
       <main className="prof-content">
+        {notice && <div className="prof-success prof-notice" role="status">{notice}</div>}
         <Routes>
           <Route index element={<Overview user={user} />} />
           <Route path="orders" element={<Orders user={user} />} />
           <Route path="addresses" element={<Addresses />} />
           <Route path="reviews" element={<ProfileReviews />} />
-          <Route path="password" element={<ChangePassword user={user} />} />
+          <Route path="password" element={<ChangePassword />} />
         </Routes>
       </main>
     </div>

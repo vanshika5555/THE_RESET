@@ -77,7 +77,6 @@ export default function Legal() {
   return (
     <div className="help-page">
       <div className="help-hero">
-        <p className="help-eyebrow">THE RESET</p>
         <h1 className="help-title">{doc.title}</h1>
         <p className="help-sub">{doc.intro}</p>
       </div>

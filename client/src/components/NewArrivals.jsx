@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getProducts } from '../utils/fetchCache';
 import { Link, useNavigate } from 'react-router-dom';
 import CardGallery from './CardGallery';
+import QuickAdd from './QuickAdd';
 import { useWishlist } from '../context/WishlistContext';
 import './NewArrivals.css';
+import Price from './Price';
 
 const isSoldOut = (p) => {
   if (!p.inStock) return true;
@@ -38,8 +40,7 @@ export default function NewArrivals() {
     <section className="na-section">
       <div className="na-head">
         <div>
-          <p className="na-eyebrow">Just In</p>
-          <h2 className="na-title">New Arrivals</h2>
+          <h2 className="na-title">Just landed</h2>
         </div>
 
         <div className="na-tabs">
@@ -72,6 +73,7 @@ export default function NewArrivals() {
                 onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/product/${p._id}`); }}
               >
                 <CardGallery product={p} />
+                <QuickAdd product={p} />
 
                 {isSoldOut(p) && <span className="na-soldout">Sold Out</span>}
                 {p.tag && !isSoldOut(p) && <span className="na-tag">{p.tag}</span>}
@@ -93,7 +95,7 @@ export default function NewArrivals() {
                 <Link to={`/product/${p._id}`} className="na-card-link">
                   <p className="na-card-name">{p.name}</p>
                 </Link>
-                <p className="na-card-price">{p.price}</p>
+                <p className="na-card-price"><Price value={p.price} mrp={p.mrp} /></p>
               </div>
             </div>
           ))}

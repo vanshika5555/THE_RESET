@@ -46,7 +46,7 @@
 }
 
 .cd-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 20px;
   font-weight: 400;
   color: #111;
@@ -81,7 +81,7 @@
 }
 
 .cd-empty {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 15px;
   color: #777;
   text-align: center;
@@ -124,21 +124,21 @@
 }
 
 .cd-item-name {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: #111;
 }
 
 .cd-item-price {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 14px;
   font-weight: 500;
   color: #111;
 }
 
 .cd-item-size {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   color: #888;
   font-weight: 300;
@@ -180,7 +180,7 @@
 .cd-stepper span {
   min-width: 28px;
   text-align: center;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 14px;
 }
 
@@ -209,7 +209,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   color: #555;
   text-decoration: underline;
@@ -225,7 +225,7 @@
   border-bottom: 1px solid #f0f0f0;
   flex-shrink: 0;
 }
-.cd-progress p { margin: 0; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #444; }
+.cd-progress p { margin: 0; font-family: 'Archivo', sans-serif; font-size: 13px; color: #444; }
 .cd-progress strong { font-weight: 500; color: #111; }
 
 .cd-empty-actions { display: flex; flex-direction: column; gap: 0; margin-top: 24px; }
@@ -241,7 +241,7 @@
 .cd-subtotal {
   display: flex;
   justify-content: space-between;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 15px;
   font-weight: 500;
   color: #111;
@@ -249,7 +249,7 @@
 }
 
 .cd-shipping {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   color: #888;
   font-weight: 300;
@@ -260,7 +260,7 @@
   width: 100%;
   min-height: 52px;
   padding: 0 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.12em;

@@ -18,6 +18,8 @@ const loadCart = () => {
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(loadCart);
   const [cartOpen, setCartOpen] = useState(false);
+  // The piece just added, shown in a small "Added to bag" pop-up.
+  const [justAdded, setJustAdded] = useState(null);
   const firstRun = useRef(true);
 
   // Save the cart every time it changes.
@@ -54,7 +56,8 @@ export function CartProvider({ children }) {
       }
       return [...prev, { ...product, size, qty: 1 }];
     });
-    setCartOpen(true);
+    // A small pop-up instead of throwing the whole bag drawer over the page.
+    setJustAdded({ product, size, at: Date.now() });
   };
 
   const removeFromCart = (i) => setCart(prev => prev.filter((_, idx) => idx !== i));
@@ -68,7 +71,7 @@ export function CartProvider({ children }) {
 
   return (
     <CartContext.Provider value={{
-      cart, cartOpen, setCartOpen,
+      cart, cartOpen, setCartOpen, justAdded, setJustAdded,
       addToCart, removeFromCart, changeQty, clearCart, cartCount
     }}>
       {children}

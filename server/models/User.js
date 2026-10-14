@@ -18,6 +18,16 @@ const userSchema = new mongoose.Schema({
   email:     { type: String, required: true, unique: true, lowercase: true, trim: true },
   password:  { type: String, required: true, minlength: 6 },
   role:      { type: String, enum: ['user', 'admin'], default: 'user' },
+
+  // Bumped whenever the password changes (or "sign out everywhere" is used).
+  // Every login token carries the number it was issued with, so raising it
+  // instantly invalidates all older tokens on every device.
+  tokenVersion: { type: Number, default: 0 },
+
+  // Password reset: only a SHA-256 hash of the emailed token is stored, so a
+  // leaked database cannot be used to reset anyone's password.
+  resetPasswordHash:    { type: String, default: null, select: false },
+  resetPasswordExpires: { type: Date,   default: null, select: false },
   addresses: { type: [addressSchema], default: [] },
 
   // What this customer is currently interested in. Kept on the account so
