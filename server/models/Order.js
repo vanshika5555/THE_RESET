@@ -33,6 +33,11 @@ const orderSchema = new mongoose.Schema({
   adminNote: { type: String, default: '' },
   // When the order reached the customer — starts the 7-day return window.
   deliveredAt: { type: Date, default: null },
+  // Given the first time the invoice is opened (shipped orders only).
+  invoice: {
+    number: { type: String, default: '' },
+    date:   { type: Date, default: null },
+  },
   // Filled in when the order is handed to the courier.
   shipment: {
     courier:        { type: String, default: '' },

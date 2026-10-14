@@ -17,6 +17,7 @@ const cleanAddress = (a = {}) => Object.fromEntries(
 
 const { reserve, restock } = require('../utils/stock');
 const { buildShipment } = require('../utils/couriers');
+const { ensureInvoiceNumber, renderInvoice } = require('../utils/invoice');
 
 // Email the customer about their order. Never blocks or fails the request.
 async function notify(order, template) {
@@ -286,6 +287,33 @@ router.put('/:id/cancel', protect, async (req, res) => {
     res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+/**
+ * GET /api/orders/:id/invoice — the invoice as a printable page.
+ * Only for orders that have shipped. The owner or an admin may open it.
+ */
+router.get('/:id/invoice', protect, async (req, res) => {
+  try {
+    let order = await Order.findById(req.params.id).populate('user', 'name email');
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    const ownerId = order.user?._id || order.user;
+    const isAdmin = req.user.role === 'admin';
+    if (String(ownerId) !== String(req.user._id) && !isAdmin) {
+      return res.status(403).json({ message: 'Not authorized to view this order' });
+    }
+    if (!['Shipped', 'Delivered'].includes(order.status)) {
+      return res.status(400).json({ message: 'The invoice is ready once your order ships.' });
+    }
+
+    order = await ensureInvoiceNumber(order);
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'private, no-store');
+    res.send(renderInvoice(order));
+  } catch (err) {
+    res.status(500).json({ message: 'Could not make the invoice. Try again.' });
   }
 });
 

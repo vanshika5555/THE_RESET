@@ -5,6 +5,7 @@ import usePageMeta from '../hooks/usePageMeta';
 import './OrderDetail.css';
 import { cdn } from '../utils/img';
 import ReturnPanel from '../components/ReturnPanel';
+import openInvoice from '../utils/openInvoice';
 import { formatPrice } from '../utils/price';
 
 const inr = (n) => '₹' + (n || 0).toLocaleString('en-IN');
@@ -24,6 +25,7 @@ export default function OrderDetail() {
   const [error, setError]       = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [awbCopied, setAwbCopied] = useState(false);
+  const [invoiceError, setInvoiceError] = useState('');
 
   usePageMeta({ title: 'Order details' });
 
@@ -196,6 +198,26 @@ export default function OrderDetail() {
               <span>Total</span><span>{inr(order.total || order.subtotal)}</span>
             </div>
           </div>
+
+          {['Shipped', 'Delivered'].includes(order.status) && (
+            <>
+              <button
+                type="button"
+                className="od-invoice-btn"
+                onClick={() => {
+                  setInvoiceError('');
+                  openInvoice(order._id).catch((e) => setInvoiceError(e.message));
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
+                </svg>
+                Download invoice
+              </button>
+              {invoiceError && <p className="od-invoice-error" role="alert">{invoiceError}</p>}
+            </>
+          )}
 
           {order.status === 'Pending' && (
             <button className="od-cancel" onClick={cancelOrder} disabled={cancelling}>

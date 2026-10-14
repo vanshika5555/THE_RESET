@@ -7,6 +7,7 @@ import {
   StatusBadge, StatusRail, SearchInput, FilterTabs, Empty, ErrorNote,
   Thumb, Chevron, Drawer, Section,
 } from './ui';
+import openInvoice from '../utils/openInvoice';
 import './AdminOrders.css';
 
 const fullAddress = (a) =>
@@ -457,6 +458,15 @@ export default function AdminOrders() {
                   <button type="button" className="btn btn--secondary" onClick={() => copyAddress(open)}>
                     {copied ? 'Copied' : 'Copy address'}
                   </button>
+                  {['Shipped', 'Delivered'].includes(open.status) && (
+                    <button
+                      type="button"
+                      className="btn btn--secondary"
+                      onClick={() => { setError(''); openInvoice(open._id).catch((e) => setError(e.message)); }}
+                    >
+                      Invoice
+                    </button>
+                  )}
                   <button type="button" className="btn btn--secondary" onClick={() => printSlip(open)}>
                     Print packing slip
                   </button>
