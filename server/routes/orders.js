@@ -16,6 +16,7 @@ const cleanAddress = (a = {}) => Object.fromEntries(
 );
 
 const { reserve, restock } = require('../utils/stock');
+const { buildShipment } = require('../utils/couriers');
 
 // Email the customer about their order. Never blocks or fails the request.
 async function notify(order, template) {
@@ -205,7 +206,14 @@ router.put('/:id/status', protect, adminOnly, async (req, res) => {
     if (previous === 'Cancelled' && req.body.status !== 'Cancelled') {
       return res.status(400).json({ message: 'A cancelled order cannot be reopened — its stock has already gone back on sale.' });
     }
+    // Shipping can carry the courier and tracking number in the same request.
+    if (req.body.shipment !== undefined) {
+      const { shipment, error } = buildShipment(req.body.shipment);
+      if (error) return res.status(400).json({ message: error });
+      if (shipment) Object.assign(order.shipment, shipment);
+    }
     order.status = req.body.status;
+    if (req.body.status === 'Shipped' && !order.shipment.shippedAt) order.shipment.shippedAt = new Date();
     if (req.body.status === 'Delivered' && !order.deliveredAt) order.deliveredAt = new Date();
     const updated = await order.save();
 
@@ -216,6 +224,28 @@ router.put('/:id/status', protect, adminOnly, async (req, res) => {
       notify(updated, emails.orderStatus);
     }
 
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+/**
+ * PUT /api/orders/:id/shipment — add or correct tracking details (admin only).
+ * No email goes out; the customer sees the change on their order page.
+ */
+router.put('/:id/shipment', protect, adminOnly, async (req, res) => {
+  try {
+    const { shipment, error } = buildShipment(req.body);
+    if (error) return res.status(400).json({ message: error });
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (order.status === 'Cancelled') {
+      return res.status(400).json({ message: 'This order was cancelled.' });
+    }
+    if (shipment) Object.assign(order.shipment, shipment);
+    else Object.assign(order.shipment, { courier: '', trackingNumber: '', trackingUrl: '' });
+    const updated = await order.save();
     res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });

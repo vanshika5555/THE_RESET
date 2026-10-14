@@ -33,6 +33,13 @@ const orderSchema = new mongoose.Schema({
   adminNote: { type: String, default: '' },
   // When the order reached the customer — starts the 7-day return window.
   deliveredAt: { type: Date, default: null },
+  // Filled in when the order is handed to the courier.
+  shipment: {
+    courier:        { type: String, default: '' },
+    trackingNumber: { type: String, default: '' },
+    trackingUrl:    { type: String, default: '' },
+    shippedAt:      { type: Date, default: null },
+  },
 
   status:   {
     type: String,

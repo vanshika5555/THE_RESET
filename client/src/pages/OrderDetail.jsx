@@ -23,6 +23,7 @@ export default function OrderDetail() {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [awbCopied, setAwbCopied] = useState(false);
 
   usePageMeta({ title: 'Order details' });
 
@@ -67,6 +68,13 @@ export default function OrderDetail() {
 
   const a = order.shippingAddress || {};
   const isCancelled = order.status === 'Cancelled';
+  const shipment = ['Shipped', 'Delivered'].includes(order.status) && order.shipment?.trackingNumber
+    ? order.shipment : null;
+  const copyAwb = () => {
+    navigator.clipboard?.writeText(shipment.trackingNumber)
+      .then(() => { setAwbCopied(true); setTimeout(() => setAwbCopied(false), 1600); })
+      .catch(() => {});
+  };
   const currentStep = STEPS.indexOf(order.status);
   const addressLine = [a.houseNo, a.address, a.landmark, a.city, a.state]
     .filter(Boolean).join(', ');
@@ -131,6 +139,36 @@ export default function OrderDetail() {
         </div>
 
         <aside className="od-side">
+          {shipment && (
+            <div className="od-box od-ship">
+              <h2 className="od-section-title">
+                {order.status === 'Delivered' ? 'Delivered by' : 'On its way'}
+              </h2>
+              <div className="od-ship-row">
+                <span className="od-ship-label">Courier</span>
+                <span className="od-ship-value">{shipment.courier}</span>
+              </div>
+              <div className="od-ship-row">
+                <span className="od-ship-label">Tracking number</span>
+                <button type="button" className="od-ship-awb" onClick={copyAwb} title="Copy tracking number">
+                  {shipment.trackingNumber}
+                  <span className="od-ship-copy">{awbCopied ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+              {shipment.shippedAt && (
+                <div className="od-ship-row">
+                  <span className="od-ship-label">Shipped</span>
+                  <span className="od-ship-value">{fmtDate(shipment.shippedAt)}</span>
+                </div>
+              )}
+              {order.status === 'Shipped' && shipment.trackingUrl && (
+                <a className="od-track-btn" href={shipment.trackingUrl} target="_blank" rel="noreferrer">
+                  Track package ↗
+                </a>
+              )}
+            </div>
+          )}
+
           <div className="od-box">
             <h2 className="od-section-title">Delivery Address</h2>
             <p className="od-addr-name">{a.fullName}</p>

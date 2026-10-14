@@ -209,3 +209,31 @@
 @media (max-width: 480px) {
   .od-step-label { font-size: 10px; }
 }
+/* ---------- shipment / tracking ---------- */
+.od-ship { display: flex; flex-direction: column; gap: 10px; }
+.od-ship .od-section-title { margin-bottom: 4px; }
+.od-ship-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 14px; }
+.od-ship-label { color: #777; }
+.od-ship-value { color: #111; font-weight: 500; text-align: right; }
+.od-ship-awb {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  background: none; border: none; padding: 0; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 600; letter-spacing: .04em; color: #111;
+  font-variant-numeric: tabular-nums;
+}
+.od-ship-copy { font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #8a5a1c; }
+.od-track-btn {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 6px; min-height: 48px; padding: 0 16px;
+  background: #000; color: #fff; text-decoration: none;
+  font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+}
+.od-track-btn:hover { background: #222; }
+
+/* Phones: tracking is what people come for — show it before the items. */
+@media (max-width: 860px) {
+  .od-columns { display: flex; flex-direction: column; align-items: stretch; }
+  .od-side { display: contents; }
+  .od-side > * + * { margin-top: -10px; }
+  .od-ship { order: -1; }
+}

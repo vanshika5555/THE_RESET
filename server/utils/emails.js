@@ -153,12 +153,28 @@ function orderStatus({ name, order }) {
   if (!copy) return null;
   const id = shortId(order._id);
   const subject = `Order #${id} ${copy.subject}`;
-  const text = `Hi ${firstName(name)},\n\n${copy.line}\n\nOrder #${id}: ${SHOP_URL()}/orders/${order._id}`;
+  const orderUrl = `${SHOP_URL()}/orders/${order._id}`;
+  // Shipped with tracking: show the courier and make "Track package" the button.
+  const ship = order.status === 'Shipped' && order.shipment && order.shipment.trackingNumber
+    ? order.shipment : null;
+  const shipText = ship
+    ? `\n\n${ship.courier} tracking number: ${ship.trackingNumber}\nTrack it: ${ship.trackingUrl}` : '';
+  const shipHtml = ship
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px;background:#f7f7f5;width:100%">
+         <tr><td style="padding:14px 16px;font:400 13px/1.6 Helvetica,Arial,sans-serif;color:#666">
+           Courier<br><strong style="font-size:15px;color:#111">${esc(ship.courier)}</strong>
+         </td><td style="padding:14px 16px;font:400 13px/1.6 Helvetica,Arial,sans-serif;color:#666">
+           Tracking number<br><strong style="font-size:15px;color:#111;letter-spacing:.04em">${esc(ship.trackingNumber)}</strong>
+         </td></tr>
+       </table>` : '';
+  const text = `Hi ${firstName(name)},\n\n${copy.line}${shipText}\n\nOrder #${id}: ${orderUrl}`;
   const html = layout({
     preheader: copy.line,
     heading: copy.heading,
-    body: `Hi ${esc(firstName(name))},<br><br>${copy.line}<br><br>${itemsTable(order.items)}`,
-    cta: { href: `${SHOP_URL()}/orders/${order._id}`, label: 'View order' },
+    body: `Hi ${esc(firstName(name))},<br><br>${copy.line}<br><br>${shipHtml}${itemsTable(order.items)}`,
+    cta: ship
+      ? { href: ship.trackingUrl, label: 'Track package' }
+      : { href: orderUrl, label: 'View order' },
   });
   return { subject, html, text };
 }

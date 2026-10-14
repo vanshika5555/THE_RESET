@@ -86,3 +86,12 @@
   .od-actions .btn { flex: 1 1 calc(50% - 4px); height: 46px; }
   .od-actions .btn:last-child { flex-basis: 100%; }
 }
+/* ── Shipping (courier + tracking) ── */
+.od-ship { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px; }
+.od-ship-awb { font-variant-numeric: tabular-nums; letter-spacing: .03em; text-transform: uppercase; }
+.od-ship-url { margin-top: 10px; }
+.od-optional { font-weight: 400; color: var(--text-3); margin-left: 4px; }
+@media (max-width: 768px) {
+  .od-ship { grid-template-columns: minmax(0, 1fr); }
+  .od-ship .input, .od-ship-url .input { height: 46px; font-size: 16px; }
+}

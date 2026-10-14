@@ -16,6 +16,19 @@ const itemCount = (o) => (o.items || []).reduce((n, i) => n + (Number(i.qty) || 
 const orderTotal = (o) => Number(o.total) || Number(o.subtotal) || 0;
 const customerName = (o) => o.shippingAddress?.fullName || o.user?.name || 'Unknown customer';
 
+// Suggestions for the courier box — any other name can be typed in.
+const COURIERS = ['Delhivery', 'Blue Dart', 'DTDC', 'Xpressbees', 'Ecom Express', 'Shadowfax', 'Shiprocket', 'India Post'];
+const BLANK_SHIP = { courier: '', trackingNumber: '', trackingUrl: '' };
+const shipFrom = (o) => ({
+  courier: o?.shipment?.courier || '',
+  trackingNumber: o?.shipment?.trackingNumber || '',
+  trackingUrl: o?.shipment?.trackingUrl || '',
+});
+const sameShip = (a, b) =>
+  a.courier.trim() === b.courier.trim() &&
+  a.trackingNumber.trim() === b.trackingNumber.trim() &&
+  a.trackingUrl.trim() === b.trackingUrl.trim();
+
 export default function AdminOrders() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -27,6 +40,8 @@ export default function AdminOrders() {
   const [copied, setCopied]   = useState(false);
   const [noteDraft, setNoteDraft] = useState(null);   // null = not editing
   const [savingNote, setSavingNote] = useState(false);
+  const [ship, setShip] = useState(BLANK_SHIP);          // courier + tracking being typed
+  const [savingShip, setSavingShip] = useState(false);
 
   const filter  = params.get('status') || 'All';
   const openId  = params.get('order');
@@ -46,6 +61,11 @@ export default function AdminOrders() {
 
   // Reset panel-only state whenever a different order opens.
   useEffect(() => { setNoteDraft(null); setCopied(false); }, [openId]);
+  // Start the shipping boxes from what's saved on the order that just opened.
+  useEffect(() => {
+    setShip(shipFrom(orders.find((o) => o._id === openId)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openId, loading]);   // also once the list arrives, for a link straight to an order
 
   const closePanel = useCallback(() => {
     const next = new URLSearchParams(params);
@@ -53,12 +73,26 @@ export default function AdminOrders() {
     setParams(next);
   }, [params, setParams]);
 
+  // Keep what the server saved (dates, tracking link), but not its un-expanded customer.
+  const mergeSaved = (saved) => setOrders((list) => list.map((o) => (o._id === saved._id
+    ? { ...o, status: saved.status, shipment: saved.shipment, deliveredAt: saved.deliveredAt }
+    : o)));
+
   const updateStatus = async (id, status) => {
     const previous = orders.find((o) => o._id === id)?.status;
     setOrders((list) => list.map((o) => (o._id === id ? { ...o, status } : o)));
     setError('');
     try {
-      await axios.put(`/api/orders/${id}/status`, { status });
+      // Shipping sends the courier and tracking number along, so the
+      // customer's "on its way" email has the tracking link in it.
+      const body = status === 'Shipped' && id === openId && ship.trackingNumber.trim()
+        ? { status, shipment: ship }
+        : { status };
+      const res = await axios.put(`/api/orders/${id}/status`, body);
+      if (res.data && res.data._id) {
+        mergeSaved(res.data);
+        if (id === openId) setShip(shipFrom(res.data));
+      }
     } catch (err) {
       setOrders((list) => list.map((o) => (o._id === id ? { ...o, status: previous } : o)));
       setError(err.response?.data?.message || `The order could not be moved to ${status}. Try again.`);
@@ -79,6 +113,26 @@ export default function AdminOrders() {
     navigator.clipboard.writeText(text)
       .then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); })
       .catch(() => setError('The address could not be copied. Select it and copy it by hand.'));
+  };
+
+  // Changing the courier or number makes the saved link stale, so it is
+  // cleared and the server builds a fresh one.
+  const editShip = (field, value, order) => setShip((s) => {
+    const next = { ...s, [field]: value };
+    if (s.trackingUrl && s.trackingUrl === (order?.shipment?.trackingUrl || '')) next.trackingUrl = '';
+    return next;
+  });
+
+  const saveShipment = async (order) => {
+    setSavingShip(true);
+    setError('');
+    try {
+      const res = await axios.put(`/api/orders/${order._id}/shipment`, ship);
+      if (res.data && res.data._id) { mergeSaved(res.data); setShip(shipFrom(res.data)); }
+    } catch (err) {
+      setError(err.response?.data?.message || 'The tracking details were not saved. Try again.');
+    }
+    setSavingShip(false);
   };
 
   const saveNote = async (order) => {
@@ -321,6 +375,70 @@ export default function AdminOrders() {
                   </select>
                 </div>
               </Section>
+
+              {['Confirmed', 'Shipped', 'Delivered'].includes(open.status) && (
+                <Section
+                  title="Shipping"
+                  aside={open.shipment?.trackingUrl && (
+                    <a className="panel-link" href={open.shipment.trackingUrl} target="_blank" rel="noreferrer">
+                      Track ↗
+                    </a>
+                  )}
+                >
+                  {open.status === 'Confirmed' && (
+                    <p className="od-note-hint">
+                      Add the tracking number before you mark it shipped — the customer’s email will have a Track package button.
+                    </p>
+                  )}
+                  <div className="od-ship">
+                    <label className="field">
+                      <span className="field-label">Courier</span>
+                      <input
+                        className="input"
+                        list="od-couriers"
+                        placeholder="Delhivery"
+                        value={ship.courier}
+                        onChange={(e) => editShip('courier', e.target.value, open)}
+                      />
+                      <datalist id="od-couriers">
+                        {COURIERS.map((c) => <option key={c} value={c} />)}
+                      </datalist>
+                    </label>
+                    <label className="field">
+                      <span className="field-label">Tracking number</span>
+                      <input
+                        className="input od-ship-awb"
+                        placeholder="AWB number"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        value={ship.trackingNumber}
+                        onChange={(e) => editShip('trackingNumber', e.target.value, open)}
+                      />
+                    </label>
+                  </div>
+                  <label className="field od-ship-url">
+                    <span className="field-label">Tracking link <span className="od-optional">optional</span></span>
+                    <input
+                      className="input"
+                      type="url"
+                      inputMode="url"
+                      placeholder="Made for you from the courier and number"
+                      value={ship.trackingUrl}
+                      onChange={(e) => setShip((s) => ({ ...s, trackingUrl: e.target.value }))}
+                    />
+                  </label>
+                  {open.status !== 'Confirmed' && !sameShip(ship, shipFrom(open)) && (
+                    <div className="od-note-actions">
+                      <button type="button" className="btn btn--primary btn--sm" onClick={() => saveShipment(open)} disabled={savingShip}>
+                        {savingShip ? 'Saving…' : 'Save tracking'}
+                      </button>
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShip(shipFrom(open))}>
+                        Discard
+                      </button>
+                    </div>
+                  )}
+                </Section>
+              )}
 
               <Section title="Deliver to">
                 <div className="od-address">

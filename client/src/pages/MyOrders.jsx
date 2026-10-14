@@ -131,6 +131,15 @@ export default function MyOrders() {
                     <span className="mo-action-note">This order was cancelled.</span>
                   ) : order.status === 'Delivered' ? (
                     <span className="mo-action-note">Delivered. Need help? See our <Link to="/help#returns" className="mo-inline-link">returns page</Link>.</span>
+                  ) : order.status === 'Shipped' && order.shipment?.trackingUrl ? (
+                    <>
+                      <span className="mo-action-note">
+                        With {order.shipment.courier || 'the courier'} · {order.shipment.trackingNumber}
+                      </span>
+                      <a className="mo-track-btn" href={order.shipment.trackingUrl} target="_blank" rel="noreferrer">
+                        Track package ↗
+                      </a>
+                    </>
                   ) : (
                     <span className="mo-action-note">
                       Already on its way — <Link to="/help#contact" className="mo-inline-link">contact us</Link> if you need to make a change.
