@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { sizesFor, guessFitType } from '../utils/sizeOptions';
 import { Switch, Thumb, ErrorNote } from './ui';
@@ -58,6 +59,19 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
   }));
   const [error, setError]     = useState('');
   const [saving, setSaving]   = useState(false);
+  // Editing: how many shoppers asked to be told when each size is back.
+  const [waiting, setWaiting] = useState({});
+  useEffect(() => {
+    if (!initial?._id) return;
+    axios.get('/api/alerts/summary', { params: { product: initial._id } })
+      .then((res) => {
+        const map = {};
+        (res.data || []).forEach((w) => { map[w.size] = w.waiting; });
+        setWaiting(map);
+      })
+      .catch(() => {});
+  }, [initial?._id]);
+  const waitingTotal = Object.values(waiting).reduce((n, v) => n + v, 0);
 
   const listed = CATEGORIES[form.category]?.[form.season] || [];
   // Older products may carry a subcategory outside this season's list — keep it selectable.
@@ -278,22 +292,33 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
               <>
                 <div className="pf-stock">
                   {form.sizes.map((s) => (
-                    <label key={s} className={`pf-stock-box ${Number(stockFor(s)) === 0 ? 'pf-stock-box--zero' : ''}`}>
-                      <span className="pf-stock-size">{s}</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={stockFor(s)}
-                        onFocus={(e) => e.target.select()}
-                        onChange={(e) => setStock(s, e.target.value.replace(/[^0-9]/g, ''))}
-                        aria-label={`Stock for size ${s}`}
-                      />
-                    </label>
+                    <div key={s} className="pf-stock-cell">
+                      <label className={`pf-stock-box ${Number(stockFor(s)) === 0 ? 'pf-stock-box--zero' : ''}`}>
+                        <span className="pf-stock-size">{s}</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={stockFor(s)}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => setStock(s, e.target.value.replace(/[^0-9]/g, ''))}
+                          aria-label={`Stock for size ${s}`}
+                        />
+                      </label>
+                      {waiting[s] > 0 && (
+                        <span className="pf-stock-wait">{waiting[s]} waiting</span>
+                      )}
+                    </div>
                   ))}
                 </div>
                 <p className="pf-stock-total">
                   <strong>{totalStock}</strong> in stock in total. A size at 0 can’t be ordered.
                 </p>
+                {waitingTotal > 0 && (
+                  <p className="pf-stock-waitnote">
+                    {waitingTotal === 1 ? '1 shopper is' : `${waitingTotal} shoppers are`} waiting for a restock.
+                    Add stock to their size and save — they’re emailed automatically.
+                  </p>
+                )}
               </>
             ) : (
               <p className="pf-empty">No sizes picked yet.</p>

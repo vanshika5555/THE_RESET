@@ -42,6 +42,14 @@ function writeCache(products, orders) {
   } catch { /* storage full or blocked — the dashboard still works without it */ }
 }
 
+const BellIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+  </svg>
+);
+
 const greeting = () => {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
@@ -71,6 +79,8 @@ export default function Dashboard({ name }) {
   const [orders, setOrders]     = useState(cached?.orders || []);
   const [loading, setLoading]   = useState(!cached);
   const [failed, setFailed]     = useState(false);
+  // Shoppers who asked "notify me" on a sold-out size: [{ product, name, size, waiting }]
+  const [waiting, setWaiting]   = useState([]);
 
   useEffect(() => {
     let ok = true;
@@ -84,6 +94,10 @@ export default function Dashboard({ name }) {
       setLoading(false);
       if (ok) writeCache(p.data, o.data);
     });
+    // Extra, not essential: if this fails the dashboard simply doesn't show it.
+    axios.get('/api/alerts/summary')
+      .then((res) => setWaiting(Array.isArray(res.data) ? res.data : []))
+      .catch(() => {});
   }, []);
 
   const hello = (
@@ -124,11 +138,26 @@ export default function Dashboard({ name }) {
   const weekSales = lastWeek.reduce((s, o) => s + orderTotal(o), 0);
   const avgOrder  = live.length ? revenue / live.length : 0;
 
+  // Who is waiting for what, per product: { id: [{ size, waiting }] }
+  const waitingBy = {};
+  waiting.forEach((w) => {
+    const id = String(w.product);
+    (waitingBy[id] = waitingBy[id] || []).push({ size: w.size, waiting: w.waiting });
+  });
+  const waitingFor = (p) => waitingBy[String(p._id)] || [];
+  const waitTotal = (p) => waitingFor(p).reduce((n, w) => n + w.waiting, 0);
+  const shoppersWaiting = waiting.reduce((n, w) => n + w.waiting, 0);
+
+  // Products running low, plus any product shoppers are waiting on.
+  // Most-wanted first, then sold out, then low.
+  const levelRank = { out: 0, 'some-out': 1, low: 2 };
   const stockAlerts = products
-    .filter((p) => p.inStock)
-    .map((p) => ({ product: p, problem: stockProblem(p) }))
-    .filter((x) => x.problem)
-    .sort((a, b) => (a.problem.level === 'out' ? -1 : 0) - (b.problem.level === 'out' ? -1 : 0));
+    .filter((p) => p.inStock || waitTotal(p) > 0)
+    .map((p) => ({ product: p, problem: stockProblem(p), wait: waitingFor(p), waitN: waitTotal(p) }))
+    .filter((x) => x.problem || x.waitN > 0)
+    .sort((a, b) =>
+      (b.waitN - a.waitN) ||
+      ((levelRank[a.problem?.level] ?? 3) - (levelRank[b.problem?.level] ?? 3)));
   const hidden = products.filter((p) => !p.inStock).length;
 
   const oldest = (list) =>
@@ -160,7 +189,9 @@ export default function Dashboard({ name }) {
       to: '/products',
       count: stockAlerts.length,
       label: 'Products running out',
-      detail: stockAlerts.length ? 'Restock or hide them from the shop' : 'Every listed product has stock',
+      detail: shoppersWaiting
+        ? `${plural(shoppersWaiting, 'shopper')} waiting for a restock`
+        : stockAlerts.length ? 'Restock or hide them from the shop' : 'Every listed product has stock',
       tone: 'red',
     },
   ];
@@ -247,16 +278,33 @@ export default function Dashboard({ name }) {
             />
           ) : (
             <>
-              {stockAlerts.slice(0, 7).map(({ product: p, problem }) => (
+              {stockAlerts.slice(0, 7).map(({ product: p, problem, wait, waitN }) => (
                 <Link key={p._id} to={`/products/edit/${p._id}`} className="row dash-srow">
                   <Thumb src={p.image} color={p.color} size="sm" />
                   <span className="cell">
                     <span className="cell-main">{p.name}</span>
-                    <span className={`dash-stock dash-stock--${problem.level}`}>{problem.text}</span>
+                    {problem && (
+                      <span className={`dash-stock dash-stock--${problem.level}`}>{problem.text}</span>
+                    )}
+                    {waitN > 0 && (
+                      <span className="dash-wait">
+                        <BellIcon />
+                        {plural(waitN, 'shopper')} waiting
+                        <span className="dash-wait-sizes">
+                          {wait.map((w) => `${w.size}${w.waiting > 1 ? ` ×${w.waiting}` : ''}`).join(' · ')}
+                        </span>
+                      </span>
+                    )}
+                    {!p.inStock && <span className="dash-stock dash-stock--hidden">Hidden from the shop</span>}
                   </span>
                   <Chevron />
                 </Link>
               ))}
+              {shoppersWaiting > 0 && (
+                <p className="dash-hidden">
+                  Waiting shoppers are emailed automatically when you add stock to their size.
+                </p>
+              )}
               {hidden > 0 && (
                 <p className="dash-hidden">{plural(hidden, 'product')} hidden from the shop.</p>
               )}

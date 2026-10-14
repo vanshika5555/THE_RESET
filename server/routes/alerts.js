@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
@@ -61,10 +62,16 @@ router.post('/', alertLimiter, async (req, res) => {
   }
 });
 
-// GET /api/alerts/summary — what shoppers are waiting for (admin only)
+// GET /api/alerts/summary — what shoppers are waiting for (admin only).
+// ?product=<id> narrows it to one product (used by the edit screen).
 router.get('/summary', protect, adminOnly, async (req, res) => {
   try {
-    const rows = await StockAlert.find({ notifiedAt: null }).populate('product', 'name').lean();
+    const filter = { notifiedAt: null };
+    if (req.query.product) {
+      if (!mongoose.isValidObjectId(req.query.product)) return res.json([]);
+      filter.product = req.query.product;
+    }
+    const rows = await StockAlert.find(filter).populate('product', 'name').lean();
     const map = {};
     rows.forEach(r => {
       if (!r.product) return;

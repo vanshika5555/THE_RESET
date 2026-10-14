@@ -140,3 +140,23 @@
   .skel--task  { height: 72px; }
   .skel--sales { height: 210px; }
 }
+
+/* ── Shoppers waiting for a restock ── */
+.dash-wait {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--amber-bg);
+  color: var(--amber);
+  font-size: 12.5px;
+  font-weight: 600;
+  width: fit-content;
+  max-width: 100%;
+}
+.dash-wait-sizes { font-weight: 500; opacity: .85; }
+.dash-wait-sizes::before { content: '·'; margin-right: 5px; }
+.dash-stock--hidden { color: var(--text-3); }

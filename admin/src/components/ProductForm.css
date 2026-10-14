@@ -34,6 +34,9 @@
 .pf-stock-box--zero { border-color: #f2c4bf; }
 .pf-stock-box--zero .pf-stock-size { background: var(--red-bg); color: var(--red); border-right-color: #f2c4bf; }
 .pf-stock-total { font-size: 14px; color: var(--text-2); }
+.pf-stock-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pf-stock-wait { align-self: flex-start; padding: 2px 8px; border-radius: 999px; background: var(--amber-bg); color: var(--amber); font-size: 12px; font-weight: 600; }
+.pf-stock-waitnote { padding: 10px 12px; border-radius: var(--r-md); background: var(--amber-bg); color: var(--amber); font-size: 13.5px; font-weight: 500; line-height: 1.45; }
 .pf-stock-total strong { color: var(--text); }
 .pf-empty { font-size: 14px; color: var(--text-3); }
 .pf-visible { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
