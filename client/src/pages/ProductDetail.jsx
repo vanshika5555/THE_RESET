@@ -45,6 +45,9 @@ export default function ProductDetail() {
   const [zoomOpen, setZoomOpen] = useState(false);
   const [sizeWarning, setSizeWarning] = useState(false);
   const [showBar, setShowBar] = useState(false);   // phone: sticky Add to Bag
+  const [copied, setCopied] = useState(false);     // "Link copied" after Share
+  const copiedTimer = useRef(null);
+  useEffect(() => () => clearTimeout(copiedTimer.current), []);
   const actionsRef = useRef(null);
   const sizesRef = useRef(null);
   const touch = useRef(null);
@@ -160,6 +163,42 @@ export default function ProductDetail() {
   const pickSize = (s) => {
     setChosenSize(s);
     setSizeWarning(false);
+  };
+
+  // Phones open the share sheet (WhatsApp, Instagram, Messages…);
+  // computers copy the link. Either way the link unfurls into a card
+  // with this product's photo and price (see server/routes/share.js).
+  const shareProduct = async () => {
+    const url = `${window.location.origin}/product/${product._id}`;
+    const touch = window.matchMedia && window.matchMedia('(hover: none)').matches;
+    if (touch && navigator.share) {
+      try {
+        await navigator.share({
+          title: `${product.name} | THE RESET`,
+          text: `${product.name} — ${formatPrice(product.price)}`,
+          url,
+        });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return; // they closed the sheet
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch { /* nothing else to try */ }
+      ta.remove();
+    }
+    setCopied(true);
+    clearTimeout(copiedTimer.current);
+    copiedTimer.current = setTimeout(() => setCopied(false), 2200);
   };
 
   if (loading) return <Loading label="Loading product..." />;
@@ -383,13 +422,35 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <button
-            type="button"
-            className="pd-wish-btn"
-            onClick={() => toggleWishlist(product)}
-          >
-            {isWished(product._id) ? '♥ Saved to Wishlist' : '♡ Add to Wishlist'}
-          </button>
+          <div className="pd-row2">
+            <button
+              type="button"
+              className="pd-wish-btn"
+              onClick={() => toggleWishlist(product)}
+            >
+              {isWished(product._id) ? '♥ Saved to Wishlist' : '♡ Add to Wishlist'}
+            </button>
+            <button
+              type="button"
+              className={`pd-share-btn ${copied ? 'pd-share-btn--done' : ''}`}
+              onClick={shareProduct}
+              aria-label="Share this product"
+            >
+              {copied ? (
+                <>✓ <span>Link copied</span></>
+              ) : (
+                <>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3v12" /><path d="M7.5 7.5 12 3l4.5 4.5" />
+                    <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+                  </svg>
+                  <span>Share</span>
+                </>
+              )}
+            </button>
+          </div>
+          <span className="sr-only" role="status" aria-live="polite">{copied ? 'Link copied' : ''}</span>
 
           <div className="pd-accordions">
             <Accordion title="Materials &amp; Wash Care">

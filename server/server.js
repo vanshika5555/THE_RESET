@@ -81,6 +81,7 @@ app.use('/api/newsletter', require('./routes/newsletter'));
 
 // Sitemap for search engines (outside /api, no rate limit)
 app.use('/', require('./routes/sitemap'));
+app.use('/share', require('./routes/share'));  // link previews for WhatsApp, Instagram, X…
 
 // Test route
 app.get('/', (req, res) => {

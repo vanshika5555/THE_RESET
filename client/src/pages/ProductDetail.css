@@ -508,3 +508,32 @@
   border-style: dashed;
 }
 .pd-size-btn--gone.pd-size-btn--active::after { background: #000; }
+
+/* ---------- wishlist + share row ---------- */
+.pd-row2 { display: flex; gap: 8px; margin-top: 16px; }
+.pd-row2 .pd-wish-btn { margin-top: 0; flex: 1; min-width: 0; }
+
+.pd-share-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 136px;   /* fits "✓ Link copied" without the row shifting */
+  padding: 0 18px;
+  background: #fff;
+  color: #111;
+  border: 1px solid #ccc;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, color .2s;
+}
+.pd-share-btn:hover { border-color: #111; }
+.pd-share-btn--done { background: #111; border-color: #111; color: #fff; }
+
+@media (max-width: 640px) {
+  .pd-share-btn { min-height: 50px; min-width: 50px; padding: 0 14px; }
+  /* phones: icon only, the share sheet explains itself */
+  .pd-share-btn:not(.pd-share-btn--done) span { display: none; }
+}
