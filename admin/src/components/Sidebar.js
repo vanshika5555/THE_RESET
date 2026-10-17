@@ -44,6 +44,12 @@ const icons = {
       <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
     </svg>
   ),
+  reports: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/>
+      <rect x="12" y="8" width="3" height="10" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/>
+    </svg>
+  ),
   add: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <circle cx="12" cy="12" r="10"/>
@@ -58,6 +64,7 @@ const links = [
   { to: '/',             label: 'Dashboard',   icon: icons.dashboard },
   { to: '/orders',       label: 'Orders',      icon: icons.orders },
   { to: '/returns',      label: 'Returns',     icon: icons.returns },
+  { to: '/reports',      label: 'Reports',     icon: icons.reports },
   { to: '/customers',    label: 'Customers',   icon: icons.customers },
   { to: '/coupons',      label: 'Discount codes', icon: icons.discounts },
   { to: '/products',     label: 'Products',    icon: icons.products },

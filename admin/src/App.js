@@ -17,6 +17,7 @@ const AdminOrders = lazy(() => import('./components/AdminOrders'));
 const Customers   = lazy(() => import('./components/Customers'));
 const Coupons     = lazy(() => import('./components/Coupons'));
 const Returns     = lazy(() => import('./components/Returns'));
+const Reports     = lazy(() => import('./components/Reports'));
 
 // After the first screen is up, quietly download the other pages so
 // tapping a tab opens instantly instead of flashing "Loading…".
@@ -27,6 +28,7 @@ const preloadPages = () => {
   import('./components/Customers');
   import('./components/Coupons');
   import('./components/Returns');
+  import('./components/Reports');
   import('./components/EditProduct');
   import('./components/AddProduct');
 };
@@ -50,6 +52,7 @@ const TITLES = [
   ['/customers',         'Customers'],
   ['/coupons',           'Discount codes'],
   ['/returns',           'Returns'],
+  ['/reports',           'Reports'],
   ['/',                  'Dashboard'],
 ];
 
@@ -135,6 +138,7 @@ function Shell({ name, onLogout }) {
             <Route path="/customers" element={<Customers />} />
             <Route path="/coupons" element={<Coupons />} />
             <Route path="/returns" element={<Returns />} />
+            <Route path="/reports" element={<Reports />} />
           </Routes>
           </Suspense>
         </div>

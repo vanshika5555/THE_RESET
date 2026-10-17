@@ -160,3 +160,8 @@
 .dash-wait-sizes { font-weight: 500; opacity: .85; }
 .dash-wait-sizes::before { content: '·'; margin-right: 5px; }
 .dash-stock--hidden { color: var(--text-3); }
+
+/* Link from the sales strip to the full reports */
+.dash-sales { position: relative; }
+.dash-reports-link { position: absolute; top: 18px; right: 20px; z-index: 1; }
+@media (max-width: 768px) { .dash-reports-link { top: 14px; right: 16px; } }

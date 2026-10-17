@@ -237,6 +237,7 @@ export default function Dashboard({ name }) {
           <span className="sale-value">{inr(avgOrder)}</span>
           <span className="sale-sub">{plural(products.length, 'product')} in the catalogue</span>
         </div>
+        <Link to="/reports" className="panel-link dash-reports-link">Reports →</Link>
       </div>
 
       <div className="dash-cols">
