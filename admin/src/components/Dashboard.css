@@ -161,7 +161,14 @@
 .dash-wait-sizes::before { content: '·'; margin-right: 5px; }
 .dash-stock--hidden { color: var(--text-3); }
 
-/* Link from the sales strip to the full reports */
-.dash-sales { position: relative; }
-.dash-reports-link { position: absolute; top: 18px; right: 20px; z-index: 1; }
-@media (max-width: 768px) { .dash-reports-link { top: 14px; right: 16px; } }
+/* Heading row of the sales strip (last in the markup so the phone layout's
+   :first-child rules still pick "Total sales"; order puts it on top). */
+.dash-sales-head {
+  order: -1;
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.dash-sales-head .panel-title { font-size: 15px; }
+@media (max-width: 768px) { .dash-sales-head { padding: 12px 16px; } }
