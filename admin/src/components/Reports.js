@@ -175,7 +175,7 @@ function BarList({ rows, format = (v) => v, empty }) {
 
 function downloadCsv(orders, label) {
   const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const head = ['Order', 'Date', 'Status', 'Customer', 'Email', 'City', 'State', 'Pincode', 'Items', 'Subtotal', 'Discount', 'Coupon', 'Delivery', 'Total', 'Courier', 'Tracking'];
+  const head = ['Order', 'Date', 'Status', 'Customer', 'Email', 'City', 'State', 'Pincode', 'Items', 'Subtotal', 'Discount', 'Coupon', 'Delivery', 'COD fee', 'Total', 'Payment', 'Payment status', 'Courier', 'Tracking'];
   const rows = orders.map((o) => {
     const a = o.shippingAddress || {};
     return [
@@ -186,7 +186,8 @@ function downloadCsv(orders, label) {
       o.user?.email || o.guest?.email || '',
       a.city, a.state, a.pincode,
       (o.items || []).map((i) => `${i.name} (${i.size}) x${i.qty}`).join('; '),
-      o.subtotal, o.discount || 0, o.couponCode || '', o.delivery || 0, orderTotal(o),
+      o.subtotal, o.discount || 0, o.couponCode || '', o.delivery || 0, o.payment?.codFee || 0, orderTotal(o),
+      o.payment?.method === 'online' ? 'Online' : 'Cash on delivery', o.payment?.status || 'Pending',
       o.shipment?.courier || '', o.shipment?.trackingNumber || '',
     ].map(q).join(',');
   });

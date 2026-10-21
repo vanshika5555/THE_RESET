@@ -668,3 +668,9 @@
 }
 .co-field input:focus, .co-field textarea:focus { outline: none; border-color: #111; }
 .co-note { margin-bottom: 20px; }
+
+/* ── Cash on delivery ── */
+.co-payment-option--off { opacity: .5; cursor: not-allowed; }
+.co-cod-limit { margin: 12px 0 0; padding: 12px 14px; background: #fff4e5; color: #8a4b06; font-size: 13px; line-height: 1.5; }
+
+.co-gift-cod { margin: 0; padding: 10px 12px; background: #fff4e5; color: #8a4b06; font-size: 13px; line-height: 1.45; }

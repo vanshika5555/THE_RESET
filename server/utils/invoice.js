@@ -93,7 +93,9 @@ function computeInvoice(order) {
   });
 
   // Delivery follows the main item's rate (it's part of the same supply).
-  const delivery = Number(order.delivery) || 0;
+  // A cash-on-delivery fee is charged with the delivery, so it's taxed the same way.
+  const codFee = Number(order.payment && order.payment.codFee) || 0;
+  const delivery = (Number(order.delivery) || 0) + codFee;
   const mainRate = lines.reduce((best, l) => (l.net > best.net ? l : best), lines[0] || { rate: LOW_RATE, net: 0 }).rate;
   const deliveryTaxable = round2(delivery / (1 + mainRate / 100));
   const deliveryTax = round2(delivery - deliveryTaxable);
@@ -284,9 +286,10 @@ function renderInvoice(order) {
   <div class="sum"><table>
     <tr><td>Items</td><td class="r">${money(inv.itemsTotal)}</td></tr>
     ${inv.discount ? `<tr><td>Discount${order.couponCode ? ` (${esc(order.couponCode)})` : ''}</td><td class="r">− ${money(inv.discount)}</td></tr>` : ''}
-    <tr><td>Delivery</td><td class="r">${inv.delivery ? money(inv.delivery) : 'Free'}</td></tr>
+    <tr><td>${order.payment && order.payment.codFee > 0 ? 'Delivery &amp; COD fee' : 'Delivery'}</td><td class="r">${inv.delivery ? money(inv.delivery) : 'Free'}</td></tr>
     ${inv.withTax ? `<tr><td style="color:#888">Includes GST</td><td class="r" style="color:#888">${money(inv.taxTotal)}</td></tr>` : ''}
-    <tr class="total"><td>Total paid</td><td class="r">${money(inv.total)}</td></tr>
+    <tr class="total"><td>${order.payment && order.payment.method === 'cod' && order.payment.status === 'Pending' ? 'Total to pay' : 'Total paid'}</td><td class="r">${money(inv.total)}</td></tr>
+    <tr><td colspan="2" style="color:#888;font-size:12px">Payment: ${order.payment && order.payment.method === 'online' ? 'Paid online' : 'Cash on delivery'}</td></tr>
   </table></div>
 
   <p class="words">Amount in words: <strong>${esc(inWords(inv.total))}</strong></p>

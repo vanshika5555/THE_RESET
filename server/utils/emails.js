@@ -71,8 +71,16 @@ function totalsTable(order) {
     ${line('Subtotal', inr(order.subtotal))}
     ${order.discount > 0 ? line(`Discount${order.couponCode ? ` (${esc(order.couponCode)})` : ''}`, `− ${inr(order.discount)}`) : ''}
     ${line('Delivery', order.delivery > 0 ? inr(order.delivery) : 'Free')}
+    ${order.payment && order.payment.codFee > 0 ? line('Cash on delivery fee', inr(order.payment.codFee)) : ''}
     ${line('Total', inr(order.total || order.subtotal), true)}
   </table>`;
+}
+
+// "Pay ₹X when it arrives" — for cash on delivery orders still to be paid.
+function payLine(order) {
+  if (!order.payment || order.payment.method !== 'cod' || order.payment.status !== 'Pending') return '';
+  return `<p style="margin:16px 0 0;padding:12px 14px;border:1.5px solid #111;font:400 14px/1.5 Helvetica,Arial,sans-serif;color:#111">
+    <strong>Cash on delivery:</strong> please keep <strong>${inr(order.total || order.subtotal)}</strong> ready — pay the courier in cash or by UPI when it arrives.</p>`;
 }
 
 function addressBlock(a = {}) {
@@ -136,12 +144,15 @@ function orderPlaced({ name, order }) {
   const subject = `Order #${id} confirmed`;
   const text = `Hi ${firstName(name)},\n\nThanks for your order #${id}.\n`
     + order.items.map(i => `- ${i.name} (size ${i.size}) x${i.qty} — ${i.price}`).join('\n')
-    + `\nTotal: ${inr(order.total || order.subtotal)}\n\nTrack it: ${SHOP_URL()}/orders/${order._id}`;
+    + `\nTotal: ${inr(order.total || order.subtotal)}`
+    + (order.payment && order.payment.method === 'cod' && order.payment.status === 'Pending'
+      ? `\nCash on delivery: keep ${inr(order.total || order.subtotal)} ready — pay the courier in cash or by UPI.` : '')
+    + `\n\nTrack it: ${SHOP_URL()}/orders/${order._id}`;
   const html = layout({
     preheader: `We've got it. Total ${inr(order.total || order.subtotal)}.`,
     heading: `Thank you, ${esc(firstName(name))}.`,
     body: `Your order <strong>#${id}</strong> is in. We'll email you again when it ships — usually within 2 working days.
-      ${giftLine(order)}${itemsTable(order.items)}${totalsTable(order)}${addressBlock(order.shippingAddress)}`,
+      ${giftLine(order)}${itemsTable(order.items)}${totalsTable(order)}${payLine(order)}${addressBlock(order.shippingAddress)}`,
     cta: { href: `${SHOP_URL()}/orders/${order._id}`, label: 'View order' },
   });
   return { subject, html, text };
@@ -177,7 +188,7 @@ function orderStatus({ name, order }) {
   const html = layout({
     preheader: copy.line,
     heading: copy.heading,
-    body: `Hi ${esc(firstName(name))},<br><br>${copy.line}<br><br>${shipHtml}${itemsTable(order.items)}`,
+    body: `Hi ${esc(firstName(name))},<br><br>${copy.line}<br><br>${shipHtml}${itemsTable(order.items)}${order.status === 'Shipped' ? payLine(order) : ''}`,
     cta: ship
       ? { href: ship.trackingUrl, label: 'Track package' }
       : { href: orderUrl, label: 'View order' },

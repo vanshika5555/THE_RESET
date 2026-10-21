@@ -214,6 +214,7 @@ export default function AdminOrders() {
             ${order.discount ? `<div><span>Discount ${order.couponCode ? '(' + order.couponCode + ')' : ''}</span><span>− ${inr(order.discount)}</span></div>` : ''}
             <div><span>Delivery</span><span>${order.delivery ? inr(order.delivery) : 'Free'}</span></div>
             <div class="grand"><span>Total</span><span>${inr(orderTotal(order))}</span></div>
+            ${order.payment?.method !== 'online' && order.payment?.status === 'Pending' ? `<div class="grand"><span>Collect on delivery</span><span>${inr(orderTotal(order))}</span></div>` : ''}
           </div>`}
           <p class="foot">Thank you for shopping with THE RESET.</p>
           <script>window.onload = () => window.print();</script>
@@ -523,7 +524,23 @@ export default function AdminOrders() {
                 </ul>
               </Section>
 
-              <Section title="Payment">
+              <Section
+                title="Payment"
+                aside={(
+                  <span className={`od-paybadge od-paybadge--${(open.payment?.status || 'Pending').toLowerCase()}`}>
+                    {open.payment?.method === 'online' ? 'Paid online'
+                      : open.payment?.status === 'Paid' ? 'Cash collected'
+                      : open.payment?.status === 'Void' || open.status === 'Cancelled' ? 'Nothing to collect'
+                      : 'Cash on delivery'}
+                  </span>
+                )}
+              >
+                {open.payment?.method !== 'online' && open.payment?.status !== 'Paid' && open.status !== 'Cancelled' && (
+                  <p className="od-note-hint">
+                    The courier collects {inr(orderTotal(open))} in cash or UPI. It's marked paid when you mark the order delivered.
+                    {open.status === 'Pending' && ' Cash orders can be fake — a quick call before confirming helps.'}
+                  </p>
+                )}
                 <dl className="kv">
                   <dt>Subtotal</dt><dd>{inr(open.subtotal)}</dd>
                   {open.discount > 0 && (
@@ -533,6 +550,7 @@ export default function AdminOrders() {
                     </>
                   )}
                   <dt>Delivery</dt><dd>{open.delivery ? inr(open.delivery) : 'Free'}</dd>
+                  {open.payment?.codFee > 0 && (<><dt>COD fee</dt><dd>{inr(open.payment.codFee)}</dd></>)}
                   <dt className="kv-total">Total</dt><dd className="kv-total">{inr(orderTotal(open))}</dd>
                 </dl>
               </Section>

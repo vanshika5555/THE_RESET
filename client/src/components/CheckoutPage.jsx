@@ -27,12 +27,21 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   const [summaryOpen, setSummaryOpen] = useState(false);   // phone: collapsed by default
   const [gift, setGift] = useState({ isGift: false, to: '', message: '' });
   const [deliveryNote, setDeliveryNote] = useState('');
+  // Cash on delivery terms come from the server (fee, upper limit).
+  const [cod, setCod] = useState({ fee: 0, max: 10000 });
+  useEffect(() => {
+    axios.get('/api/orders/payment-options')
+      .then((res) => { if (res.data?.cod) setCod({ fee: Number(res.data.cod.fee) || 0, max: Number(res.data.cod.max) || 10000 }); })
+      .catch(() => {});
+  }, []);
 
   const subtotal = cartSubtotal(cart);
   const discount = coupon ? coupon.discount : 0;
   const afterDiscount = subtotal - discount;
   const delivery = deliveryCharge(afterDiscount);
-  const total = afterDiscount + delivery;
+  const codFee = cod.fee;
+  const total = afterDiscount + delivery + codFee;
+  const overCod = total > cod.max;
   const toFree = amountToFreeDelivery(afterDiscount);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
 
@@ -135,8 +144,6 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
     setLoading(true);
     setStep(3);
     try {
-      // Simulate payment processing
-      await new Promise(r => setTimeout(r, 2000));
 
       const orderItems = cart.map(item => ({
         product: item._id,
@@ -158,6 +165,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
           couponCode: coupon ? coupon.code : '',
           guestEmail: user ? '' : guestEmail.trim(),
           guestName: user ? '' : address.fullName,
+          paymentMethod: 'cod',
           gift: gift.isGift ? gift : { isGift: false },
           deliveryNote,
         }
@@ -190,7 +198,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
       <div className="co-page">
         <div className="co-processing">
           <div className="co-spinner" />
-          <p>Processing your order...</p>
+          <p>Placing your order...</p>
         </div>
       </div>
     );
@@ -337,6 +345,10 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 </label>
                 {gift.isGift && (
                   <div className="co-gift-fields">
+                    <p className="co-gift-cod">
+                      Heads up: with cash on delivery, the person receiving it pays the courier
+                      {' '}{formatPrice(total)}. Online payment is coming soon.
+                    </p>
                     <label className="co-field">
                       <span>To</span>
                       <input
@@ -372,26 +384,35 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 />
               </label>
 
-              {/* Payment method — fake UPI */}
-              <div className="co-payment-methods">
-                <div className="co-payment-option co-payment-option--selected">
+              {/* Payment method */}
+              <div className="co-payment-methods" role="radiogroup" aria-label="Payment method">
+                <div className="co-payment-option co-payment-option--selected" role="radio" aria-checked="true">
                   <div className="co-radio-dot" />
                   <div>
-                    <p className="co-payment-label">UPI / Net Banking / Cards</p>
-                    <p className="co-payment-sub">Simulated payment — no real charge</p>
+                    <p className="co-payment-label">Cash on delivery</p>
+                    <p className="co-payment-sub">
+                      Pay {formatPrice(total)} in cash or by UPI when it arrives
+                      {codFee > 0 ? ` · includes a ${formatPrice(codFee)} COD fee` : ' · no extra fee'}
+                    </p>
                   </div>
                 </div>
-                <div className="co-payment-option">
+                <div className="co-payment-option co-payment-option--off" role="radio" aria-checked="false" aria-disabled="true">
                   <div className="co-radio-dot co-radio-dot--empty" />
                   <div>
-                    <p className="co-payment-label">Cash on Delivery</p>
-                    <p className="co-payment-sub">Pay when your order arrives</p>
+                    <p className="co-payment-label">UPI / cards / net banking</p>
+                    <p className="co-payment-sub">Coming soon</p>
                   </div>
                 </div>
               </div>
 
-              <button className="co-btn co-btn--place co-btn--sticky" onClick={handlePlaceOrder} disabled={loading}>
-                Place Order — ₹{total.toLocaleString('en-IN')}
+              {overCod && (
+                <p className="co-cod-limit" role="alert">
+                  Cash on delivery is available on orders up to {formatPrice(cod.max)}. Remove something from your bag to continue.
+                </p>
+              )}
+
+              <button className="co-btn co-btn--place co-btn--sticky" onClick={handlePlaceOrder} disabled={loading || overCod}>
+                Place order · Pay {formatPrice(total)} on delivery
               </button>
               <p className="co-disclaimer">By placing this order you agree to our Terms & Conditions</p>
             </div>
@@ -489,6 +510,13 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 ? <span className="co-free">FREE</span>
                 : <span>₹{delivery.toLocaleString('en-IN')}</span>}
             </div>
+
+            {codFee > 0 && (
+              <div className="co-total-row">
+                <span>Cash on delivery fee</span>
+                <span>₹{codFee.toLocaleString('en-IN')}</span>
+              </div>
+            )}
 
             {toFree > 0 && (
               <p className="co-free-nudge">

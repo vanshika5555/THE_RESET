@@ -26,7 +26,7 @@ async function pricesToNumbers() {
  */
 async function fixOrderTotals() {
   const orders = mongoose.connection.collection('orders');
-  const all = await orders.find({}).project({ items: 1, subtotal: 1, total: 1, discount: 1, delivery: 1 }).toArray();
+  const all = await orders.find({}).project({ items: 1, subtotal: 1, total: 1, discount: 1, delivery: 1, payment: 1 }).toArray();
   let fixed = 0;
   for (const o of all) {
     const items = Array.isArray(o.items) ? o.items : [];
@@ -34,21 +34,38 @@ async function fixOrderTotals() {
     const sum = Math.round(items.reduce((n, i) => n + parsePrice(i.price) * (Number(i.qty) || 1), 0) * 100) / 100;
     const discount = Math.min(Number(o.discount) || 0, sum);
     const delivery = Number(o.delivery) || 0;
+    const fee = Number(o.payment && o.payment.codFee) || 0;
     const subtotal = Number(o.subtotal);
     const total = Number(o.total);
     const badSubtotal = !Number.isFinite(subtotal) || Math.abs(subtotal - sum) > 1;
-    const badTotal = !Number.isFinite(total) || total <= 0 || total > sum + delivery + 1;
+    const badTotal = !Number.isFinite(total) || total <= 0 || total > sum + delivery + fee + 1;
     if (!badSubtotal && !badTotal) continue;
     await orders.updateOne({ _id: o._id }, {
-      $set: { subtotal: sum, total: Math.max(0, Math.round((sum - discount + delivery) * 100) / 100) },
+      $set: { subtotal: sum, total: Math.max(0, Math.round((sum - discount + delivery + fee) * 100) / 100) },
     });
     fixed += 1;
   }
   if (fixed) console.log(`Fixed the totals on ${fixed} early order${fixed === 1 ? '' : 's'}.`);
 }
 
+// Orders from before cash on delivery have no payment record; give them one.
+async function backfillPayments() {
+  const orders = mongoose.connection.collection('orders');
+  const set = (filter, status) => orders.updateMany(
+    { 'payment.method': { $exists: false }, ...filter },
+    { $set: { payment: { method: 'cod', status, codFee: 0, paidAt: null } } }
+  );
+  const r = await Promise.all([
+    set({ status: 'Delivered' }, 'Paid'),
+    set({ status: 'Cancelled' }, 'Void'),
+    set({ status: { $in: ['Pending', 'Confirmed', 'Shipped'] } }, 'Pending'),
+  ]);
+  const n = r.reduce((s, x) => s + (x.modifiedCount || 0), 0);
+  if (n) console.log(`Added payment details to ${n} older order${n === 1 ? '' : 's'}.`);
+}
+
 async function runMigrations() {
-  for (const step of [pricesToNumbers, fixOrderTotals]) {
+  for (const step of [pricesToNumbers, fixOrderTotals, backfillPayments]) {
     try {
       await step();
     } catch (err) {

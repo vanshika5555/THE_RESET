@@ -342,3 +342,5 @@
   }
   .oc-inline-link { display: inline-block; padding: 4px 0; }
 }
+
+.oc-cod { margin: 14px 0 0; padding: 12px 14px; border: 1.5px solid #111; font-family: 'Archivo', sans-serif; font-size: 13px; line-height: 1.5; color: #111; text-align: left; }

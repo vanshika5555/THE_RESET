@@ -3,7 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { parsePrice, formatINR } = require('../utils/price');
-const { deliveryCharge } = require('../utils/shipping');
+const { deliveryCharge, COD_MAX, COD_FEE } = require('../utils/shipping');
 const Coupon = require('../models/Coupon');
 const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
@@ -38,6 +38,11 @@ async function notify(order, template) {
     if (msg) sendMailLater({ to: user.email, ...msg });
   } catch { /* email is best-effort */ }
 }
+
+// GET /api/orders/payment-options — what checkout can offer (public)
+router.get('/payment-options', (req, res) => {
+  res.json({ cod: { available: true, fee: COD_FEE, max: COD_MAX }, online: { available: false } });
+});
 
 /**
  * POST /api/orders — place an order.
@@ -126,7 +131,19 @@ router.post('/', protect, async (req, res) => {
 
     const afterDiscount = subtotal - discount;
     const delivery = deliveryCharge(afterDiscount);
-    const total = afterDiscount + delivery;
+
+    // Only cash on delivery for now — online payments aren't switched on.
+    const method = req.body.paymentMethod || 'cod';
+    if (method !== 'cod') {
+      return res.status(400).json({ message: 'Online payment isn’t available yet. Please choose cash on delivery.' });
+    }
+    const codFee = COD_FEE;
+    const total = afterDiscount + delivery + codFee;
+    if (total > COD_MAX) {
+      return res.status(400).json({
+        message: `Cash on delivery is available on orders up to ₹${COD_MAX.toLocaleString('en-IN')}. Remove something from your bag, or contact us to arrange payment.`,
+      });
+    }
 
     // Reserve stock line by line; if any line has just sold out, put back
     // what was already taken and tell the customer exactly which piece.
@@ -165,6 +182,7 @@ router.post('/', protect, async (req, res) => {
         delivery,
         total,
         shippingAddress: cleanAddress(shippingAddress),
+        payment: { method: 'cod', status: 'Pending', codFee },
         gift: cleanGift(req.body.gift),
         deliveryNote: cleanText(req.body.deliveryNote, 200),
       });
@@ -226,6 +244,14 @@ router.put('/:id/status', protect, adminOnly, async (req, res) => {
     order.status = req.body.status;
     if (req.body.status === 'Shipped' && !order.shipment.shippedAt) order.shipment.shippedAt = new Date();
     if (req.body.status === 'Delivered' && !order.deliveredAt) order.deliveredAt = new Date();
+    // Cash is collected when the parcel is handed over.
+    if (order.payment && order.payment.method === 'cod') {
+      if (req.body.status === 'Delivered' && order.payment.status === 'Pending') {
+        order.payment.status = 'Paid';
+        order.payment.paidAt = new Date();
+      }
+      if (req.body.status === 'Cancelled' && order.payment.status === 'Pending') order.payment.status = 'Void';
+    }
     const updated = await order.save();
 
     if (previous !== 'Cancelled' && req.body.status === 'Cancelled') {
@@ -285,7 +311,9 @@ router.put('/:id/cancel', protect, async (req, res) => {
     // double-tap cannot put the stock back twice.
     const updated = await Order.findOneAndUpdate(
       { _id: order._id, status: 'Pending' },
-      { status: 'Cancelled' },
+      order.payment?.method === 'cod' && order.payment.status === 'Pending'
+        ? { status: 'Cancelled', 'payment.status': 'Void' }
+        : { status: 'Cancelled' },
       { new: true }
     );
     if (!updated) {

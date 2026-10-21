@@ -33,6 +33,15 @@ const orderSchema = new mongoose.Schema({
   adminNote: { type: String, default: '' },
   // When the order reached the customer — starts the 7-day return window.
   deliveredAt: { type: Date, default: null },
+  // How the customer pays. Cash on delivery is "Pending" until the courier
+  // hands the parcel over (the order is marked Delivered).
+  payment: {
+    method: { type: String, enum: ['cod', 'online'], default: 'cod' },
+    status: { type: String, enum: ['Pending', 'Paid', 'Refunded', 'Void'], default: 'Pending' },
+    codFee: { type: Number, default: 0 },
+    paidAt: { type: Date, default: null },
+  },
+
   // Sent as a gift: a note goes in the parcel and the packing slip shows no prices.
   gift: {
     isGift:  { type: Boolean, default: false },

@@ -252,3 +252,7 @@
 /* ---------- gift ---------- */
 .od-gift-msg { margin: 6px 0 8px; font-size: 15px; line-height: 1.55; color: #111; white-space: pre-line; font-style: italic; }
 .od-delnote { margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; }
+
+/* ---------- payment ---------- */
+.od-pay { margin: 12px 0 0; padding: 10px 12px; font-size: 13px; line-height: 1.45; background: #f6f6f4; color: #444; }
+.od-pay--pending { background: #111; color: #fff; }

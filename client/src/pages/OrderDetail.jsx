@@ -206,9 +206,21 @@ export default function OrderDetail() {
               <span>Delivery</span>
               <span>{order.delivery ? inr(order.delivery) : 'FREE'}</span>
             </div>
+            {order.payment?.codFee > 0 && (
+              <div className="od-sum-row">
+                <span>Cash on delivery fee</span><span>{inr(order.payment.codFee)}</span>
+              </div>
+            )}
             <div className="od-sum-row od-sum-row--total">
               <span>Total</span><span>{inr(order.total || order.subtotal)}</span>
             </div>
+            <p className={`od-pay od-pay--${(order.payment?.status || 'Pending').toLowerCase()}`}>
+              {order.payment?.method === 'online'
+                ? 'Paid online'
+                : order.payment?.status === 'Paid' ? 'Paid in cash on delivery'
+                : order.payment?.status === 'Void' || order.status === 'Cancelled' ? 'Cash on delivery — nothing to pay'
+                : `Cash on delivery — pay ${inr(order.total || order.subtotal)} when it arrives`}
+            </p>
           </div>
 
           {['Shipped', 'Delivered'].includes(order.status) && (

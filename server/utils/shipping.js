@@ -12,6 +12,11 @@
 const FREE_DELIVERY_ABOVE = 1999;   // free once the bag reaches this
 const DELIVERY_CHARGE     = 99;     // otherwise, flat rate
 
+// Cash on delivery. Couriers cap how much cash they'll carry, and some shops
+// add a small fee — set COD_FEE on Render to charge one (0 = free).
+const COD_MAX = Number(process.env.COD_MAX) || 10000;
+const COD_FEE = Math.max(0, Number(process.env.COD_FEE) || 0);
+
 function deliveryCharge(subtotal) {
   const value = Number(subtotal) || 0;
   if (value <= 0) return 0;
@@ -26,6 +31,8 @@ function amountToFreeDelivery(subtotal) {
 }
 
 module.exports = {
+  COD_MAX,
+  COD_FEE,
   FREE_DELIVERY_ABOVE,
   DELIVERY_CHARGE,
   deliveryCharge,
