@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import StockInput from './StockInput';
+import BulkEdit from './BulkEdit';
 import { Switch, SearchInput, FilterTabs, Empty, ErrorNote, Thumb, plural, inr } from './ui';
 import './Products.css';
 
@@ -144,6 +145,7 @@ export default function Products() {
         <div className="toolbar-grow">
           <SearchInput value={query} onChange={setQuery} placeholder="Search products" />
         </div>
+        <BulkEdit products={products} onDone={fetchProducts} />
         <Link to="/products/add" className="btn btn--primary only-desktop">Add product</Link>
       </div>
 
