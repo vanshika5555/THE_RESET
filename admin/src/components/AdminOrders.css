@@ -122,3 +122,36 @@
 .od-log-text { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
 .od-log-meta { font-size: 12.5px; color: var(--text-3); }
 .od-log-old { margin: 12px 0 0; }
+.od-paybadge--refunded { background: var(--grey-bg); color: var(--grey); }
+
+/* ── Picking several orders ── */
+.orow-all { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--line-soft); font-size: 13px; color: var(--text-2); cursor: pointer; }
+.orow-all input, .orow-pick input { width: 18px; height: 18px; accent-color: #000; cursor: pointer; }
+.orow-all-note { margin-left: auto; color: var(--green); font-weight: 500; }
+.orow-wrap { display: flex; align-items: stretch; border-bottom: 1px solid var(--line-soft); }
+.orow-wrap:last-child { border-bottom: none; }
+.orow-wrap .row { border-bottom: none; padding-left: 4px; flex: 1; min-width: 0; }
+.orow-wrap.is-picked, .orow-wrap.is-picked .row { background: #f4f4f2; }
+.orow-pick { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; padding-left: 8px; cursor: pointer; }
+.orow-grid.list-head { padding-left: 56px; }
+
+.bulkbar {
+  position: sticky; bottom: 16px; z-index: 30;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  margin-top: 14px; padding: 12px 14px 12px 18px;
+  background: #000; color: #fff; border-radius: var(--r-lg); box-shadow: var(--shadow-pop);
+}
+.bulkbar-count { font-size: 14px; font-weight: 600; }
+.bulkbar-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.bulkbar .btn--secondary { background: #fff; color: #000; border-color: #fff; }
+.bulkbar .btn--primary { background: #fff; color: #000; }
+.bulkbar .btn--ghost { color: #fff; }
+.bulkbar-hint { flex-basis: 100%; font-size: 12.5px; color: #bbb; }
+@media (max-width: 768px) {
+  .bulkbar { bottom: calc(76px + env(safe-area-inset-bottom)); padding: 12px; }
+  .bulkbar-actions { margin-left: 0; width: 100%; }
+  .bulkbar-actions .btn { flex: 1 1 auto; height: 40px; }
+  .orow-all { padding: 10px 16px; }
+  .orow-wrap .row { padding-left: 2px; }
+  .orow-pick { flex-basis: 40px; padding-left: 6px; }
+}

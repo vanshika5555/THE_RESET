@@ -349,25 +349,30 @@ router.get('/', protect, teamOnly, async (req, res) => {
   }
 });
 
-// PUT /api/orders/:id/status — move an order along (admin only)
-router.put('/:id/status', protect, teamOnly, async (req, res) => {
+/**
+ * Moves one order to a new status — confirming, shipping (optionally with
+ * tracking), delivering or cancelling — with everything that goes with it:
+ * cash marked collected, stock and credit put back, refunds, the activity
+ * log and the customer's email. Used for single orders and in bulk.
+ */
+async function changeStatus(orderId, status, user, shipmentInput) {
   const allowed = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+  const req = { body: { status, shipment: shipmentInput }, user };
+  const fail = (code, message) => ({ code, body: { message } });
   try {
-    if (!allowed.includes(req.body.status)) {
-      return res.status(400).json({ message: 'Unknown order status' });
-    }
-    const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (!allowed.includes(req.body.status)) return fail(400, 'Unknown order status');
+    const order = await Order.findById(orderId);
+    if (!order) return fail(404, 'Order not found');
 
     const previous = order.status;
     if (previous === 'Cancelled' && req.body.status !== 'Cancelled') {
-      return res.status(400).json({ message: 'A cancelled order cannot be reopened — its stock has already gone back on sale.' });
+      return fail(400, 'A cancelled order cannot be reopened — its stock has already gone back on sale.');
     }
     // Shipping can carry the courier and tracking number in the same request.
     const trackingBefore = trackingLine(order);
     if (req.body.shipment !== undefined) {
       const { shipment, error } = buildShipment(req.body.shipment);
-      if (error) return res.status(400).json({ message: error });
+      if (error) return fail(400, error);
       if (shipment) Object.assign(order.shipment, shipment);
     }
     const trackingNow = trackingLine(order);
@@ -393,14 +398,14 @@ router.put('/:id/status', protect, teamOnly, async (req, res) => {
     if (previous !== 'Cancelled' && req.body.status === 'Cancelled'
         && order.payment?.method === 'online' && order.payment.status === 'Paid') {
       if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'This order was paid online — cancelling it refunds the customer, so only the owner can do it.' });
+        return fail(403, 'This order was paid online — cancelling it refunds the customer, so only the owner can do it.');
       }
       try {
         const rf = await rzp.refund(order.payment.razorpayPaymentId);
         order.payment.status = 'Refunded';
         order.payment.refundId = rf.id || '';
       } catch (err) {
-        return res.status(502).json({ message: `The refund didn’t go through (${err.message}), so the order wasn’t cancelled. Try again, or refund it from the Razorpay dashboard first.` });
+        return fail(502, `The refund didn’t go through (${err.message}), so the order wasn’t cancelled. Try again, or refund it from the Razorpay dashboard first.`);
       }
     }
 
@@ -426,10 +431,37 @@ router.put('/:id/status', protect, teamOnly, async (req, res) => {
       notify(updated, emails.orderStatus);
     }
 
-    res.json(updated);
+    return { code: 200, body: updated };
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    return fail(400, err.message);
   }
+}
+
+
+
+// PUT /api/orders/:id/status — move an order along (admin only)
+router.put('/:id/status', protect, teamOnly, async (req, res) => {
+  const r = await changeStatus(req.params.id, req.body.status, req.user, req.body.shipment);
+  res.status(r.code).json(r.body);
+});
+
+// POST /api/orders/bulk-status — { ids: [...], status } several at once.
+// Only forward moves (confirm, ship, deliver) — cancelling stays one by one.
+router.post('/bulk-status', protect, teamOnly, async (req, res) => {
+  const { ids, status } = req.body || {};
+  if (!['Confirmed', 'Shipped', 'Delivered'].includes(status)) {
+    return res.status(400).json({ message: 'In bulk, orders can be confirmed, shipped or delivered.' });
+  }
+  const list = Array.isArray(ids) ? [...new Set(ids.map(String))].filter((id) => /^[a-f0-9]{24}$/i.test(id)).slice(0, 200) : [];
+  if (!list.length) return res.status(400).json({ message: 'Pick at least one order.' });
+  const done = [];
+  const failed = [];
+  for (const id of list) {
+    const r = await changeStatus(id, status, req.user);
+    if (r.code === 200) done.push(r.body);
+    else failed.push({ id, message: r.body.message });
+  }
+  res.json({ done, failed });
 });
 
 /**

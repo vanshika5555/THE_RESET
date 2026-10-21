@@ -8,6 +8,7 @@ import {
   Thumb, Chevron, Drawer, Section,
 } from './ui';
 import openInvoice from '../utils/openInvoice';
+import { toCsv, download } from '../utils/csv';
 import './AdminOrders.css';
 
 const fullAddress = (a) =>
@@ -18,6 +19,8 @@ const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 
 const itemCount = (o) => (o.items || []).reduce((n, i) => n + (Number(i.qty) || 1), 0);
 const orderTotal = (o) => Number(o.total) || Number(o.subtotal) || 0;
+// What's left to collect after the customer's store credit.
+const amountDue = (o) => Math.max(0, Math.round((orderTotal(o) - (Number(o.payment?.credit) || 0)) * 100) / 100);
 const customerName = (o) => o.shippingAddress?.fullName || o.user?.name || 'Unknown customer';
 
 // Suggestions for the courier box — any other name can be typed in.
@@ -172,8 +175,8 @@ export default function AdminOrders() {
     setSavingNote(false);
   };
 
-  // A simple packing slip in a new window, ready to print.
-  const printSlip = (order) => {
+  // Packing slips: one per page, ready to print — for one order or many.
+  const slipBody = (order) => {
     const a = order.shippingAddress || {};
     // Gifts go out without prices, with the sender's note on top.
     const isGift = !!order.gift?.isGift;
@@ -191,30 +194,7 @@ export default function AdminOrders() {
             <div class="gift-from">from ${esc(String(order.user?.name || order.guest?.name || '').trim().split(/\s+/)[0] || 'someone who thought of you')}</div>
           </div>` : '';
 
-    const html = `
-      <html>
-        <head>
-          <title>Packing slip ${shortId(order._id)}</title>
-          <style>
-            body { font-family: -apple-system, system-ui, sans-serif; padding: 32px; color: #111; }
-            h1 { font-size: 20px; letter-spacing: .2em; margin: 0 0 4px; }
-            .sub { color: #555; font-size: 13px; margin-bottom: 26px; }
-            .box { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 6px; }
-            .label { font-size: 12px; color: #555; margin-bottom: 6px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
-            th { text-align: left; font-size: 12px; color: #555; border-bottom: 1px solid #ccc; padding: 8px 6px; }
-            td { padding: 9px 6px; border-bottom: 1px solid #eee; font-size: 14px; }
-            .totals { margin-left: auto; width: 260px; font-size: 14px; }
-            .totals div { display: flex; justify-content: space-between; padding: 5px 0; }
-            .totals .grand { border-top: 1px solid #ccc; margin-top: 6px; padding-top: 10px; font-weight: 700; }
-            .foot { margin-top: 30px; font-size: 12px; color: #777; }
-            .gift { border: 2px solid #111; padding: 20px; margin-bottom: 20px; }
-            .gift-msg { font-size: 18px; line-height: 1.5; font-style: italic; margin: 6px 0 10px; white-space: pre-line; }
-            .gift-from { font-size: 13px; color: #555; }
-            .note { font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc; }
-          </style>
-        </head>
-        <body>
+    return `<section class="page">
           <h1>THE RESET</h1>
           <p class="sub">${isGift ? 'Gift receipt' : 'Packing slip'} · Order ${shortId(order._id)} · ${fmtDate(order.createdAt)}</p>
           <div class="box">
@@ -235,9 +215,43 @@ export default function AdminOrders() {
             ${order.discount ? `<div><span>Discount ${order.couponCode ? '(' + order.couponCode + ')' : ''}</span><span>− ${inr(order.discount)}</span></div>` : ''}
             <div><span>Delivery</span><span>${order.delivery ? inr(order.delivery) : 'Free'}</span></div>
             <div class="grand"><span>Total</span><span>${inr(orderTotal(order))}</span></div>
-            ${order.payment?.method !== 'online' && order.payment?.status === 'Pending' ? `<div class="grand"><span>Collect on delivery</span><span>${inr(orderTotal(order))}</span></div>` : ''}
+            ${order.payment?.method === 'cod' && order.payment?.status === 'Pending' ? `<div class="grand"><span>Collect on delivery</span><span>${inr(amountDue(order))}</span></div>` : ''}
           </div>`}
           <p class="foot">Thank you for shopping with THE RESET.</p>
+          </section>`;
+  };
+
+  const printSlips = (list) => {
+    if (!list.length) return;
+    const html = `
+      <html>
+        <head>
+          <title>${list.length === 1 ? `Packing slip ${shortId(list[0]._id)}` : `${list.length} packing slips`}</title>
+          <style>
+            body { font-family: -apple-system, system-ui, sans-serif; padding: 32px; color: #111; }
+            h1 { font-size: 20px; letter-spacing: .2em; margin: 0 0 4px; }
+            .sub { color: #555; font-size: 13px; margin-bottom: 26px; }
+            .box { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 6px; }
+            .label { font-size: 12px; color: #555; margin-bottom: 6px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+            th { text-align: left; font-size: 12px; color: #555; border-bottom: 1px solid #ccc; padding: 8px 6px; }
+            td { padding: 9px 6px; border-bottom: 1px solid #eee; font-size: 14px; }
+            .totals { margin-left: auto; width: 260px; font-size: 14px; }
+            .totals div { display: flex; justify-content: space-between; padding: 5px 0; }
+            .totals .grand { border-top: 1px solid #ccc; margin-top: 6px; padding-top: 10px; font-weight: 700; }
+            .foot { margin-top: 30px; font-size: 12px; color: #777; }
+            .gift { border: 2px solid #111; padding: 20px; margin-bottom: 20px; }
+            .gift-msg { font-size: 18px; line-height: 1.5; font-style: italic; margin: 6px 0 10px; white-space: pre-line; }
+            .gift-from { font-size: 13px; color: #555; }
+            .note { font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc; }
+                      .page { page-break-after: always; break-after: page; }
+            .page:last-child { page-break-after: auto; break-after: auto; }
+            .page + .page { border-top: 1px dashed #ccc; padding-top: 32px; margin-top: 32px; }
+            @media print { .page + .page { border-top: none; padding-top: 0; margin-top: 0; } }
+          </style>
+        </head>
+        <body>
+          ${list.map(slipBody).join('')}
           <script>window.onload = () => window.print();</script>
         </body>
       </html>`;
@@ -249,6 +263,51 @@ export default function AdminOrders() {
     }
     w.document.write(html);
     w.document.close();
+  };
+  const printSlip = (order) => printSlips([order]);
+
+  /* ── several orders at once ── */
+  const [picked, setPicked] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkNote, setBulkNote] = useState('');
+  const togglePick = (id) => setPicked((p) => {
+    const next = new Set(p);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  // Ready for a courier's bulk upload (Shiprocket, Delhivery and most others take this shape).
+  const courierCsv = (list) => {
+    const rows = [['Order', 'Date', 'Name', 'Phone', 'Address', 'Landmark', 'City', 'State', 'Pincode', 'Payment', 'Collect (₹)', 'Order value (₹)', 'Items', 'Pieces', 'Gift', 'Courier note']];
+    list.forEach((o) => {
+      const a = o.shippingAddress || {};
+      const cod = o.payment?.method === 'cod' && o.payment?.status === 'Pending';
+      rows.push([
+        shortId(o._id).replace('#', ''), fmtDate(o.createdAt), a.fullName || customerName(o), a.phone || '',
+        [a.houseNo, a.address].filter(Boolean).join(', '), a.landmark || '', a.city || '', a.state || '', a.pincode || '',
+        cod ? 'COD' : 'Prepaid', cod ? amountDue(o) : 0, orderTotal(o),
+        (o.items || []).map((i) => `${i.name} (${i.size}) x${i.qty}`).join('; '), itemCount(o),
+        o.gift?.isGift ? 'Yes' : '', o.deliveryNote || '',
+      ]);
+    });
+    download(`the-reset-courier-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
+  };
+
+  const bulkStatus = async (list, status) => {
+    const word = { Confirmed: 'Confirm', Shipped: 'Mark shipped', Delivered: 'Mark delivered' }[status];
+    if (!window.confirm(`${word}: ${plural(list.length, 'order')}? Each customer gets the usual email.`)) return;
+    setBulkBusy(true); setError(''); setBulkNote('');
+    try {
+      const res = await axios.post('/api/orders/bulk-status', { ids: list.map((o) => o._id), status });
+      (res.data.done || []).forEach(mergeSaved);
+      const failed = res.data.failed || [];
+      setBulkNote(`${plural((res.data.done || []).length, 'order')} marked ${status.toLowerCase()}.`);
+      if (failed.length) setError(`${plural(failed.length, 'order')} couldn't be changed: ${failed[0].message}`);
+      setPicked(new Set());
+    } catch (err) {
+      setError(err.response?.data?.message || 'The orders could not be updated. Try again.');
+    }
+    setBulkBusy(false);
   };
 
   /* ── filtering ── */
@@ -277,6 +336,13 @@ export default function AdminOrders() {
   }, [orders, filter, search]);
 
   const open = orders.find((o) => o._id === openId) || null;
+
+  // A new tab or search starts a fresh selection.
+  useEffect(() => { setPicked(new Set()); setBulkNote(''); }, [filter, search]);
+  const pickedList = visible.filter((o) => picked.has(o._id));
+  const allPicked = visible.length > 0 && pickedList.length === visible.length;
+  const sameStatus = pickedList.length && pickedList.every((o) => o.status === pickedList[0].status) ? pickedList[0].status : null;
+  const bulkNext = sameStatus && NEXT_STEP[sameStatus];
 
   const tabs = [
     { value: 'All', label: 'All', count: counts.All },
@@ -328,6 +394,16 @@ export default function AdminOrders() {
           />
         ) : (
           <>
+            <label className="orow-all">
+              <input
+                type="checkbox"
+                checked={allPicked}
+                ref={(el) => { if (el) el.indeterminate = pickedList.length > 0 && !allPicked; }}
+                onChange={() => setPicked(allPicked ? new Set() : new Set(visible.map((o) => o._id)))}
+              />
+              <span>{allPicked ? 'All selected' : `Select all ${visible.length}`}</span>
+              {bulkNote && <span className="orow-all-note" role="status">{bulkNote}</span>}
+            </label>
             <div className="list-head orow-grid only-desktop">
               <span>Customer</span>
               <span>Progress</span>
@@ -337,8 +413,11 @@ export default function AdminOrders() {
             </div>
 
             {visible.map((o) => (
+              <div key={o._id} className={`orow-wrap ${picked.has(o._id) ? 'is-picked' : ''}`}>
+              <label className="orow-pick" aria-label={`Select order ${shortId(o._id)}`}>
+                <input type="checkbox" checked={picked.has(o._id)} onChange={() => togglePick(o._id)} />
+              </label>
               <button
-                key={o._id}
                 type="button"
                 className={`row orow orow-grid ${openId === o._id ? 'row--active' : ''}`}
                 onClick={() => setParam('order', o._id)}
@@ -365,10 +444,30 @@ export default function AdminOrders() {
 
                 <span className="orow-chev only-desktop"><Chevron /></span>
               </button>
+              </div>
             ))}
           </>
         )}
       </div>
+
+      {pickedList.length > 0 && (
+        <div className="bulkbar" role="region" aria-label="Selected orders">
+          <span className="bulkbar-count">{plural(pickedList.length, 'order')} selected</span>
+          <div className="bulkbar-actions">
+            {bulkNext && (
+              <button type="button" className="btn btn--primary btn--sm" disabled={bulkBusy} onClick={() => bulkStatus(pickedList, bulkNext.to)}>
+                {bulkBusy ? 'Working…' : { Confirmed: 'Confirm all', Shipped: 'Mark all shipped', Delivered: 'Mark all delivered' }[bulkNext.to]}
+              </button>
+            )}
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => printSlips(pickedList)}>Print slips</button>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => courierCsv(pickedList)}>Courier sheet</button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setPicked(new Set())}>Clear</button>
+          </div>
+          {!bulkNext && pickedList.length > 1 && !sameStatus && (
+            <p className="bulkbar-hint">Pick orders with the same status to move them along together.</p>
+          )}
+        </div>
+      )}
 
       {/* ── Order panel ── */}
       <Drawer
@@ -549,7 +648,9 @@ export default function AdminOrders() {
                 title="Payment"
                 aside={(
                   <span className={`od-paybadge od-paybadge--${(open.payment?.status || 'Pending').toLowerCase()}`}>
-                    {open.payment?.method === 'online'
+                    {open.payment?.method === 'credit'
+                      ? (open.payment.status === 'Refunded' ? 'Credit given back' : 'Store credit')
+                      : open.payment?.method === 'online'
                       ? (open.payment.status === 'Refunded' ? 'Refunded' : 'Paid online')
                       : open.payment?.status === 'Paid' ? 'Cash collected'
                       : open.payment?.status === 'Void' || open.status === 'Cancelled' ? 'Nothing to collect'
@@ -557,9 +658,9 @@ export default function AdminOrders() {
                   </span>
                 )}
               >
-                {open.payment?.method !== 'online' && open.payment?.status !== 'Paid' && open.status !== 'Cancelled' && (
+                {open.payment?.method === 'cod' && open.payment?.status !== 'Paid' && open.status !== 'Cancelled' && (
                   <p className="od-note-hint">
-                    The courier collects {inr(orderTotal(open))} in cash or UPI. It's marked paid when you mark the order delivered.
+                    The courier collects {inr(amountDue(open))} in cash or UPI. It's marked paid when you mark the order delivered.
                     {open.status === 'Pending' && ' Cash orders can be fake — a quick call before confirming helps.'}
                   </p>
                 )}
@@ -574,6 +675,14 @@ export default function AdminOrders() {
                   <dt>Delivery</dt><dd>{open.delivery ? inr(open.delivery) : 'Free'}</dd>
                   {open.payment?.codFee > 0 && (<><dt>COD fee</dt><dd>{inr(open.payment.codFee)}</dd></>)}
                   <dt className="kv-total">Total</dt><dd className="kv-total">{inr(orderTotal(open))}</dd>
+                  {open.payment?.credit > 0 && (
+                    <>
+                      <dt>Paid with store credit</dt><dd className="kv-good">− {inr(open.payment.credit)}</dd>
+                      {amountDue(open) > 0 && (
+                        <><dt>{open.payment.method === 'online' ? 'Paid online' : 'Cash on delivery'}</dt><dd>{inr(amountDue(open))}</dd></>
+                      )}
+                    </>
+                  )}
                 </dl>
               </Section>
 
