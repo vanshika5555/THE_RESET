@@ -430,6 +430,10 @@ async function changeStatus(orderId, status, user, shipmentInput) {
     if (previous !== req.body.status) {
       notify(updated, emails.orderStatus);
     }
+    // A friend's first order arriving pays out "invite a friend" credit.
+    if (previous !== 'Delivered' && req.body.status === 'Delivered') {
+      require('../utils/referrals').rewardIfDue(updated);
+    }
 
     return { code: 200, body: updated };
   } catch (err) {

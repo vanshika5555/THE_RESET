@@ -1,0 +1,10 @@
+.ib { display: flex; align-items: center; gap: 14px; padding: 10px 16px 10px 20px; background: #f6f6f4; border-bottom: 1px solid #e7e7e4; }
+.ib-text { flex: 1; margin: 0; font-size: 14px; line-height: 1.45; color: #333; }
+.ib-text strong { color: #111; }
+.ib-btn { flex-shrink: 0; display: inline-flex; align-items: center; min-height: 38px; padding: 0 16px; background: #111; color: #fff; text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.ib-close { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; background: none; color: #777; cursor: pointer; }
+@media (max-width: 640px) {
+  .ib { flex-wrap: wrap; padding: 12px 8px 12px 16px; gap: 10px; }
+  .ib-text { flex-basis: calc(100% - 56px); font-size: 13.5px; }
+  .ib-btn { order: 3; flex: 1; justify-content: center; min-height: 44px; margin-right: 8px; }
+}

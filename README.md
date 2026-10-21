@@ -30,6 +30,9 @@
 - **Sold out?** — pick the size anyway and tap *Notify me*; you get an email the moment it's restocked.
 - **Share** — the phone share sheet or copy-link; shared links unfurl on WhatsApp, Instagram and X with the product's photo and price.
 - **Bag & checkout** — quick-add from any grid, saved addresses, coupon codes, server-side price checks.
+- **Store credit** — returns can be refunded as instant store credit, the owner can add credit as a goodwill gesture, and it comes off at checkout (whole order or part of it).
+- **Invite a friend** — “give ₹200, get ₹200”: share a link; both get store credit once the friend’s first order arrives (no credit for sign-ups alone, so fake accounts earn nothing).
+- **Gift cards** — bought online and emailed with a code; the recipient adds it to their account as store credit. The owner can send free ones from the admin.
 - **Account** — orders with live status, cancel while pending, **returns & exchanges** within 7 days, wishlist, reviews, password reset by email, *sign out everywhere*.
 - **Newsletter** — subscribers get a one-time `WELCOME-XXXXXX` code for their first order.
 - **Built for phones first** — sticky Add to Bag, 44px tap targets, no horizontal scroll at 360px.

@@ -3,17 +3,19 @@ import axios from 'axios';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PasswordField, { passwordProblem } from '../components/PasswordField';
+import { inviteCode, forgetInvite } from '../utils/invite';
 import usePageMeta from '../hooks/usePageMeta';
 import './AuthPage.css';
 
 export default function AuthPage() {
-  const [mode, setMode] = useState('login'); // 'login' or 'signup'
+  const location = useLocation();
+  // Arrived from a friend's invite (or its "Sign up" button)? Start on sign-up.
+  const [mode, setMode] = useState(() => (location.state?.signup ? 'signup' : 'login')); // 'login' or 'signup'
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   usePageMeta({ title: mode === 'login' ? 'Sign in' : 'Create account' });
 
@@ -41,7 +43,7 @@ export default function AuthPage() {
       const url = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
       const payload = mode === 'login'
         ? { email: form.email.trim(), password: form.password }
-        : { name: form.name.trim(), email: form.email.trim(), password: form.password };
+        : { name: form.name.trim(), email: form.email.trim(), password: form.password, ref: inviteCode() || undefined };
 
       const res = await axios.post(url, payload);
       // Admin accounts with 2-step verification sign in from the admin panel.
@@ -50,6 +52,7 @@ export default function AuthPage() {
         setLoading(false);
         return;
       }
+      if (mode === 'signup') forgetInvite();
       login(res.data);
       navigate(from, { replace: true });
     } catch (err) {

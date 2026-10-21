@@ -11,7 +11,45 @@ import './StoreCredit.css';
 
 const inr = (n) => `₹${(Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-IN')}`;
 const fmt = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-const KIND = { refund: 'Return refunded as credit', spent: 'Used at checkout', returned: 'Given back', adjust: 'From THE RESET', giftcard: 'Gift card added' };
+const KIND = { refund: 'Return refunded as credit', spent: 'Used at checkout', returned: 'Given back', adjust: 'From THE RESET', giftcard: 'Gift card added', referral: 'Invite a friend' };
+
+// "Give ₹200, get ₹200": the shopper's invite link, a share button and how it's going.
+function InviteFriends() {
+  const [ref, setRef] = useState(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { axios.get('/api/auth/referral').then((r) => setRef(r.data)).catch(() => {}); }, []);
+  if (!ref?.on) return null;
+
+  const message = `I shop at THE RESET — sign up with my link and we both get ${inr(ref.reward)} to spend: ${ref.link}`;
+  const share = async () => {
+    const touch = window.matchMedia && window.matchMedia('(hover: none)').matches;
+    if (touch && navigator.share) {
+      try { await navigator.share({ title: 'THE RESET', text: message }); return; } catch { /* closed */ }
+    }
+    try { await navigator.clipboard.writeText(ref.link); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* fine */ }
+  };
+
+  return (
+    <section className="sc-invite" aria-labelledby="sc-invite-title">
+      <h3 className="sc-head" id="sc-invite-title">Invite a friend</h3>
+      <p className="sc-invite-lede">
+        <strong>Give {inr(ref.reward)}, get {inr(ref.reward)}.</strong> When a friend signs up with your link and their first order
+        {ref.min ? ` of ${inr(ref.min)}+` : ''} arrives, you both get {inr(ref.reward)} store credit.
+      </p>
+      <div className="sc-invite-row">
+        <code className="sc-invite-link">{ref.link.replace(/^https?:\/\//, '')}</code>
+        <button type="button" className="sc-invite-btn" onClick={share}>{copied ? 'Link copied' : 'Share link'}</button>
+      </div>
+      <a className="sc-invite-wa" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">Send on WhatsApp</a>
+      {ref.joined > 0 && (
+        <p className="sc-invite-stats">
+          {ref.joined} friend{ref.joined === 1 ? '' : 's'} joined · {ref.rewarded} first order{ref.rewarded === 1 ? '' : 's'} arrived
+          {ref.rewarded > 0 && ` · ${inr(ref.rewarded * ref.reward)} earned`}
+        </p>
+      )}
+    </section>
+  );
+}
 
 export default function StoreCredit() {
   const [params, setParams] = useSearchParams();
@@ -78,6 +116,8 @@ export default function StoreCredit() {
         {redeemMsg && <p className={`sc-redeem-msg ${redeemMsg.ok ? 'is-ok' : ''}`} role="status">{redeemMsg.text}</p>}
         <p className="sc-redeem-hint">Want to send one? <Link to="/gift-cards">Gift cards</Link></p>
       </form>
+
+      <InviteFriends />
 
       {data.history.length > 0 && (
         <>

@@ -9,6 +9,9 @@ import.meta.glob(['./pages/*.css', './components/*.css'], { eager: true });
 import './brand.css';
 
 import axios from "axios";
+import { captureInvite } from './utils/invite';
+// Came from a friend's invite link? Remember the code for sign-up.
+captureInvite();
 // The API address comes from REACT_APP_API_URL (set on Vercel). Vite is told
 // to accept that old name too, so nothing on Vercel has to change.
 axios.defaults.baseURL = import.meta.env.REACT_APP_API_URL || import.meta.env.VITE_API_URL || "http://localhost:5000";

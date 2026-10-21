@@ -333,6 +333,23 @@ function priceDrop({ name, product, stopUrl }) {
   return { subject, html, text };
 }
 
+// ---------- invite a friend ----------
+
+function referralReward({ name, amount, other, inviter }) {
+  const subject = inviter ? `${other} shopped with your invite — ${inr(amount)} for you` : `${inr(amount)} store credit — a welcome gift`;
+  const line = inviter
+    ? `${esc(other)} joined THE RESET with your invite and their first order has arrived. We've added <strong>${inr(amount)}</strong> to your store credit — it comes off at checkout.`
+    : `Your first order has arrived — thanks for joining through ${esc(other)}'s invite. We've added <strong>${inr(amount)}</strong> to your store credit for next time.`;
+  const html = layout({
+    preheader: `${inr(amount)} added to your store credit.`,
+    heading: inviter ? 'Thanks for the invite.' : 'A little welcome gift.',
+    body: `${line}<br><br>Invite more friends from your account — there's no limit.`,
+    cta: { href: `${SHOP_URL()}/profile/credit`, label: 'See my credit' },
+  });
+  const text = `Hi ${firstName(name)},\n\n${line.replace(/<[^>]+>/g, '')}\n\n${SHOP_URL()}/profile/credit`;
+  return { subject, html, text };
+}
+
 // ---------- product questions ----------
 
 function questionAnswered({ name, question, product }) {
@@ -391,4 +408,4 @@ function giftCardReceipt({ card, name }) {
   return { subject, html, text };
 }
 
-module.exports = { questionAnswered, giftCard, giftCardReceipt, layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };
+module.exports = { referralReward, questionAnswered, giftCard, giftCardReceipt, layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };

@@ -60,6 +60,10 @@ const userSchema = new mongoose.Schema({
   bagReminders:       { type: Boolean, default: true },   // turned off from the email's link
   dailyDigest:        { type: Boolean, default: true },   // team only: the morning email
   credit:             { type: Number, default: 0, min: 0 },   // store credit balance (₹)
+  // Invite a friend: my code, who invited me, and whether that's been rewarded.
+  referralCode:       { type: String, unique: true, sparse: true, uppercase: true, trim: true },
+  referredBy:         { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  referralRewarded:   { type: Boolean, default: false },
 
   wishlist: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],

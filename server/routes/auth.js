@@ -54,6 +54,8 @@ router.post('/register', authLimiter, async (req, res) => {
 
     // role is never taken from the request — nobody can sign themselves up as admin.
     const user = await User.create({ name, email, password });
+    // Joined through a friend's invite link?
+    if (req.body.ref) await require('../utils/referrals').attach(user, str(req.body.ref)).catch(() => null);
     sendMailLater({ to: user.email, ...emails.welcome({ name: user.name }) });
     res.status(201).json(session(user));
   } catch (err) {
@@ -382,6 +384,36 @@ router.get('/my-sizes', protect, async (req, res) => {
   } catch (err) {
     res.json({});
   }
+});
+
+// ---- Invite a friend ----
+
+// GET /api/auth/referral — my code and how my invites are doing
+router.get('/referral', protect, async (req, res) => {
+  try {
+    const r = require('../utils/referrals');
+    if (!r.on()) return res.json({ on: false });
+    const code = await r.codeFor(req.user);
+    const friends = await User.find({ referredBy: req.user._id }).select('name referralRewarded createdAt').sort({ createdAt: -1 }).lean();
+    const shop = (process.env.SHOP_URL || 'https://the-reset-snowy.vercel.app').replace(/\/$/, '');
+    res.json({
+      on: true, code, link: `${shop}/?ref=${encodeURIComponent(code)}`,
+      reward: r.reward(), min: r.minOrder(),
+      joined: friends.length,
+      rewarded: friends.filter((f) => f.referralRewarded).length,
+      friends: friends.slice(0, 20).map((f) => ({ name: String(f.name || '').split(/\s+/)[0], rewarded: !!f.referralRewarded, at: f.createdAt })),
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not load your invite.' });
+  }
+});
+
+// GET /api/auth/referral/:code — who sent this invite (first name only), for the welcome note
+router.get('/referral/:code', async (req, res) => {
+  const r = require('../utils/referrals');
+  const inviter = r.on() ? await r.inviterFor(req.params.code).catch(() => null) : null;
+  if (!inviter) return res.status(404).json({ message: 'That invite link isn’t valid.' });
+  res.json({ name: String(inviter.name || '').split(/\s+/)[0], reward: r.reward(), min: r.minOrder() });
 });
 
 // ---- Store credit ----

@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 import InstallApp from './components/InstallApp';
+import InviteBanner from './components/InviteBanner';
 
 
 // After a new version goes live, a page left open may ask for files that no
@@ -55,6 +56,7 @@ function App() {
             <ScrollToTop />
             <div className="App">
               <Navbar />
+              <InviteBanner />
               <ErrorBoundary>
               <Suspense fallback={<div className="page-loading" aria-busy="true" />}>
               <Routes>
