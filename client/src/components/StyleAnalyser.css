@@ -44,7 +44,7 @@
 }
 
 .sa-eyebrow {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.2em;
@@ -54,7 +54,7 @@
 }
 
 .sa-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 26px;
   font-weight: 400;
   color: #fff;
@@ -98,7 +98,7 @@
 .sa-submit-bar .sa-submit { margin-top: 0; min-height: 52px; }
 
 .sa-intro {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 300;
   color: #888;
@@ -113,7 +113,7 @@
   border: 1px solid #fca5a5;
   color: #dc2626;
   padding: 10px 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   border-radius: 4px;
   margin-bottom: 16px;
@@ -126,7 +126,7 @@
 
 .sa-label {
   display: block;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -143,7 +143,7 @@
 }
 
 .sa-pill {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 400;
   padding: 7px 16px;
@@ -174,7 +174,7 @@
   color: #fff;
   border: none;
   padding: 16px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -214,14 +214,14 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .sa-loading-text {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 20px;
   font-weight: 400;
   color: #111;
 }
 
 .sa-loading-sub {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   color: #aaa;
   font-weight: 300;
@@ -236,7 +236,7 @@
 }
 
 .sa-result-badge {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -252,7 +252,7 @@
 }
 
 .sa-result-tags span {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 11px;
   color: #888;
   background: #f5f5f5;
@@ -265,7 +265,7 @@
 }
 
 .sa-result-heading {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: #111;
@@ -277,7 +277,7 @@
 .sa-result-heading:first-child { margin-top: 0; }
 
 .sa-result-line {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 300;
   color: #444;
@@ -299,7 +299,7 @@
   background: #fff;
   border: 1px solid #111;
   color: #111;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -316,7 +316,7 @@
   background: #111;
   border: 1px solid #111;
   color: #fff;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -370,7 +370,7 @@
 }
 
 .sa-outfit-text {
-  font-family: "Cormorant Garamond", serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 17px;
   font-weight: 400;
   color: #fff;
@@ -388,7 +388,7 @@
 }
 
 .sa-result-list li {
-  font-family: "DM Sans", sans-serif;
+  font-family: 'Archivo', sans-serif;
   font-size: 13px;
   font-weight: 300;
   color: #444;
