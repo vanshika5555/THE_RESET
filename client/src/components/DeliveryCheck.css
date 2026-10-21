@@ -1,0 +1,20 @@
+.dc { margin-top: 22px; padding: 16px; border: 1px solid #e5e5e3; }
+.dc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #111; }
+.dc-title { font-size: 14px; font-weight: 600; }
+.dc-form { display: flex; gap: 8px; }
+.dc-input {
+  flex: 1; min-width: 0; height: 44px; padding: 0 12px;
+  border: 1px solid #ccc; border-radius: 0; font: inherit; font-size: 16px; letter-spacing: .08em;
+}
+.dc-input:focus { outline: none; border-color: #111; }
+.dc-input[aria-invalid='true'] { border-color: #b91c1c; }
+.dc-btn {
+  height: 44px; padding: 0 18px; border: 1px solid #111; background: #111; color: #fff;
+  font: inherit; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+}
+.dc-error { margin: 8px 0 0; font-size: 13px; color: #b91c1c; }
+.dc-when { margin: 0; font-size: 15px; color: #111; }
+.dc-to { margin: 2px 0 0; font-size: 13px; color: #666; display: flex; align-items: baseline; gap: 10px; }
+.dc-change { background: none; border: none; padding: 6px 0; font: inherit; font-size: 13px; color: #111; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.dc-perks { list-style: none; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
+.dc-perks li::before { content: '✓'; margin-right: 8px; color: #111; }

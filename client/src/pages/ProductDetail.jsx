@@ -9,6 +9,7 @@ import ProductReviews from '../components/ProductReviews';
 import RelatedProducts from '../components/RelatedProducts';
 import RecentlyViewed from '../components/RecentlyViewed';
 import NotifyMe from '../components/NotifyMe';
+import DeliveryCheck from '../components/DeliveryCheck';
 import { addRecent } from '../utils/recent';
 import Loading from '../components/Loading';
 import SizeGuide from '../components/SizeGuide';
@@ -541,6 +542,8 @@ export default function ProductDetail() {
             </button>
           </div>
           <span className="sr-only" role="status" aria-live="polite">{copied ? 'Link copied' : ''}</span>
+
+          <DeliveryCheck />
 
           <div className="pd-accordions">
             <Accordion title="Materials &amp; Wash Care">
