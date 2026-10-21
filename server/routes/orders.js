@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { parsePrice, formatINR } = require('../utils/price');
 const { deliveryCharge, COD_MAX, COD_FEE } = require('../utils/shipping');
+const rzp = require('../utils/razorpay');
 const Coupon = require('../models/Coupon');
 const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
@@ -41,7 +42,10 @@ async function notify(order, template) {
 
 // GET /api/orders/payment-options — what checkout can offer (public)
 router.get('/payment-options', (req, res) => {
-  res.json({ cod: { available: true, fee: COD_FEE, max: COD_MAX }, online: { available: false } });
+  res.json({
+    cod: { available: true, fee: COD_FEE, max: COD_MAX },
+    online: { available: rzp.enabled() },
+  });
 });
 
 /**
@@ -132,14 +136,13 @@ router.post('/', protect, async (req, res) => {
     const afterDiscount = subtotal - discount;
     const delivery = deliveryCharge(afterDiscount);
 
-    // Only cash on delivery for now — online payments aren't switched on.
-    const method = req.body.paymentMethod || 'cod';
-    if (method !== 'cod') {
+    const method = req.body.paymentMethod === 'online' ? 'online' : 'cod';
+    if (method === 'online' && !rzp.enabled()) {
       return res.status(400).json({ message: 'Online payment isn’t available yet. Please choose cash on delivery.' });
     }
-    const codFee = COD_FEE;
+    const codFee = method === 'cod' ? COD_FEE : 0;
     const total = afterDiscount + delivery + codFee;
-    if (total > COD_MAX) {
+    if (method === 'cod' && total > COD_MAX) {
       return res.status(400).json({
         message: `Cash on delivery is available on orders up to ₹${COD_MAX.toLocaleString('en-IN')}. Remove something from your bag, or contact us to arrange payment.`,
       });
@@ -182,7 +185,9 @@ router.post('/', protect, async (req, res) => {
         delivery,
         total,
         shippingAddress: cleanAddress(shippingAddress),
-        payment: { method: 'cod', status: 'Pending', codFee },
+        payment: method === 'online'
+          ? { method: 'online', status: 'Awaiting', codFee: 0 }
+          : { method: 'cod', status: 'Pending', codFee },
         gift: cleanGift(req.body.gift),
         deliveryNote: cleanText(req.body.deliveryNote, 200),
       });
@@ -192,6 +197,22 @@ router.post('/', protect, async (req, res) => {
       throw err;
     }
 
+    if (method === 'online') {
+      // Ask Razorpay for a payment order; the shopper pays in the Razorpay window.
+      try {
+        const ro = await rzp.createOrder({ amount: total, receipt: String(order._id), notes: { order: String(order._id) } });
+        order.payment.razorpayOrderId = ro.id;
+        await order.save();
+        return res.status(201).json({
+          ...order.toObject(),
+          razorpay: { key: rzp.keyId(), orderId: ro.id, amount: ro.amount, currency: 'INR' },
+        });
+      } catch (err) {
+        await releaseOrder(order, 'Void');
+        return res.status(502).json({ message: 'Online payment couldn’t start just now. Try again, or choose cash on delivery.' });
+      }
+    }
+
     notify(order, emails.orderPlaced);
     res.status(201).json(order);
   } catch (err) {
@@ -199,10 +220,71 @@ router.post('/', protect, async (req, res) => {
   }
 });
 
+/**
+ * Cancels an online order that was never paid and puts everything back:
+ * the stock and the discount code's use. Safe to call twice.
+ */
+async function releaseOrder(order, paymentStatus = 'Void') {
+  const r = await Order.updateOne(
+    { _id: order._id, 'payment.status': 'Awaiting' },
+    { $set: { status: 'Cancelled', 'payment.status': paymentStatus } }
+  );
+  if (!r.modifiedCount) return false;
+  await restock(order.items);
+  if (order.couponCode) await Coupon.updateOne({ code: order.couponCode, usedCount: { $gt: 0 } }, { $inc: { usedCount: -1 } });
+  return true;
+}
+
+// Marks an online order paid (once) and sends the confirmation email.
+async function markPaid(order, paymentId) {
+  const r = await Order.updateOne(
+    { _id: order._id, 'payment.status': 'Awaiting' },
+    { $set: { 'payment.status': 'Paid', 'payment.paidAt': new Date(), 'payment.razorpayPaymentId': paymentId } }
+  );
+  const fresh = await Order.findById(order._id);
+  if (r.modifiedCount) notify(fresh, emails.orderPlaced);
+  return fresh;
+}
+
+// POST /api/orders/:id/pay — the Razorpay window reports a successful payment
+router.post('/:id/pay', protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order || String(order.user) !== String(req.user._id)) return res.status(404).json({ message: 'Order not found' });
+    if (order.payment?.method !== 'online') return res.status(400).json({ message: 'This order is paid on delivery.' });
+    if (order.payment.status === 'Paid') return res.json(order);
+
+    const { razorpay_payment_id: pid, razorpay_order_id: oid, razorpay_signature: sig } = req.body || {};
+    if (!pid || oid !== order.payment.razorpayOrderId || !rzp.validCheckoutSignature(oid, pid, sig)) {
+      return res.status(400).json({ message: 'We couldn’t confirm that payment. If money left your account, it will be refunded automatically.' });
+    }
+    if (order.payment.status !== 'Awaiting') {
+      // Paid after the order had already timed out — give the money back.
+      try { await rzp.refund(pid); } catch { /* reported below */ }
+      return res.status(409).json({ message: 'This order had expired before the payment arrived, so we’ve refunded it. Please place the order again.' });
+    }
+    res.json(await markPaid(order, pid));
+  } catch (err) {
+    res.status(500).json({ message: 'Could not confirm the payment. Check My Orders in a minute.' });
+  }
+});
+
+// POST /api/orders/:id/abandon — the shopper closed the payment window
+router.post('/:id/abandon', protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order || String(order.user) !== String(req.user._id)) return res.status(404).json({ message: 'Order not found' });
+    await releaseOrder(order, 'Void');
+    res.json({ released: true });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not release the order.' });
+  }
+});
+
 // GET /api/orders/myorders — the signed-in customer's own orders
 router.get('/myorders', protect, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.user._id, 'payment.status': { $ne: 'Awaiting' } }).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -212,7 +294,7 @@ router.get('/myorders', protect, async (req, res) => {
 // GET /api/orders — every order (admin only)
 router.get('/', protect, adminOnly, async (req, res) => {
   try {
-    const orders = await Order.find({})
+    const orders = await Order.find({ 'payment.status': { $ne: 'Awaiting' } })
       .populate('user', 'name email')
       .sort({ createdAt: -1 });
     res.json(orders);
@@ -251,6 +333,17 @@ router.put('/:id/status', protect, adminOnly, async (req, res) => {
         order.payment.paidAt = new Date();
       }
       if (req.body.status === 'Cancelled' && order.payment.status === 'Pending') order.payment.status = 'Void';
+    }
+    // Cancelling an order that was paid online sends the money back first.
+    if (previous !== 'Cancelled' && req.body.status === 'Cancelled'
+        && order.payment?.method === 'online' && order.payment.status === 'Paid') {
+      try {
+        const rf = await rzp.refund(order.payment.razorpayPaymentId);
+        order.payment.status = 'Refunded';
+        order.payment.refundId = rf.id || '';
+      } catch (err) {
+        return res.status(502).json({ message: `The refund didn’t go through (${err.message}), so the order wasn’t cancelled. Try again, or refund it from the Razorpay dashboard first.` });
+      }
     }
     const updated = await order.save();
 
@@ -321,6 +414,17 @@ router.put('/:id/cancel', protect, async (req, res) => {
     }
 
     await restock(order.items);
+    // Paid online? Refund straight away.
+    if (updated.payment?.method === 'online' && updated.payment.status === 'Paid') {
+      try {
+        const rf = await rzp.refund(updated.payment.razorpayPaymentId);
+        updated.payment.status = 'Refunded';
+        updated.payment.refundId = rf.id || '';
+        await updated.save();
+      } catch (err) {
+        console.error(`Refund failed for order ${updated._id}:`, err.message);
+      }
+    }
     notify(updated, emails.orderStatus);
     res.json(updated);
   } catch (err) {
@@ -392,3 +496,5 @@ router.put('/:id/note', protect, adminOnly, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.releaseOrder = releaseOrder;
+module.exports.markPaid = markPaid;

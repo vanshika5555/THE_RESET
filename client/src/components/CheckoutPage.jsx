@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { cartSubtotal, deliveryCharge, amountToFreeDelivery, formatPrice } from '../utils/price';
+import { payWithRazorpay } from '../utils/razorpay';
 import AddressFields, { BLANK_ADDRESS, validateAddress } from './AddressFields';
 import './AddressFields.css';
 import './CheckoutPage.css';
@@ -29,9 +30,14 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   const [deliveryNote, setDeliveryNote] = useState('');
   // Cash on delivery terms come from the server (fee, upper limit).
   const [cod, setCod] = useState({ fee: 0, max: 10000 });
+  const [onlineOn, setOnlineOn] = useState(false);       // Razorpay switched on at the server?
+  const [payMethod, setPayMethod] = useState('cod');
   useEffect(() => {
     axios.get('/api/orders/payment-options')
-      .then((res) => { if (res.data?.cod) setCod({ fee: Number(res.data.cod.fee) || 0, max: Number(res.data.cod.max) || 10000 }); })
+      .then((res) => {
+        if (res.data?.cod) setCod({ fee: Number(res.data.cod.fee) || 0, max: Number(res.data.cod.max) || 10000 });
+        if (res.data?.online?.available) { setOnlineOn(true); setPayMethod('online'); }
+      })
       .catch(() => {});
   }, []);
 
@@ -39,9 +45,9 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   const discount = coupon ? coupon.discount : 0;
   const afterDiscount = subtotal - discount;
   const delivery = deliveryCharge(afterDiscount);
-  const codFee = cod.fee;
+  const codFee = payMethod === 'cod' ? cod.fee : 0;
   const total = afterDiscount + delivery + codFee;
-  const overCod = total > cod.max;
+  const overCod = payMethod === 'cod' && total > cod.max;
   const toFree = amountToFreeDelivery(afterDiscount);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
 
@@ -165,7 +171,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
           couponCode: coupon ? coupon.code : '',
           guestEmail: user ? '' : guestEmail.trim(),
           guestName: user ? '' : address.fullName,
-          paymentMethod: 'cod',
+          paymentMethod: payMethod,
           gift: gift.isGift ? gift : { isGift: false },
           deliveryNote,
         }
@@ -183,6 +189,30 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
         } catch {
           // the order is already placed — nothing to do here
         }
+      }
+
+      // Paying online: open Razorpay, then confirm the payment with the server.
+      if (res.data.razorpay) {
+        const placed = res.data;
+        try {
+          const paid = await payWithRazorpay({
+            razorpay: placed.razorpay,
+            description: `Order #${String(placed._id).slice(-8).toUpperCase()}`,
+            prefill: { name: address.fullName, email: user?.email || guestEmail.trim(), contact: address.phone },
+          });
+          const done = await axios.post(`/api/orders/${placed._id}/pay`, paid);
+          onOrderSuccess(done.data);
+        } catch (payErr) {
+          if (payErr && payErr.dismissed) {
+            axios.post(`/api/orders/${placed._id}/abandon`).catch(() => {});
+            setError('Payment cancelled — nothing was charged. Your bag is just as you left it.');
+          } else {
+            setError(payErr?.response?.data?.message || payErr?.message || 'The payment didn’t go through. Try again, or choose cash on delivery.');
+          }
+          setStep(2);
+          setLoading(false);
+        }
+        return;
       }
 
       onOrderSuccess(res.data);
@@ -346,8 +376,9 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 {gift.isGift && (
                   <div className="co-gift-fields">
                     <p className="co-gift-cod">
-                      Heads up: with cash on delivery, the person receiving it pays the courier
-                      {' '}{formatPrice(total)}. Online payment is coming soon.
+                      {payMethod === 'cod'
+                        ? `Heads up: with cash on delivery, the person receiving it pays the courier ${formatPrice(total)}.${onlineOn ? ' Pay online so it arrives already paid.' : ''}`
+                        : 'Paid online — it arrives with nothing to pay.'}
                     </p>
                     <label className="co-field">
                       <span>To</span>
@@ -386,33 +417,48 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
 
               {/* Payment method */}
               <div className="co-payment-methods" role="radiogroup" aria-label="Payment method">
-                <div className="co-payment-option co-payment-option--selected" role="radio" aria-checked="true">
-                  <div className="co-radio-dot" />
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={payMethod === 'online'}
+                  aria-disabled={!onlineOn}
+                  disabled={!onlineOn}
+                  className={`co-payment-option ${payMethod === 'online' ? 'co-payment-option--selected' : ''} ${!onlineOn ? 'co-payment-option--off' : ''}`}
+                  onClick={() => onlineOn && setPayMethod('online')}
+                >
+                  <div className={`co-radio-dot ${payMethod === 'online' ? '' : 'co-radio-dot--empty'}`} />
+                  <div>
+                    <p className="co-payment-label">UPI / cards / net banking</p>
+                    <p className="co-payment-sub">{onlineOn ? 'Pay now securely with Razorpay' : 'Coming soon'}</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={payMethod === 'cod'}
+                  className={`co-payment-option ${payMethod === 'cod' ? 'co-payment-option--selected' : ''}`}
+                  onClick={() => setPayMethod('cod')}
+                >
+                  <div className={`co-radio-dot ${payMethod === 'cod' ? '' : 'co-radio-dot--empty'}`} />
                   <div>
                     <p className="co-payment-label">Cash on delivery</p>
                     <p className="co-payment-sub">
-                      Pay {formatPrice(total)} in cash or by UPI when it arrives
-                      {codFee > 0 ? ` · includes a ${formatPrice(codFee)} COD fee` : ' · no extra fee'}
+                      Pay in cash or by UPI when it arrives
+                      {cod.fee > 0 ? ` · ${formatPrice(cod.fee)} COD fee` : ' · no extra fee'}
                     </p>
                   </div>
-                </div>
-                <div className="co-payment-option co-payment-option--off" role="radio" aria-checked="false" aria-disabled="true">
-                  <div className="co-radio-dot co-radio-dot--empty" />
-                  <div>
-                    <p className="co-payment-label">UPI / cards / net banking</p>
-                    <p className="co-payment-sub">Coming soon</p>
-                  </div>
-                </div>
+                </button>
               </div>
 
               {overCod && (
                 <p className="co-cod-limit" role="alert">
-                  Cash on delivery is available on orders up to {formatPrice(cod.max)}. Remove something from your bag to continue.
+                  Cash on delivery is available on orders up to {formatPrice(cod.max)}.
+                  {onlineOn ? ' Pay online instead, or remove something from your bag.' : ' Remove something from your bag to continue.'}
                 </p>
               )}
 
               <button className="co-btn co-btn--place co-btn--sticky" onClick={handlePlaceOrder} disabled={loading || overCod}>
-                Place order · Pay {formatPrice(total)} on delivery
+                {payMethod === 'online' ? `Pay ${formatPrice(total)}` : `Place order · Pay ${formatPrice(total)} on delivery`}
               </button>
               <p className="co-disclaimer">By placing this order you agree to our Terms & Conditions</p>
             </div>

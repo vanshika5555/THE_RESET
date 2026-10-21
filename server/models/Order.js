@@ -37,9 +37,14 @@ const orderSchema = new mongoose.Schema({
   // hands the parcel over (the order is marked Delivered).
   payment: {
     method: { type: String, enum: ['cod', 'online'], default: 'cod' },
-    status: { type: String, enum: ['Pending', 'Paid', 'Refunded', 'Void'], default: 'Pending' },
+    // Awaiting = online order whose payment hasn't come through yet; it is
+    // hidden from the shop's order list and cancelled if never paid.
+    status: { type: String, enum: ['Pending', 'Awaiting', 'Paid', 'Refunded', 'Void'], default: 'Pending' },
     codFee: { type: Number, default: 0 },
     paidAt: { type: Date, default: null },
+    razorpayOrderId:   { type: String, default: '' },
+    razorpayPaymentId: { type: String, default: '' },
+    refundId:          { type: String, default: '' },
   },
 
   // Sent as a gift: a note goes in the parcel and the packing slip shows no prices.

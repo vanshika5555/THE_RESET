@@ -59,6 +59,9 @@ app.use(cors({
   credentials: true,
 }));
 
+// Razorpay's webhook needs the raw body to check its signature, so it is
+// mounted before the JSON parser.
+app.use('/api/payments', require('./routes/payments'));
 app.use(express.json({ limit: '200kb' }));
 app.use(stripOperators);
 app.use('/api', apiLimiter);
@@ -125,6 +128,7 @@ mongoose.connect(process.env.MONGO_URI)
       }
       console.log(`Server running on port ${port}`);
       require('./utils/bagReminders').startBagReminders();
+      require('./routes/payments').startPaymentSweeper();
     });
   })
   .catch((err) => console.log('MongoDB error:', err));

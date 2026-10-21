@@ -216,7 +216,7 @@ export default function OrderDetail() {
             </div>
             <p className={`od-pay od-pay--${(order.payment?.status || 'Pending').toLowerCase()}`}>
               {order.payment?.method === 'online'
-                ? 'Paid online'
+                ? (order.payment.status === 'Refunded' ? 'Paid online — refunded to your account (5–7 working days)' : 'Paid online')
                 : order.payment?.status === 'Paid' ? 'Paid in cash on delivery'
                 : order.payment?.status === 'Void' || order.status === 'Cancelled' ? 'Cash on delivery — nothing to pay'
                 : `Cash on delivery — pay ${inr(order.total || order.subtotal)} when it arrives`}

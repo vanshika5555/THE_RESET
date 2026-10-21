@@ -674,3 +674,5 @@
 .co-cod-limit { margin: 12px 0 0; padding: 12px 14px; background: #fff4e5; color: #8a4b06; font-size: 13px; line-height: 1.5; }
 
 .co-gift-cod { margin: 0; padding: 10px 12px; background: #fff4e5; color: #8a4b06; font-size: 13px; line-height: 1.45; }
+button.co-payment-option { width: 100%; background: #fff; text-align: left; font: inherit; color: inherit; margin: 0; }
+.co-payment-option--selected { background: #fafafa; }

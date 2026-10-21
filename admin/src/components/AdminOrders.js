@@ -528,7 +528,8 @@ export default function AdminOrders() {
                 title="Payment"
                 aside={(
                   <span className={`od-paybadge od-paybadge--${(open.payment?.status || 'Pending').toLowerCase()}`}>
-                    {open.payment?.method === 'online' ? 'Paid online'
+                    {open.payment?.method === 'online'
+                      ? (open.payment.status === 'Refunded' ? 'Refunded' : 'Paid online')
                       : open.payment?.status === 'Paid' ? 'Cash collected'
                       : open.payment?.status === 'Void' || open.status === 'Cancelled' ? 'Nothing to collect'
                       : 'Cash on delivery'}
