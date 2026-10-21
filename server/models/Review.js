@@ -8,6 +8,8 @@ const reviewSchema = new mongoose.Schema({
   review:    { type: String, required: true, maxlength: 2000 },
   // True when the reviewer has a delivered order containing this piece.
   verified:  { type: Boolean, default: false },
+  // Up to 3 photos from verified buyers (Cloudinary links, checked on save).
+  photos:    { type: [String], default: [] },
 }, { timestamps: true });
 
 // One review per user per product

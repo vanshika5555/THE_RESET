@@ -50,6 +50,11 @@ const icons = {
       <rect x="12" y="8" width="3" height="10" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/>
     </svg>
   ),
+  reviews: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/>
+    </svg>
+  ),
   security: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
@@ -71,6 +76,7 @@ const links = [
   { to: '/returns',      label: 'Returns',     icon: icons.returns },
   { to: '/reports',      label: 'Reports',     icon: icons.reports },
   { to: '/customers',    label: 'Customers',   icon: icons.customers },
+  { to: '/reviews',      label: 'Reviews',     icon: icons.reviews },
   { to: '/coupons',      label: 'Discount codes', icon: icons.discounts },
   { to: '/products',     label: 'Products',    icon: icons.products },
   { to: '/products/add', label: 'Add product', icon: icons.add },

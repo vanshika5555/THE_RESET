@@ -19,6 +19,7 @@ const Coupons     = lazy(() => import('./components/Coupons'));
 const Returns     = lazy(() => import('./components/Returns'));
 const Reports     = lazy(() => import('./components/Reports'));
 const Security    = lazy(() => import('./components/Security'));
+const Reviews     = lazy(() => import('./components/Reviews'));
 
 // After the first screen is up, quietly download the other pages so
 // tapping a tab opens instantly instead of flashing "Loading…".
@@ -55,6 +56,7 @@ const TITLES = [
   ['/returns',           'Returns'],
   ['/reports',           'Reports'],
   ['/security',          'Security'],
+  ['/reviews',           'Reviews'],
   ['/',                  'Dashboard'],
 ];
 
@@ -142,6 +144,7 @@ function Shell({ name, onLogout }) {
             <Route path="/returns" element={<Returns />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/security" element={<Security />} />
+            <Route path="/reviews" element={<Reviews />} />
           </Routes>
           </Suspense>
         </div>

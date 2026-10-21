@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { cdn } from '../utils/img';
+import ImageLightbox from './ImageLightbox';
+import { reviewSignature, uploadReviewPhoto, MAX_PHOTOS } from '../utils/reviewPhotos';
 import './ProductReviews.css';
 
 function Stars({ value, size = 15 }) {
@@ -25,6 +28,9 @@ export default function ProductReviews({ productId }) {
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [photos, setPhotos] = useState([]);            // uploaded links for this review
+  const [uploading, setUploading] = useState(0);       // progress %, 0 = idle
+  const [viewer, setViewer] = useState(null);          // { images, index }
 
   const load = () => {
     axios.get(`/api/reviews/product/${productId}`)
@@ -45,6 +51,7 @@ export default function ProductReviews({ productId }) {
   const openForm = () => {
     setRating(mine ? mine.rating : 0);
     setText(mine ? mine.review : '');
+    setPhotos(mine?.photos || []);
     setError('');
     setShowForm(true);
   };
@@ -61,6 +68,7 @@ export default function ProductReviews({ productId }) {
         product: productId,
         rating,
         review: text.trim(),
+        photos,
       });
       setShowForm(false);
       load();
@@ -72,6 +80,30 @@ export default function ProductReviews({ productId }) {
       );
     }
     setSaving(false);
+  };
+
+  const addPhotos = async (e) => {
+    const files = Array.from(e.target.files || []).slice(0, MAX_PHOTOS - photos.length);
+    e.target.value = '';
+    if (!files.length) return;
+    setError('');
+    let sig;
+    try {
+      sig = await reviewSignature(productId);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Photos can’t be added right now.');
+      return;
+    }
+    for (const f of files) {
+      try {
+        setUploading(1);
+        const url = await uploadReviewPhoto(f, sig, (p) => setUploading(Math.max(1, p)));
+        setPhotos((list) => [...list, url].slice(0, MAX_PHOTOS));
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+    setUploading(0);
   };
 
   const remove = async (id) => {
@@ -136,10 +168,33 @@ export default function ProductReviews({ productId }) {
             placeholder="How was the fit, fabric and quality?"
           />
 
+          <div className="pr-photos-edit">
+            {photos.map((u) => (
+              <span key={u} className="pr-thumb">
+                <img src={cdn(u, 120)} alt="" />
+                <button type="button" aria-label="Remove photo" onClick={() => setPhotos((l) => l.filter((x) => x !== u))}>×</button>
+              </span>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <label className={`pr-add-photo ${uploading ? 'is-busy' : ''}`}>
+                <input type="file" accept="image/*" multiple hidden onChange={addPhotos} disabled={!!uploading} />
+                {uploading ? `${uploading}%` : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
+                    </svg>
+                    <span>Add photos</span>
+                  </>
+                )}
+              </label>
+            )}
+          </div>
+          <p className="pr-photo-hint">Up to {MAX_PHOTOS} photos of you wearing it — for buyers who've received the piece.</p>
+
           {error && <p className="pr-error">{error}</p>}
 
           <div className="pr-form-actions">
-            <button type="submit" className="pr-submit" disabled={saving}>
+            <button type="submit" className="pr-submit" disabled={saving || !!uploading}>
               {saving ? 'Saving...' : mine ? 'Update Review' : 'Post Review'}
             </button>
             <button type="button" className="pr-cancel" onClick={() => setShowForm(false)}>
@@ -183,6 +238,21 @@ export default function ProductReviews({ productId }) {
                   </span>
                 </div>
                 <p className="pr-text">{r.review}</p>
+                {r.photos?.length > 0 && (
+                  <div className="pr-photos">
+                    {r.photos.map((u, k) => (
+                      <button
+                        type="button"
+                        key={u}
+                        className="pr-photo"
+                        onClick={() => setViewer({ images: r.photos, index: k })}
+                        aria-label={`Open photo ${k + 1} from ${r.userName || 'this customer'}`}
+                      >
+                        <img src={cdn(u, 200)} alt="" loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {isMine && (
                   <button type="button" className="pr-delete" onClick={() => remove(r._id)}>
                     Delete
@@ -192,6 +262,9 @@ export default function ProductReviews({ productId }) {
             );
           })}
         </ul>
+      )}
+      {viewer && (
+        <ImageLightbox images={viewer.images} startIndex={viewer.index} alt="Customer photo" onClose={() => setViewer(null)} />
       )}
     </section>
   );
