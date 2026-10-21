@@ -15,6 +15,14 @@ axios.defaults.baseURL = import.meta.env.REACT_APP_API_URL || import.meta.env.VI
 // loads so it is usually awake by the time someone opens a collection.
 axios.get('/').catch(() => {});
 
+// Lets the shop be installed as an app and show a proper page when offline.
+// Only on the live site — on localhost it would keep serving old files.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

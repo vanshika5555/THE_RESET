@@ -33,6 +33,7 @@
 - **Account** — orders with live status, cancel while pending, **returns & exchanges** within 7 days, wishlist, reviews, password reset by email, *sign out everywhere*.
 - **Newsletter** — subscribers get a one-time `WELCOME-XXXXXX` code for their first order.
 - **Built for phones first** — sticky Add to Bag, 44px tap targets, no horizontal scroll at 360px.
+- **Installable app** — add it to the home screen on Android or iPhone; opens full screen, with an offline page when there's no signal.
 
 ### Admin (`admin/`)
 - **Dashboard** — orders to confirm and ship, sales, low stock, and which sold-out sizes shoppers are waiting for.

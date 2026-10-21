@@ -9,8 +9,13 @@
       name="description"
       content="Considered essentials for men and women. Clean lines, honest fabric, nothing excess."
     />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+    <!-- Installable app: icon on the home screen, opens full screen -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="THE RESET" />
     <!--
       Brand font (Archivo, variable width + weight), loaded once for the whole site. They used to be @import-ed
       separately in eleven CSS files, which made phones wait on the same

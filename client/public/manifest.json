@@ -1,20 +1,24 @@
 {
+  "id": "/",
   "short_name": "THE RESET",
   "name": "THE RESET — Considered Essentials",
-  "icons": [
-    {
-      "src": "favicon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any"
-    },
-    {
-      "src": "apple-touch-icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "180x180"
-    }
-  ],
-  "start_url": ".",
+  "description": "Considered essentials for men and women. Clean lines, honest fabric, nothing excess.",
+  "start_url": "/?source=app",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#111111",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Men", "url": "/men?source=app", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Women", "url": "/women?source=app", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "My orders", "url": "/orders?source=app", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Wishlist", "url": "/wishlist?source=app", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
 }

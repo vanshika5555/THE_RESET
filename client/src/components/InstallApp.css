@@ -1,0 +1,70 @@
+/* "Get the app" card — phones only */
+.ia { display: none; }
+
+@media (max-width: 820px) {
+  .ia {
+    display: block;
+    position: fixed;
+    z-index: 1100;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    padding: 14px 14px 14px 16px;
+    background: #fff;
+    color: #111;
+    border: 1px solid #e6e6e6;
+    border-radius: 14px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
+    animation: ia-in 0.35s ease-out both;
+  }
+}
+
+@keyframes ia-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ia { animation: none; }
+}
+
+.ia-row { display: flex; align-items: flex-start; gap: 12px; }
+.ia-icon { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 10px; }
+.ia-copy { flex: 1; min-width: 0; }
+.ia-title { margin: 1px 0 3px; font-size: 15px; font-weight: 600; }
+.ia-sub { margin: 0; font-size: 13px; line-height: 1.45; color: #666; }
+
+.ia-close {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  margin: -12px -10px 0 0;
+  border: 0; background: none; color: #888; cursor: pointer;
+}
+
+.ia-btn {
+  display: block;
+  width: 100%;
+  height: 46px;
+  margin-top: 12px;
+  border: 0;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.ia-btn:active { background: #333; }
+
+.ia-how {
+  margin: 12px 0 0;
+  padding: 12px 12px 12px 30px;
+  background: #f6f6f6;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ia-how li + li { margin-top: 6px; }
+.ia-share { display: inline-block; vertical-align: -3px; margin: 0 4px; }

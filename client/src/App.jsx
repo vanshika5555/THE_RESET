@@ -24,6 +24,7 @@ import NotFound from './pages/NotFound';
 import OrderDetail from './pages/OrderDetail';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
+import InstallApp from './components/InstallApp';
 
 function App() {
   return (
@@ -60,6 +61,7 @@ function App() {
               </Routes>
               </ErrorBoundary>
               <Footer />
+              <InstallApp />
             </div>
           </Router>
         </WishlistProvider>
