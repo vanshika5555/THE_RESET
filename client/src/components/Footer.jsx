@@ -78,6 +78,7 @@ export default function Footer() {
             <li><Link to="/men">Men</Link></li>
             <li><Link to="/women">Women</Link></li>
             <li><Link to="/search?q=new">New Arrivals</Link></li>
+            <li><Link to="/gift-cards">Gift Cards</Link></li>
           </ul>
         </div>
 

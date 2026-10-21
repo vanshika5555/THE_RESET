@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProfileReviews from '../components/ProfileReviews';
+import StoreCredit from '../components/StoreCredit';
 import AddressFields, { BLANK_ADDRESS, validateAddress } from '../components/AddressFields';
 import '../components/AddressFields.css';
 import { Link, useNavigate, useLocation, Routes, Route, NavLink } from 'react-router-dom';
@@ -520,14 +521,16 @@ export default function Profile() {
   const notice = location.state?.notice;
 
   useEffect(() => {
-    if (!user) navigate('/login');
-  }, [user, navigate]);
+    // Come back to the same page after signing in (e.g. a gift card link).
+    if (!user) navigate('/login', { state: { from: location.pathname + location.search } });
+  }, [user, navigate, location.pathname, location.search]);
 
   if (!user) return null;
 
   const navItems = [
     { to: '/profile', label: 'Overview', icon: '👤' },
     { to: '/profile/orders', label: 'My Orders', icon: '📦' },
+    { to: '/profile/credit', label: 'Store credit', icon: '💳' },
     { to: '/profile/addresses', label: 'Addresses', icon: '📍' },
     { to: '/profile/reviews', label: 'Reviews', icon: '⭐' },
     { to: '/profile/password', label: 'Security', icon: '🔒' },
@@ -573,6 +576,7 @@ export default function Profile() {
         <Routes>
           <Route index element={<Overview user={user} />} />
           <Route path="orders" element={<Orders user={user} />} />
+          <Route path="credit" element={<StoreCredit />} />
           <Route path="addresses" element={<Addresses />} />
           <Route path="reviews" element={<ProfileReviews />} />
           <Route path="password" element={<ChangePassword />} />

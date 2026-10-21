@@ -19,6 +19,7 @@ router.get('/sitemap.xml', async (req, res) => {
       { loc: '/women', priority: '0.9' },
       { loc: '/about', priority: '0.5' },
       { loc: '/help', priority: '0.4' },
+      { loc: '/gift-cards', priority: '0.5' },
     ];
     const urls = [
       ...pages.map(p => `<url><loc>${esc(base + p.loc)}</loc><priority>${p.priority}</priority></url>`),

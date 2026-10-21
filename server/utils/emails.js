@@ -333,4 +333,44 @@ function priceDrop({ name, product, stopUrl }) {
   return { subject, html, text };
 }
 
-module.exports = { layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };
+// ---------- gift cards ----------
+
+function giftCard({ card, code }) {
+  const from = card.fromName || 'Someone';
+  const first = firstName(card.to.name);
+  const subject = `${from} sent you a THE RESET gift card`;
+  const redeemUrl = `${SHOP_URL()}/profile/credit?redeem=${encodeURIComponent(code)}`;
+  const text = `Hi ${first},\n\n${from} sent you a ${inr(card.amount)} gift card for THE RESET.`
+    + (card.message ? `\n\n"${card.message}"` : '')
+    + `\n\nYour code: ${code}\n\nAdd it to your account (sign in or create one): ${redeemUrl}\nIt becomes store credit and comes off at checkout. It doesn't expire.`;
+  const html = layout({
+    preheader: `${inr(card.amount)} to spend at THE RESET.`,
+    heading: `A gift for you, ${esc(first)}.`,
+    body: `${esc(from)} sent you a gift card to spend at THE RESET.
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 6px;background:#111">
+        <tr><td style="padding:26px 24px 8px;font:600 12px/1 Helvetica,Arial,sans-serif;letter-spacing:.28em;color:#999">THE RESET · GIFT CARD</td></tr>
+        <tr><td style="padding:6px 24px 4px;font:400 40px/1.1 Georgia,serif;color:#fff">${inr(card.amount)}</td></tr>
+        <tr><td style="padding:14px 24px 26px;font:600 17px/1 'Courier New',monospace;letter-spacing:.08em;color:#fff">${esc(code)}</td></tr>
+      </table>
+      ${card.message ? `<p style="margin:18px 0 0;padding:14px 16px;background:#f7f7f5;font:italic 400 15px/1.6 Georgia,serif;color:#333;white-space:pre-line">“${esc(card.message)}”<br><span style="font:400 13px Helvetica,Arial,sans-serif;font-style:normal;color:#888">— ${esc(from)}</span></p>` : ''}
+      <p style="margin:18px 0 0">Tap the button to add it to your account — it becomes store credit that comes off at checkout. It doesn't expire.</p>`,
+    cta: { href: redeemUrl, label: 'Add it to my account' },
+  });
+  return { subject, html, text };
+}
+
+function giftCardReceipt({ card, name }) {
+  const subject = `Your gift card for ${card.to.name} is on its way`;
+  const text = `Hi ${firstName(name)},\n\nWe've emailed your ${inr(card.amount)} gift card to ${card.to.name} (${card.to.email}).\nCard ending ${card.last4}.`;
+  const html = layout({
+    preheader: `${inr(card.amount)} gift card sent to ${card.to.name}.`,
+    heading: 'Gift card sent.',
+    body: `We've emailed your <strong>${inr(card.amount)}</strong> gift card to <strong>${esc(card.to.name)}</strong> at ${esc(card.to.email)}.
+      ${card.message ? `<br><br>Your note: <em>“${esc(card.message)}”</em>` : ''}
+      <br><br>Card ending <strong>${esc(card.last4)}</strong>. If it doesn't arrive, just reply to this email.`,
+    cta: { href: `${SHOP_URL()}/gift-cards`, label: 'Send another' },
+  });
+  return { subject, html, text };
+}
+
+module.exports = { giftCard, giftCardReceipt, layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };

@@ -4,6 +4,8 @@ const Order = require('../models/Order');
 const rzp = require('../utils/razorpay');
 const { releaseOrder, markPaid } = require('./orders');
 const { entry, rupees } = require('../utils/orderLog');
+const GiftCard = require('../models/GiftCard');
+const giftCards = require('../utils/giftCards');
 
 /**
  * Razorpay webhook — Razorpay tells the server directly when a payment is
@@ -30,6 +32,19 @@ router.post('/razorpay/webhook', express.raw({ type: '*/*', limit: '200kb' }), a
     const payment = event?.payload?.payment?.entity;
     if ((event.event === 'payment.captured' || event.event === 'order.paid') && payment?.order_id) {
       const order = await Order.findOne({ 'payment.razorpayOrderId': payment.order_id });
+      const card = order ? null : await GiftCard.findOne({ razorpayOrderId: payment.order_id });
+      if (card) {
+        if (card.status === 'Awaiting') await giftCards.activate(card, payment.id);
+        else if (card.status === 'Void' && !card.razorpayPaymentId) {
+          // Paid after it had expired — send the money back.
+          try {
+            const rf = await rzp.refund(payment.id);
+            await GiftCard.updateOne({ _id: card._id }, { razorpayPaymentId: payment.id, refundId: rf.id || '' });
+          } catch (err) {
+            console.error(`Late gift card payment refund failed for ${card._id}:`, err.message);
+          }
+        }
+      }
       if (order) {
         if (order.payment.status === 'Awaiting') {
           await markPaid(order, payment.id);
@@ -82,12 +97,32 @@ async function sweepUnpaid() {
   }
 }
 
+// Gift cards waiting on a payment that never came are switched off the same way.
+async function sweepGiftCards() {
+  const stale = await GiftCard.find({ status: 'Awaiting', createdAt: { $lte: new Date(Date.now() - EXPIRE_AFTER) } }).limit(50);
+  for (const card of stale) {
+    try {
+      let captured = null;
+      if (card.razorpayOrderId) {
+        const list = await rzp.orderPayments(card.razorpayOrderId);
+        captured = (list.items || []).find((p) => p.status === 'captured');
+      }
+      if (captured) await giftCards.activate(card, captured.id);
+      else await GiftCard.updateOne({ _id: card._id, status: 'Awaiting' }, { status: 'Void' });
+    } catch (err) {
+      console.error(`Could not check gift card payment ${card._id}:`, err.message);
+    }
+  }
+}
+
 function startPaymentSweeper() {
   if (!rzp.enabled()) return;
-  setInterval(() => sweepUnpaid().catch(() => {}), 5 * 60 * 1000).unref();
-  setTimeout(() => sweepUnpaid().catch(() => {}), 30 * 1000).unref();
+  const run = () => { sweepUnpaid().catch(() => {}); sweepGiftCards().catch(() => {}); };
+  setInterval(run, 5 * 60 * 1000).unref();
+  setTimeout(run, 30 * 1000).unref();
 }
 
 module.exports = router;
 module.exports.sweepUnpaid = sweepUnpaid;
+module.exports.sweepGiftCards = sweepGiftCards;
 module.exports.startPaymentSweeper = startPaymentSweeper;

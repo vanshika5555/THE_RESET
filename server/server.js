@@ -81,6 +81,7 @@ app.use('/api/uploads',  require('./routes/uploads'));
 app.use('/api/alerts',   require('./routes/alerts'));
 app.use('/api/returns',  require('./routes/returns'));
 app.use('/api/newsletter', require('./routes/newsletter'));
+app.use('/api/giftcards', require('./routes/giftcards'));
 
 // Sitemap for search engines (outside /api, no rate limit)
 app.use('/', require('./routes/sitemap'));

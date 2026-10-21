@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import './StoreCredit.css';
 
@@ -11,17 +11,37 @@ import './StoreCredit.css';
 
 const inr = (n) => `₹${(Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-IN')}`;
 const fmt = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-const KIND = { refund: 'Return refunded as credit', spent: 'Used at checkout', returned: 'Given back', adjust: 'From THE RESET' };
+const KIND = { refund: 'Return refunded as credit', spent: 'Used at checkout', returned: 'Given back', adjust: 'From THE RESET', giftcard: 'Gift card added' };
 
 export default function StoreCredit() {
+  const [params, setParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  // Gift card: the email's button fills the code in (?redeem=…).
+  const [code, setCode] = useState(params.get('redeem') || '');
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemMsg, setRedeemMsg] = useState(null);   // { ok, text }
 
-  useEffect(() => {
-    axios.get('/api/auth/credit')
-      .then((r) => setData(r.data))
-      .catch(() => setError('Could not load your store credit. Try again in a moment.'));
-  }, []);
+  const load = () => axios.get('/api/auth/credit')
+    .then((r) => setData(r.data))
+    .catch(() => setError('Could not load your store credit. Try again in a moment.'));
+  useEffect(() => { load(); }, []);
+
+  const redeem = async (e) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setRedeeming(true); setRedeemMsg(null);
+    try {
+      const r = await axios.post('/api/giftcards/redeem', { code });
+      setRedeemMsg({ ok: true, text: `${inr(r.data.added)} added${r.data.fromName ? ` — a gift from ${r.data.fromName}` : ''}.` });
+      setCode('');
+      if (params.get('redeem')) { params.delete('redeem'); setParams(params, { replace: true }); }
+      load();
+    } catch (err) {
+      setRedeemMsg({ ok: false, text: err.response?.data?.message || 'Could not add that gift card. Please try again.' });
+    }
+    setRedeeming(false);
+  };
 
   if (error) return <div className="prof-section"><p className="sc-error">{error}</p></div>;
   if (!data) return <div className="prof-loading">Loading…</div>;
@@ -39,6 +59,25 @@ export default function StoreCredit() {
         </p>
         {data.balance > 0 && <Link to="/" className="sc-btn">Start shopping</Link>}
       </div>
+
+      <form className="sc-redeem" onSubmit={redeem}>
+        <label htmlFor="sc-code">Have a gift card?</label>
+        <div className="sc-redeem-row">
+          <input
+            id="sc-code"
+            type="text"
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="RESET-XXXX-XXXX-XXXX"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          />
+          <button type="submit" disabled={redeeming || !code.trim()}>{redeeming ? 'Adding…' : 'Add'}</button>
+        </div>
+        {redeemMsg && <p className={`sc-redeem-msg ${redeemMsg.ok ? 'is-ok' : ''}`} role="status">{redeemMsg.text}</p>}
+        <p className="sc-redeem-hint">Want to send one? <Link to="/gift-cards">Gift cards</Link></p>
+      </form>
 
       {data.history.length > 0 && (
         <>

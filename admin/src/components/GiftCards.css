@@ -1,0 +1,32 @@
+.gc { display: flex; flex-direction: column; gap: 16px; max-width: 980px; }
+.gc-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.gc-stats > div { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.gc-stat { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+.gc-stat-label { font-size: 13px; color: var(--text-2); }
+.gc-panel { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.gc-text { font-size: 14px; color: var(--text-2); line-height: 1.55; }
+.gc-pad { padding: 20px; }
+.gc-form { display: grid; grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1.3fr); gap: 10px; align-items: end; }
+.gc-form-msg { grid-column: 1 / 3; }
+.gc-opt { font-weight: 400; color: var(--text-3); }
+.gc-ok { padding: 10px 12px; border-radius: var(--r-md); background: var(--green-bg); color: var(--green); font-size: 14px; }
+.gc-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--line-soft); }
+.gc-row:last-child { border-bottom: none; }
+.gc-amount { font-size: 16px; font-weight: 700; }
+.gc-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gc-who strong { font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-who strong span { font-weight: 400; color: var(--text-3); margin-left: 4px; }
+.gc-who > span { font-size: 13px; color: var(--text-3); }
+.gc-tag { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--grey-bg); color: var(--text-2); white-space: nowrap; }
+.gc-tag--active { background: var(--amber-bg); color: var(--amber); }
+.gc-tag--done { background: var(--green-bg); color: var(--green); }
+.gc-actions { display: flex; gap: 4px; }
+.gc-cancel { color: var(--red); }
+@media (max-width: 768px) {
+  .gc-form { grid-template-columns: minmax(0, 1fr); }
+  .gc-form-msg { grid-column: auto; }
+  .gc-form .btn { height: 46px; }
+  .gc-row { grid-template-columns: auto minmax(0, 1fr); padding: 14px 16px; }
+  .gc-tag { justify-self: start; grid-column: 2; }
+  .gc-actions { grid-column: 2; }
+}

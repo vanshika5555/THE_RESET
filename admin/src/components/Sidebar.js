@@ -60,6 +60,11 @@ const icons = {
       <circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/>
     </svg>
   ),
+  gift: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M3 12h18"/><path d="M12 8v13"/><path d="M12 8c-1.5-3.5-5.5-4-5.5-1.5S10 8 12 8zM12 8c1.5-3.5 5.5-4 5.5-1.5S14 8 12 8z"/>
+    </svg>
+  ),
   security: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
@@ -83,6 +88,7 @@ const LINKS = [
   { to: '/customers',    label: 'Customers',   icon: icons.customers, owner: true },
   { to: '/reviews',      label: 'Reviews',     icon: icons.reviews },
   { to: '/coupons',      label: 'Discount codes', icon: icons.discounts, owner: true },
+  { to: '/gift-cards',   label: 'Gift cards',  icon: icons.gift, owner: true },
   { to: '/products',     label: 'Products',    icon: icons.products },
   { to: '/products/add', label: 'Add product', icon: icons.add },
   { to: '/team',         label: 'Team',        icon: icons.team, owner: true },

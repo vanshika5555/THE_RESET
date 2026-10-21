@@ -20,3 +20,17 @@
   .sc-balance { padding: 22px 18px; }
   .sc-amount { font-size: 34px; }
 }
+
+/* gift card redeem */
+.sc-redeem { margin: -12px 0 36px; }
+.sc-redeem label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #111; }
+.sc-redeem-row { display: flex; gap: 8px; max-width: 460px; }
+.sc-redeem-row input { flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid #ddd; font: inherit; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; outline: none; }
+.sc-redeem-row input:focus { border-color: #111; }
+.sc-redeem-row input::placeholder { letter-spacing: 0.06em; color: #bbb; }
+.sc-redeem-row button { min-width: 88px; padding: 0 18px; border: 1px solid #111; background: #111; color: #fff; font: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
+.sc-redeem-row button:disabled { opacity: 0.45; cursor: not-allowed; }
+.sc-redeem-msg { margin: 10px 0 0; font-size: 14px; color: #b91c1c; }
+.sc-redeem-msg.is-ok { color: #15803d; font-weight: 600; }
+.sc-redeem-hint { margin: 10px 0 0; font-size: 13px; color: #888; }
+.sc-redeem-hint a { color: #111; }
