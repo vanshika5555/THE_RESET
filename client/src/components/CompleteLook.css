@@ -1,0 +1,6 @@
+.cl-section { border-top: none; margin-top: 40px; }
+.cl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+.cl-head .rp-title { margin: 0; }
+.cl-sub { margin: 0; font-size: 13px; color: #6b6b6b; }
+.cl-card { cursor: pointer; }
+.cl-card:focus-visible { outline: 2px solid #111; outline-offset: 4px; }

@@ -54,7 +54,7 @@
   .pf-layout { display: flex; flex-direction: column; align-items: stretch; }
   .pf-main, .pf-side { display: contents; }
   .pf-o1 { order: 1; } .pf-o2 { order: 2; } .pf-o3 { order: 3; }
-  .pf-o4 { order: 4; } .pf-o5 { order: 5; } .pf-o6 { order: 6; } .pf-o7 { order: 4; }
+  .pf-o4 { order: 4; } .pf-o5 { order: 5; } .pf-o6 { order: 6; } .pf-o7 { order: 4; } .pf-o8 { order: 7; }
 }
 @media (max-width: 768px) {
   .pf-layout, .pf-main, .pf-side { gap: 12px; }
@@ -114,3 +114,11 @@
 .pf-sibling { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px 0 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; }
 .pf-sibling-dot { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .pf-sibling-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Wear it with */
+.pf-pairs { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.pf-pair { display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 6px; border: 1px solid var(--line); border-radius: var(--r-md); }
+.pf-pair-img { flex: 0 0 auto; width: 40px; height: 50px; border-radius: 6px; overflow: hidden; }
+.pf-pair-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pf-pair-name { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14px; font-weight: 500; }
+.pf-pair-name small { font-size: 12.5px; font-weight: 400; color: var(--text-3); }

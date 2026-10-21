@@ -8,6 +8,7 @@ import mySizes from '../utils/mySizes';
 import StarRating from '../components/StarRating';
 import ProductReviews from '../components/ProductReviews';
 import RelatedProducts from '../components/RelatedProducts';
+import CompleteLook from '../components/CompleteLook';
 import RecentlyViewed from '../components/RecentlyViewed';
 import NotifyMe from '../components/NotifyMe';
 import DeliveryCheck from '../components/DeliveryCheck';
@@ -587,6 +588,8 @@ export default function ProductDetail() {
           <p className="pd-meta">{product.season} · {product.category}</p>
         </div>
       </div>
+
+      <CompleteLook productId={product._id} />
 
       <ProductReviews productId={product._id} />
 

@@ -40,6 +40,8 @@ const productSchema = new mongoose.Schema({
   styleGroup:  { type: String, default: '', index: true },
   // The last lowered price wishlist shoppers were emailed about (0 = none yet).
   lowestNotifiedPrice: { type: Number, default: 0 },
+  // "Wear it with": up to 4 pieces the owner chose to show alongside this one.
+  pairsWith:   { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }], default: [] },
   inStock:     { type: Boolean, default: true },     // master switch — hide it regardless of counts
 }, { timestamps: true });
 

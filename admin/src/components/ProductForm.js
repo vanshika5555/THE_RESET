@@ -57,6 +57,7 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
     ...BLANK_PRODUCT,
     ...initial,
     images: initial?.images?.length ? initial.images : (initial?.image ? [initial.image] : ['']),
+    pairsWith: (initial?.pairsWith || []).map(String),
   }));
   const [error, setError]     = useState('');
   const [saving, setSaving]   = useState(false);
@@ -90,6 +91,16 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
     .filter((p) => p._id !== selfId)
     .sort((a, b) => (a.category === form.category ? -1 : 0) - (b.category === form.category ? -1 : 0) || a.name.localeCompare(b.name));
   const colourLabel = (p) => `${p.name}${p.colorName ? ` — ${p.colorName}` : ''}`;
+
+  // "Wear it with": up to 4 pieces shown under this one in the shop.
+  const pairs = (form.pairsWith || []).map((id) => catalogue.find((p) => p._id === id)).filter(Boolean);
+  const pairChoices = catalogue
+    .filter((p) => p._id !== selfId && !(form.pairsWith || []).includes(p._id) && !(group && p.styleGroup === group))
+    .sort((a, b) => (a.category === form.category ? -1 : 0) - (b.category === form.category ? -1 : 0)
+      || (a.fitType !== form.fitType ? -1 : 0) - (b.fitType !== form.fitType ? -1 : 0)
+      || a.name.localeCompare(b.name));
+  const addPair = (id) => id && set('pairsWith', [...(form.pairsWith || []), id].slice(0, 4));
+  const removePair = (id) => set('pairsWith', (form.pairsWith || []).filter((x) => x !== id));
 
   const listed = CATEGORIES[form.category]?.[form.season] || [];
   // Older products may carry a subcategory outside this season's list — keep it selectable.
@@ -478,6 +489,28 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
                 </>
               )}
             </div>
+          </Card>
+
+          <Card order={8} title="Wear it with" hint="Up to 4 pieces shown under this one in the shop, each with a quick “+” to add. Leave it empty and the shop picks for you — what customers bought together, or a top for a bottom.">
+            {pairs.length > 0 && (
+              <ul className="pf-pairs">
+                {pairs.map((p) => (
+                  <li key={p._id} className="pf-pair">
+                    <span className="pf-pair-img" style={{ background: p.color || '#eee' }}>
+                      {(p.images?.[0] || p.image) && <img src={p.images?.[0] || p.image} alt="" />}
+                    </span>
+                    <span className="pf-pair-name">{colourLabel(p)}<small>{p.category} · {p.subcategory}{(p.inStock === false || ((p.stock || []).length && !p.stock.some((x) => x.qty > 0))) ? ' · sold out — not shown until restocked' : ''}</small></span>
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => removePair(p._id)} aria-label={`Remove ${p.name}`}>Remove</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {pairs.length < 4 && (
+              <select className="select" value="" onChange={(e) => addPair(e.target.value)} aria-label="Add a piece to wear with this one">
+                <option value="">{pairs.length ? 'Add another piece…' : 'Add a piece…'}</option>
+                {pairChoices.map((p) => <option key={p._id} value={p._id}>{colourLabel(p)} · {p.category}</option>)}
+              </select>
+            )}
           </Card>
         </aside>
       </div>
