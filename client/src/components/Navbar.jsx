@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { getProducts } from "../utils/fetchCache";
 import { cdn } from "../utils/img";
-import StyleAnalyser from "./StyleAnalyser";
+// Only downloaded when someone opens it.
+const StyleAnalyser = lazy(() => import("./StyleAnalyser"));
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { searchProducts } from '../utils/search';
@@ -365,7 +366,7 @@ export default function Navbar() {
       )}
 
       {/* Style Analyser Panel */}
-      {analyserOpen && <StyleAnalyser onClose={() => setAnalyserOpen(false)} />}
+      {analyserOpen && <Suspense fallback={null}><StyleAnalyser onClose={() => setAnalyserOpen(false)} /></Suspense>}
     </>
   );
 }

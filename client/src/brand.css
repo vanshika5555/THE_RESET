@@ -239,3 +239,6 @@ body {
 .na-card-price:has(.price--sale) { grid-column: 1 / -1; order: 2; margin-top: 2px; }
 .cp-card-price:has(.price--sale) .price,
 .na-card-price:has(.price--sale) .price { justify-content: flex-start; }
+
+/* Result counts: dark enough to read (4.5:1+) */
+.cp-count { color: var(--graphite); }

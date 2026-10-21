@@ -2,6 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+// Pages download their code only when opened, but their styles still load
+// up front — so brand.css below stays last and keeps winning, as before.
+import.meta.glob(['./pages/*.css', './components/*.css'], { eager: true });
 // Brand layer last, so its shared look wins over component defaults.
 import './brand.css';
 

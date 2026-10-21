@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import heroBg from "../assets/hero-bg.jpg";
+import heroBg from "../assets/hero-bg.webp";
 import "./Hero.css";
 
 const slides = [

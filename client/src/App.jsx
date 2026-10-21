@@ -1,4 +1,5 @@
 import './App.css';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -6,26 +7,44 @@ import { WishlistProvider } from './context/WishlistContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
-import Men from './pages/Men';
-import Women from './pages/Women';
-import About from './pages/About';
-import AuthPage from './pages/AuthPage';
-import MyOrders from './pages/MyOrders';
-import WishlistPage from './pages/WishlistPage';
-import CheckoutRoute from './pages/CheckoutRoute';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Profile from './pages/Profile';
-import ProductDetail from './pages/ProductDetail';
-import SearchPage from './pages/SearchPage';
-import Help from './pages/Help';
-import Legal from './pages/Legal';
-import NotFound from './pages/NotFound';
-import OrderDetail from './pages/OrderDetail';
-import GiftCards from './pages/GiftCards';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 import InstallApp from './components/InstallApp';
+
+
+// After a new version goes live, a page left open may ask for files that no
+// longer exist. Reload once to pick up the new version instead of failing.
+function lazyPage(load) {
+  return lazy(() => load().then((mod) => {
+    try { sessionStorage.removeItem('theresetChunkReload'); } catch { /* fine */ }
+    return mod;
+  }).catch((err) => {
+    let tried = true;
+    try { tried = sessionStorage.getItem('theresetChunkReload') === '1'; sessionStorage.setItem('theresetChunkReload', '1'); } catch { /* fine */ }
+    if (!tried) { window.location.reload(); return new Promise(() => {}); }
+    throw err;
+  }));
+}
+
+// The home page comes with the first download; every other page is fetched
+// the first time someone opens it, so phones start much faster.
+const Men = lazyPage(() => import('./pages/Men'));
+const Women = lazyPage(() => import('./pages/Women'));
+const About = lazyPage(() => import('./pages/About'));
+const AuthPage = lazyPage(() => import('./pages/AuthPage'));
+const MyOrders = lazyPage(() => import('./pages/MyOrders'));
+const WishlistPage = lazyPage(() => import('./pages/WishlistPage'));
+const CheckoutRoute = lazyPage(() => import('./pages/CheckoutRoute'));
+const ForgotPassword = lazyPage(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazyPage(() => import('./pages/ResetPassword'));
+const Profile = lazyPage(() => import('./pages/Profile'));
+const ProductDetail = lazyPage(() => import('./pages/ProductDetail'));
+const SearchPage = lazyPage(() => import('./pages/SearchPage'));
+const Help = lazyPage(() => import('./pages/Help'));
+const Legal = lazyPage(() => import('./pages/Legal'));
+const NotFound = lazyPage(() => import('./pages/NotFound'));
+const OrderDetail = lazyPage(() => import('./pages/OrderDetail'));
+const GiftCards = lazyPage(() => import('./pages/GiftCards'));
 
 function App() {
   return (
@@ -37,6 +56,7 @@ function App() {
             <div className="App">
               <Navbar />
               <ErrorBoundary>
+              <Suspense fallback={<div className="page-loading" aria-busy="true" />}>
               <Routes>
                 <Route path="/"          element={<Home />} />
                 <Route path="/men"       element={<Men />} />
@@ -61,6 +81,7 @@ function App() {
                 {/* anything else */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
               </ErrorBoundary>
               <Footer />
               <InstallApp />

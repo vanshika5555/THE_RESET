@@ -73,7 +73,7 @@ export default function Footer() {
       <div className="footer-grid">
 
         <div className="footer-col">
-          <h4 className="footer-col-title">Shop</h4>
+          <h2 className="footer-col-title">Shop</h2>
           <ul className="footer-links">
             <li><Link to="/men">Men</Link></li>
             <li><Link to="/women">Women</Link></li>
@@ -83,14 +83,14 @@ export default function Footer() {
         </div>
 
         <div className="footer-col">
-          <h4 className="footer-col-title">Company</h4>
+          <h2 className="footer-col-title">Company</h2>
           <ul className="footer-links">
             <li><Link to="/about">Our Story</Link></li>
           </ul>
         </div>
 
         <div className="footer-col">
-          <h4 className="footer-col-title">Help</h4>
+          <h2 className="footer-col-title">Help</h2>
           <ul className="footer-links">
             <li><Link to="/help#faq">FAQ</Link></li>
             <li><Link to="/help#shipping">Shipping</Link></li>
@@ -100,7 +100,7 @@ export default function Footer() {
         </div>
 
         <div className="footer-col">
-          <h4 className="footer-col-title">Follow</h4>
+          <h2 className="footer-col-title">Follow</h2>
           <ul className="footer-links">
             {SOCIAL.filter(s => s.url).map(s => (
               <li key={s.label}>

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import EGwomen from "../assets/EGwomen.jpg";
-import EGmen from "../assets/EGmen.jpg";
+import EGwomen from "../assets/EGwomen.webp";
+import EGmen from "../assets/EGmen.webp";
 import "./EditorialGrid.css";
 
 export default function EditorialGrid() {
@@ -13,7 +13,7 @@ export default function EditorialGrid() {
 
         {/* Large image block — left */}
         <div className="eg-block eg-block--img-light">
-          <img src={EGwomen} alt="Women Collection" className="eg-real-img" />
+          <img src={EGwomen} alt="Women Collection" className="eg-real-img" width="1200" height="593" loading="lazy" decoding="async" />
           <div className="eg-block-text eg-block-text--over-light">
             <p className="eg-eyebrow">New Season</p>
             <h2 className="eg-heading">Dressed in<br />Daylight.</h2>
@@ -46,7 +46,7 @@ export default function EditorialGrid() {
 
         {/* Wide image — left bottom */}
         <div className="eg-block eg-block--wide">
-          <img src={EGmen} alt="Men Collection" className="eg-real-img" />
+          <img src={EGmen} alt="Men Collection" className="eg-real-img" width="1200" height="593" loading="lazy" decoding="async" />
           <div className="eg-block-text eg-block-text--bottom">
             <p className="eg-eyebrow">Men's Edit</p>
             <h2 className="eg-heading">Elevate your<br />everyday game.</h2>

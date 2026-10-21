@@ -61,3 +61,7 @@ html, body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Holds the space while a page's code downloads, so the footer doesn't jump up. */
+.page-loading { min-height: 70vh; }
+
