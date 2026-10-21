@@ -10,6 +10,22 @@ const orderItemSchema = new mongoose.Schema({
   color:    { type: String },
 });
 
+// One line of the order's activity log (see utils/orderLog.js).
+const historySchema = new mongoose.Schema({
+  at:   { type: Date, default: Date.now },
+  type: { type: String, required: true },
+  text: { type: String, default: '' },
+  // Who did it — empty for the system (Razorpay, the unpaid-order sweeper).
+  by: {
+    type: new mongoose.Schema({
+      id:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      name: { type: String, default: '' },
+      role: { type: String, default: 'user' },
+    }, { _id: false }),
+    default: null,
+  },
+}, { _id: false });
+
 const orderSchema = new mongoose.Schema({
   // Signed-in customers have a user. Guests do not, so their contact
   // details are kept on the order itself.
@@ -68,6 +84,9 @@ const orderSchema = new mongoose.Schema({
     trackingUrl:    { type: String, default: '' },
     shippedAt:      { type: Date, default: null },
   },
+
+  // What happened to the order, oldest first.
+  history: { type: [historySchema], default: [] },
 
   status:   {
     type: String,

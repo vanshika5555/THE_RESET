@@ -108,3 +108,17 @@
 .od-paybadge { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: var(--amber-bg); color: var(--amber); }
 .od-paybadge--paid { background: var(--green-bg); color: var(--green); }
 .od-paybadge--void { background: var(--grey-bg); color: var(--grey); }
+
+/* ── Activity log ── */
+.od-log { list-style: none; margin: 0; padding: 0; }
+.od-log-row { position: relative; display: flex; gap: 12px; padding: 0 0 14px; }
+.od-log-row:last-child { padding-bottom: 0; }
+.od-log-row:not(:last-child)::before { content: ''; position: absolute; left: 4px; top: 14px; bottom: 0; width: 1.5px; background: var(--line); }
+.od-log-dot { flex: 0 0 auto; width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; background: #b5b5b2; }
+.od-log-row:first-child .od-log-dot { background: var(--ink); }
+.od-log-row--cancelled .od-log-dot { background: var(--red-bar); }
+.od-log-row--refund .od-log-dot, .od-log-row--paid .od-log-dot { background: var(--green-bar); }
+.od-log-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.od-log-text { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.od-log-meta { font-size: 12.5px; color: var(--text-3); }
+.od-log-old { margin: 12px 0 0; }

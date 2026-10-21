@@ -9,6 +9,15 @@ const { sendMailLater } = require('../utils/mailer');
 const emails = require('../utils/emails');
 const rzp = require('../utils/razorpay');
 const { parsePrice } = require('../utils/price');
+const { pushLog, rupees } = require('../utils/orderLog');
+
+const pieces = (items) => {
+  const n = items.reduce((t, i) => t + (Number(i.qty) || 0), 0);
+  return `${n} piece${n === 1 ? '' : 's'}`;
+};
+const RETURN_WORDS = {
+  Approved: 'approved', Rejected: 'declined', Received: 'received back at the shop', Exchanged: 'sent out in the new size',
+};
 
 const UPI_RE = /^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9.]{1,63}$/;
 const paidOnline = (order) => order.payment && order.payment.method === 'online' && order.payment.razorpayPaymentId;
@@ -137,6 +146,7 @@ router.post('/', protect, async (req, res) => {
     }
 
     const request = await ReturnRequest.create({ order: order._id, user: req.user._id, type, reason, note, items, refund });
+    await pushLog(Order, order._id, 'return', `${type === 'exchange' ? 'Exchange' : 'Return'} requested · ${pieces(items)} · ${reason}`, req.user);
     notify(request, req.user.email, req.user.name);
     res.status(201).json(request);
   } catch (err) {
@@ -175,6 +185,7 @@ router.put('/:id', protect, teamOnly, async (req, res) => {
     if (!r) return res.status(404).json({ message: 'Request not found' });
 
     const status = req.body.status;
+    const statusBefore = r.status;
     if (typeof req.body.shopMessage === 'string') r.shopMessage = req.body.shopMessage.slice(0, 1000);
 
     if (status && status !== r.status) {
@@ -226,6 +237,16 @@ router.put('/:id', protect, teamOnly, async (req, res) => {
     }
 
     await r.save();
+    // Write it on the order's activity log too.
+    if (r.status !== statusBefore) {
+      const kind = r.type === 'exchange' ? 'Exchange' : 'Return';
+      if (r.status === 'Refunded') {
+        const via = r.refund?.method === 'upi' ? `by UPI · ref ${r.refund.reference}` : 'to the original payment';
+        await pushLog(Order, r.order, 'refund', `${rupees(r.refund?.amount)} refunded for the return ${via}`, req.user);
+      } else {
+        await pushLog(Order, r.order, 'return', `${kind} ${RETURN_WORDS[r.status] || r.status.toLowerCase()}`, req.user);
+      }
+    }
     if (status) notify(r, r.user?.email, r.user?.name);
     res.json(r);
   } catch (err) {

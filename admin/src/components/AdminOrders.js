@@ -28,6 +28,25 @@ const shipFrom = (o) => ({
   trackingNumber: o?.shipment?.trackingNumber || '',
   trackingUrl: o?.shipment?.trackingUrl || '',
 });
+// The order's activity log, newest first. Orders from before the log
+// started get their main dates filled in from what the order recorded.
+function activityFor(o) {
+  if (o?.history?.length) return [...o.history].reverse();
+  const rows = [{ at: o.createdAt, type: 'placed', text: 'Order placed' }];
+  if (o.payment?.method === 'online' && o.payment?.paidAt) rows.push({ at: o.payment.paidAt, type: 'paid', text: 'Paid online' });
+  if (o.shipment?.shippedAt) rows.push({ at: o.shipment.shippedAt, type: 'status', text: 'Marked Shipped' });
+  if (o.deliveredAt) rows.push({ at: o.deliveredAt, type: 'status', text: 'Marked Delivered' });
+  return rows.filter((r) => r.at).sort((a, b) => new Date(b.at) - new Date(a.at)).map((r) => ({ ...r, old: true }));
+}
+const fmtWhen = (d) => new Date(d).toLocaleString('en-IN', {
+  day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+});
+const byLine = (h) => {
+  if (!h.by) return h.old ? '' : 'Automatic';
+  if (h.by.role === 'user') return 'Customer';
+  return `${h.by.name || 'Someone'}${h.by.role === 'staff' ? ' · staff' : ''}`;
+};
+
 const sameShip = (a, b) =>
   a.courier.trim() === b.courier.trim() &&
   a.trackingNumber.trim() === b.trackingNumber.trim() &&
@@ -79,7 +98,7 @@ export default function AdminOrders() {
 
   // Keep what the server saved (dates, tracking link), but not its un-expanded customer.
   const mergeSaved = (saved) => setOrders((list) => list.map((o) => (o._id === saved._id
-    ? { ...o, status: saved.status, shipment: saved.shipment, deliveredAt: saved.deliveredAt }
+    ? { ...o, status: saved.status, shipment: saved.shipment, deliveredAt: saved.deliveredAt, payment: saved.payment, history: saved.history }
     : o)));
 
   const updateStatus = async (id, status) => {
@@ -142,8 +161,10 @@ export default function AdminOrders() {
   const saveNote = async (order) => {
     setSavingNote(true);
     try {
-      await axios.put(`/api/orders/${order._id}/note`, { note: noteDraft ?? '' });
-      setOrders((list) => list.map((o) => (o._id === order._id ? { ...o, adminNote: noteDraft ?? '' } : o)));
+      const res = await axios.put(`/api/orders/${order._id}/note`, { note: noteDraft ?? '' });
+      setOrders((list) => list.map((o) => (o._id === order._id
+        ? { ...o, adminNote: noteDraft ?? '', history: res.data?.history || o.history }
+        : o)));
       setNoteDraft(null);
     } catch {
       setError('The note was not saved. Try again.');
@@ -569,7 +590,7 @@ export default function AdminOrders() {
               </Section>
 
               <Section title="Internal note">
-                <p className="od-note-hint">Only you can see this. Customers never do.</p>
+                <p className="od-note-hint">Only the team can see this. Customers never do.</p>
                 <textarea
                   className="textarea"
                   rows={3}
@@ -586,6 +607,25 @@ export default function AdminOrders() {
                       Discard
                     </button>
                   </div>
+                )}
+              </Section>
+
+              <Section title="Activity">
+                <ol className="od-log">
+                  {activityFor(open).map((h, i) => (
+                    <li key={i} className={`od-log-row od-log-row--${h.type}`}>
+                      <span className="od-log-dot" aria-hidden="true" />
+                      <span className="od-log-body">
+                        <span className="od-log-text">{h.text}</span>
+                        <span className="od-log-meta">
+                          {fmtWhen(h.at)}{byLine(h) && ` · ${byLine(h)}`}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                {!open.history?.length && (
+                  <p className="od-note-hint od-log-old">Placed before the activity log started — only the main dates are known.</p>
                 )}
               </Section>
             </>

@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const rzp = require('../utils/razorpay');
 const { releaseOrder, markPaid } = require('./orders');
+const { entry, rupees } = require('../utils/orderLog');
 
 /**
  * Razorpay webhook — Razorpay tells the server directly when a payment is
@@ -36,7 +37,10 @@ router.post('/razorpay/webhook', express.raw({ type: '*/*', limit: '200kb' }), a
           // Paid after the order had expired — send the money back.
           try {
             const rf = await rzp.refund(payment.id);
-            await Order.updateOne({ _id: order._id }, { $set: { 'payment.status': 'Refunded', 'payment.razorpayPaymentId': payment.id, 'payment.refundId': rf.id || '' } });
+            await Order.updateOne({ _id: order._id }, {
+              $set: { 'payment.status': 'Refunded', 'payment.razorpayPaymentId': payment.id, 'payment.refundId': rf.id || '' },
+              $push: { history: entry('refund', `Paid after the order had expired · ${rupees(order.total)} refunded`, null) },
+            });
           } catch (err) {
             console.error(`Late payment refund failed for ${order._id}:`, err.message);
           }

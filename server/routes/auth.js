@@ -600,7 +600,7 @@ router.get('/export', protect, async (req, res) => {
     const user = await User.findById(req.user._id)
       .select('-password -tokenVersion -resetPasswordHash -resetPasswordExpires -__v').lean();
     const [orders, reviews, returns, alerts, newsletter] = await Promise.all([
-      Order.find({ user: req.user._id }).select('-adminNote -__v').lean(),
+      Order.find({ user: req.user._id }).select('-adminNote -history.by -__v').lean(),
       Review.find({ user: req.user._id }).select('-__v').lean(),
       ReturnRequest.find({ user: req.user._id }).select('-__v').lean(),
       StockAlert.find({ email: user.email }).select('-__v').lean(),

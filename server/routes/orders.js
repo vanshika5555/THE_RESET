@@ -27,6 +27,12 @@ const cleanGift = (g) => (g && g.isGift
   : { isGift: false, to: '', message: '' });
 const { buildShipment } = require('../utils/couriers');
 const { ensureInvoiceNumber, renderInvoice } = require('../utils/invoice');
+const { log, entry, forCustomer, rupees } = require('../utils/orderLog');
+
+// "Delhivery · 123456" — or '' when there's no tracking number.
+const trackingLine = (order) => (order.shipment?.trackingNumber
+  ? [order.shipment.courier, order.shipment.trackingNumber].filter(Boolean).join(' · ')
+  : '');
 
 // Email the customer about their order. Never blocks or fails the request.
 async function notify(order, template) {
@@ -190,6 +196,9 @@ router.post('/', protect, async (req, res) => {
           : { method: 'cod', status: 'Pending', codFee },
         gift: cleanGift(req.body.gift),
         deliveryNote: cleanText(req.body.deliveryNote, 200),
+        history: [entry('placed', method === 'online'
+          ? `Order placed · ${rupees(total)} · paying online`
+          : `Order placed · ${rupees(total)} · cash on delivery`, req.user)],
       });
     } catch (err) {
       await restock(reserved);
@@ -204,7 +213,7 @@ router.post('/', protect, async (req, res) => {
         order.payment.razorpayOrderId = ro.id;
         await order.save();
         return res.status(201).json({
-          ...order.toObject(),
+          ...forCustomer(order),
           razorpay: { key: rzp.keyId(), orderId: ro.id, amount: ro.amount, currency: 'INR' },
         });
       } catch (err) {
@@ -214,7 +223,7 @@ router.post('/', protect, async (req, res) => {
     }
 
     notify(order, emails.orderPlaced);
-    res.status(201).json(order);
+    res.status(201).json(forCustomer(order));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -227,7 +236,10 @@ router.post('/', protect, async (req, res) => {
 async function releaseOrder(order, paymentStatus = 'Void') {
   const r = await Order.updateOne(
     { _id: order._id, 'payment.status': 'Awaiting' },
-    { $set: { status: 'Cancelled', 'payment.status': paymentStatus } }
+    {
+      $set: { status: 'Cancelled', 'payment.status': paymentStatus },
+      $push: { history: entry('cancelled', 'Online payment wasn’t completed, so the order was cancelled', null) },
+    }
   );
   if (!r.modifiedCount) return false;
   await restock(order.items);
@@ -239,7 +251,10 @@ async function releaseOrder(order, paymentStatus = 'Void') {
 async function markPaid(order, paymentId) {
   const r = await Order.updateOne(
     { _id: order._id, 'payment.status': 'Awaiting' },
-    { $set: { 'payment.status': 'Paid', 'payment.paidAt': new Date(), 'payment.razorpayPaymentId': paymentId } }
+    {
+      $set: { 'payment.status': 'Paid', 'payment.paidAt': new Date(), 'payment.razorpayPaymentId': paymentId },
+      $push: { history: entry('paid', `Paid online · ${rupees(order.total)}`, null) },
+    }
   );
   const fresh = await Order.findById(order._id);
   if (r.modifiedCount) notify(fresh, emails.orderPlaced);
@@ -252,7 +267,7 @@ router.post('/:id/pay', protect, async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order || String(order.user) !== String(req.user._id)) return res.status(404).json({ message: 'Order not found' });
     if (order.payment?.method !== 'online') return res.status(400).json({ message: 'This order is paid on delivery.' });
-    if (order.payment.status === 'Paid') return res.json(order);
+    if (order.payment.status === 'Paid') return res.json(forCustomer(order));
 
     const { razorpay_payment_id: pid, razorpay_order_id: oid, razorpay_signature: sig } = req.body || {};
     if (!pid || oid !== order.payment.razorpayOrderId || !rzp.validCheckoutSignature(oid, pid, sig)) {
@@ -263,7 +278,7 @@ router.post('/:id/pay', protect, async (req, res) => {
       try { await rzp.refund(pid); } catch { /* reported below */ }
       return res.status(409).json({ message: 'This order had expired before the payment arrived, so we’ve refunded it. Please place the order again.' });
     }
-    res.json(await markPaid(order, pid));
+    res.json(forCustomer(await markPaid(order, pid)));
   } catch (err) {
     res.status(500).json({ message: 'Could not confirm the payment. Check My Orders in a minute.' });
   }
@@ -285,7 +300,7 @@ router.post('/:id/abandon', protect, async (req, res) => {
 router.get('/myorders', protect, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id, 'payment.status': { $ne: 'Awaiting' } }).sort({ createdAt: -1 });
-    res.json(orders);
+    res.json(orders.map(forCustomer));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -318,17 +333,21 @@ router.put('/:id/status', protect, teamOnly, async (req, res) => {
       return res.status(400).json({ message: 'A cancelled order cannot be reopened — its stock has already gone back on sale.' });
     }
     // Shipping can carry the courier and tracking number in the same request.
+    const trackingBefore = trackingLine(order);
     if (req.body.shipment !== undefined) {
       const { shipment, error } = buildShipment(req.body.shipment);
       if (error) return res.status(400).json({ message: error });
       if (shipment) Object.assign(order.shipment, shipment);
     }
+    const trackingNow = trackingLine(order);
     order.status = req.body.status;
     if (req.body.status === 'Shipped' && !order.shipment.shippedAt) order.shipment.shippedAt = new Date();
     if (req.body.status === 'Delivered' && !order.deliveredAt) order.deliveredAt = new Date();
     // Cash is collected when the parcel is handed over.
+    let cashCollected = false;
     if (order.payment && order.payment.method === 'cod') {
       if (req.body.status === 'Delivered' && order.payment.status === 'Pending') {
+        cashCollected = true;
         order.payment.status = 'Paid';
         order.payment.paidAt = new Date();
       }
@@ -347,6 +366,19 @@ router.put('/:id/status', protect, teamOnly, async (req, res) => {
         order.payment.refundId = rf.id || '';
       } catch (err) {
         return res.status(502).json({ message: `The refund didn’t go through (${err.message}), so the order wasn’t cancelled. Try again, or refund it from the Razorpay dashboard first.` });
+      }
+    }
+
+    // Activity log
+    if (trackingNow && trackingNow !== trackingBefore) log(order, 'shipment', `Tracking added · ${trackingNow}`, req.user);
+    if (previous !== req.body.status) {
+      if (req.body.status === 'Cancelled') {
+        log(order, 'cancelled', 'Order cancelled by the shop', req.user);
+        if (order.payment?.status === 'Refunded' && order.payment.refundId) {
+          log(order, 'refund', `${rupees(order.total)} refunded to the original payment`, req.user);
+        }
+      } else {
+        log(order, 'status', `Marked ${req.body.status}${cashCollected ? ` · ${rupees(order.total)} cash collected` : ''}`, req.user);
       }
     }
     const updated = await order.save();
@@ -377,8 +409,13 @@ router.put('/:id/shipment', protect, teamOnly, async (req, res) => {
     if (order.status === 'Cancelled') {
       return res.status(400).json({ message: 'This order was cancelled.' });
     }
+    const before = trackingLine(order);
     if (shipment) Object.assign(order.shipment, shipment);
     else Object.assign(order.shipment, { courier: '', trackingNumber: '', trackingUrl: '' });
+    const now = trackingLine(order);
+    if (now !== before) {
+      log(order, 'shipment', now ? `${before ? 'Tracking changed' : 'Tracking added'} · ${now}` : 'Tracking removed', req.user);
+    }
     const updated = await order.save();
     res.json(updated);
   } catch (err) {
@@ -408,9 +445,12 @@ router.put('/:id/cancel', protect, async (req, res) => {
     // double-tap cannot put the stock back twice.
     const updated = await Order.findOneAndUpdate(
       { _id: order._id, status: 'Pending' },
-      order.payment?.method === 'cod' && order.payment.status === 'Pending'
-        ? { status: 'Cancelled', 'payment.status': 'Void' }
-        : { status: 'Cancelled' },
+      {
+        $set: order.payment?.method === 'cod' && order.payment.status === 'Pending'
+          ? { status: 'Cancelled', 'payment.status': 'Void' }
+          : { status: 'Cancelled' },
+        $push: { history: entry('cancelled', 'Cancelled by the customer', req.user) },
+      },
       { new: true }
     );
     if (!updated) {
@@ -424,13 +464,14 @@ router.put('/:id/cancel', protect, async (req, res) => {
         const rf = await rzp.refund(updated.payment.razorpayPaymentId);
         updated.payment.status = 'Refunded';
         updated.payment.refundId = rf.id || '';
+        log(updated, 'refund', `${rupees(updated.total)} refunded to the original payment`, null);
         await updated.save();
       } catch (err) {
         console.error(`Refund failed for order ${updated._id}:`, err.message);
       }
     }
     notify(updated, emails.orderStatus);
-    res.json(updated);
+    res.json(forCustomer(updated));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -477,7 +518,8 @@ router.get('/:id', protect, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view this order' });
     }
 
-    res.json(order);
+    // The internal note and staff names stay with the shop.
+    res.json(isAdmin ? order : forCustomer(order));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -487,13 +529,14 @@ router.get('/:id', protect, async (req, res) => {
 router.put('/:id/note', protect, teamOnly, async (req, res) => {
   try {
     const note = String(req.body.note ?? '').slice(0, 2000);
-    const updated = await Order.findByIdAndUpdate(
-      req.params.id,
-      { adminNote: note },
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ message: 'Order not found' });
-    res.json({ adminNote: updated.adminNote });
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (note !== (order.adminNote || '')) {
+      log(order, 'note', note.trim() ? (order.adminNote ? 'Internal note edited' : 'Internal note added') : 'Internal note cleared', req.user);
+      order.adminNote = note;
+      await order.save();
+    }
+    res.json({ adminNote: order.adminNote, history: order.history });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
