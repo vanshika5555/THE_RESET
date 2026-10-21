@@ -373,6 +373,17 @@ router.get('/users', protect, adminOnly, async (req, res) => {
   }
 });
 
+// GET /api/auth/my-sizes — the size this customer usually keeps, for tops and bottoms
+router.get('/my-sizes', protect, async (req, res) => {
+  try {
+    const { sizesFor } = require('../utils/sizeMemory');
+    res.set('Cache-Control', 'private, no-store');
+    res.json(await sizesFor(req.user._id));
+  } catch (err) {
+    res.json({});
+  }
+});
+
 // ---- Store credit ----
 
 async function creditStatement(userId) {

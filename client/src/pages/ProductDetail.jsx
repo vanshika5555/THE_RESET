@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
+import mySizes from '../utils/mySizes';
 import StarRating from '../components/StarRating';
 import ProductReviews from '../components/ProductReviews';
 import RelatedProducts from '../components/RelatedProducts';
@@ -113,6 +114,14 @@ export default function ProductDetail() {
   const { toggleWishlist, isWished } = useWishlist();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // "Your size": what this customer has kept before, in this kind of fit.
+  const [usual, setUsual] = useState({});
+  useEffect(() => {
+    let active = true;
+    mySizes(user?._id).then((d) => { if (active) setUsual(d); });
+    return () => { active = false; };
+  }, [user?._id]);
 
   useEffect(() => {
     let active = true;
@@ -466,6 +475,23 @@ export default function ProductDetail() {
               ))}
             </div>
           </div>
+
+          {(() => {
+            const mine = usual[product.fitType || 'Top'];
+            if (!mine || !product.sizes.includes(mine.size)) return null;
+            const gone = qtyFor(mine.size) <= 0;
+            return (
+              <p className={`pd-your-size ${chosenSize === mine.size ? 'is-picked' : ''}`}>
+                <span>
+                  Your size: <strong>{mine.size}</strong>
+                  <span className="pd-your-size-why"> · {mine.note}{gone ? ` · sold out in ${mine.size} right now` : ''}</span>
+                </span>
+                {chosenSize !== mine.size && (
+                  <button type="button" onClick={() => pickSize(mine.size)}>{gone ? 'Get notified' : `Choose ${mine.size}`}</button>
+                )}
+              </p>
+            );
+          })()}
 
           {chosenSize && qtyFor(chosenSize) !== Infinity && qtyFor(chosenSize) > 0 && qtyFor(chosenSize) <= 3 && (
             <p className="pd-low-stock">

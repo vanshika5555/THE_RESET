@@ -281,7 +281,8 @@
 
 /* ---------- responsive ---------- */
 @media (max-width: 1000px) {
-  .pd-layout { grid-template-columns: 1fr; gap: 36px; }
+  /* minmax(0, …): a wide child (the photo strip) must never stretch the page past the screen */
+  .pd-layout { grid-template-columns: minmax(0, 1fr); gap: 36px; }
 }
 
 @media (max-width: 1000px) and (min-width: 641px) {
@@ -569,3 +570,18 @@
   .pd-swatch { width: 44px; height: 44px; }
   .pd-swatch-fill { width: 34px; height: 34px; }
 }
+
+/* ---- your usual size ---- */
+.pd-your-size {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 14px 0 0; padding: 10px 12px; background: #f6f6f4;
+  font-size: 13.5px; line-height: 1.45; color: #111;
+}
+.pd-your-size strong { font-weight: 700; }
+.pd-your-size-why { color: #777; }
+.pd-your-size button {
+  flex-shrink: 0; min-height: 36px; padding: 0 14px; border: 1px solid #111; background: #fff;
+  font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+}
+.pd-your-size button:hover { background: #111; color: #fff; }
+.pd-your-size.is-picked { background: #edf7f0; }
