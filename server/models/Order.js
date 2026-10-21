@@ -33,6 +33,15 @@ const orderSchema = new mongoose.Schema({
   adminNote: { type: String, default: '' },
   // When the order reached the customer — starts the 7-day return window.
   deliveredAt: { type: Date, default: null },
+  // Sent as a gift: a note goes in the parcel and the packing slip shows no prices.
+  gift: {
+    isGift:  { type: Boolean, default: false },
+    to:      { type: String, default: '', maxlength: 60 },
+    message: { type: String, default: '', maxlength: 250 },
+  },
+  // For the courier — "leave with the guard", "call before coming".
+  deliveryNote: { type: String, default: '', maxlength: 200 },
+
   // Given the first time the invoice is opened (shipped orders only).
   invoice: {
     number: { type: String, default: '' },

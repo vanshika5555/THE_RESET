@@ -125,6 +125,12 @@ function welcome({ name }) {
   return { subject, html, text };
 }
 
+function giftLine(order) {
+  if (!order.gift || !order.gift.isGift) return '';
+  return `<p style="margin:0 0 16px;padding:12px 14px;background:#f7f7f5;color:#444;font-size:13px">
+    🎁 Sent as a gift${order.gift.to ? ` to ${esc(order.gift.to)}` : ''} — the parcel has your note and no prices.</p>`;
+}
+
 function orderPlaced({ name, order }) {
   const id = shortId(order._id);
   const subject = `Order #${id} confirmed`;
@@ -135,7 +141,7 @@ function orderPlaced({ name, order }) {
     preheader: `We've got it. Total ${inr(order.total || order.subtotal)}.`,
     heading: `Thank you, ${esc(firstName(name))}.`,
     body: `Your order <strong>#${id}</strong> is in. We'll email you again when it ships — usually within 2 working days.
-      ${itemsTable(order.items)}${totalsTable(order)}${addressBlock(order.shippingAddress)}`,
+      ${giftLine(order)}${itemsTable(order.items)}${totalsTable(order)}${addressBlock(order.shippingAddress)}`,
     cta: { href: `${SHOP_URL()}/orders/${order._id}`, label: 'View order' },
   });
   return { subject, html, text };

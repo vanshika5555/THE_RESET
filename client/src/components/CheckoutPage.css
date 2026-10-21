@@ -650,3 +650,21 @@
   color: #555;
 }
 .oc-guest-note p:last-child { margin-bottom: 0; }
+/* ── Gift + delivery note ── */
+.co-extra { border: 1px solid #e3e3e0; padding: 14px 16px; margin-bottom: 14px; transition: border-color .15s ease; }
+.co-extra--on { border-color: #111; }
+.co-gift-toggle { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+.co-gift-toggle input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: #111; flex-shrink: 0; }
+.co-gift-text { display: flex; flex-direction: column; gap: 2px; }
+.co-gift-text strong { font-size: 14px; font-weight: 600; color: #111; }
+.co-gift-text span { font-size: 13px; color: #666; line-height: 1.45; }
+.co-gift-fields { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #eee; }
+.co-field { display: flex; flex-direction: column; gap: 6px; }
+.co-field > span { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #555; display: flex; justify-content: space-between; }
+.co-field em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; color: #999; }
+.co-field input, .co-field textarea {
+  width: 100%; padding: 12px 14px; border: 1px solid #d0d0cc; border-radius: 0;
+  font: inherit; font-size: 16px; color: #111; background: #fff; resize: vertical;
+}
+.co-field input:focus, .co-field textarea:focus { outline: none; border-color: #111; }
+.co-note { margin-bottom: 20px; }

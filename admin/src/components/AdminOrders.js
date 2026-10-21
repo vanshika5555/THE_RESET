@@ -13,6 +13,9 @@ import './AdminOrders.css';
 const fullAddress = (a) =>
   [a?.houseNo, a?.address, a?.landmark, a?.city, a?.state].filter(Boolean).join(', ');
 
+// Customer-typed text goes into printable HTML, so escape it.
+const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 const itemCount = (o) => (o.items || []).reduce((n, i) => n + (Number(i.qty) || 1), 0);
 const orderTotal = (o) => Number(o.total) || Number(o.subtotal) || 0;
 const customerName = (o) => o.shippingAddress?.fullName || o.user?.name || 'Unknown customer';
@@ -151,13 +154,21 @@ export default function AdminOrders() {
   // A simple packing slip in a new window, ready to print.
   const printSlip = (order) => {
     const a = order.shippingAddress || {};
+    // Gifts go out without prices, with the sender's note on top.
+    const isGift = !!order.gift?.isGift;
     const rows = order.items.map((i) => `
       <tr>
-        <td>${i.name}</td>
-        <td>${i.size || '-'}</td>
-        <td style="text-align:center">${i.qty}</td>
-        <td style="text-align:right">${i.price || ''}</td>
+        <td>${esc(i.name)}</td>
+        <td>${esc(i.size || '-')}</td>
+        <td style="text-align:center">${Number(i.qty) || 1}</td>
+        ${isGift ? '' : `<td style="text-align:right">${esc(i.price || '')}</td>`}
       </tr>`).join('');
+    const giftCard = isGift ? `
+          <div class="gift">
+            <div class="label">A gift${order.gift.to ? ` for ${esc(order.gift.to)}` : ''}</div>
+            ${order.gift.message ? `<p class="gift-msg">“${esc(order.gift.message)}”</p>` : ''}
+            <div class="gift-from">from ${esc(String(order.user?.name || order.guest?.name || '').trim().split(/\s+/)[0] || 'someone who thought of you')}</div>
+          </div>` : '';
 
     const html = `
       <html>
@@ -176,28 +187,34 @@ export default function AdminOrders() {
             .totals div { display: flex; justify-content: space-between; padding: 5px 0; }
             .totals .grand { border-top: 1px solid #ccc; margin-top: 6px; padding-top: 10px; font-weight: 700; }
             .foot { margin-top: 30px; font-size: 12px; color: #777; }
+            .gift { border: 2px solid #111; padding: 20px; margin-bottom: 20px; }
+            .gift-msg { font-size: 18px; line-height: 1.5; font-style: italic; margin: 6px 0 10px; white-space: pre-line; }
+            .gift-from { font-size: 13px; color: #555; }
+            .note { font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc; }
           </style>
         </head>
         <body>
           <h1>THE RESET</h1>
-          <p class="sub">Packing slip · Order ${shortId(order._id)} · ${fmtDate(order.createdAt)}</p>
+          <p class="sub">${isGift ? 'Gift receipt' : 'Packing slip'} · Order ${shortId(order._id)} · ${fmtDate(order.createdAt)}</p>
           <div class="box">
             <div class="label">Deliver to</div>
-            <div><strong>${a.fullName || ''}</strong></div>
-            <div>${fullAddress(a)}</div>
-            <div>${a.pincode || ''}</div>
-            <div>Phone: ${a.phone || '—'}</div>
+            <div><strong>${esc(a.fullName || '')}</strong></div>
+            <div>${esc(fullAddress(a))}</div>
+            <div>${esc(a.pincode || '')}</div>
+            <div>Phone: ${esc(a.phone || '—')}</div>
+            ${order.deliveryNote ? `<div class="note"><strong>Courier note:</strong> ${esc(order.deliveryNote)}</div>` : ''}
           </div>
+          ${giftCard}
           <table>
-            <thead><tr><th>Item</th><th>Size</th><th style="text-align:center">Qty</th><th style="text-align:right">Price</th></tr></thead>
+            <thead><tr><th>Item</th><th>Size</th><th style="text-align:center">Qty</th>${isGift ? '' : '<th style="text-align:right">Price</th>'}</tr></thead>
             <tbody>${rows}</tbody>
           </table>
-          <div class="totals">
+          ${isGift ? '' : `<div class="totals">
             <div><span>Subtotal</span><span>${inr(order.subtotal)}</span></div>
             ${order.discount ? `<div><span>Discount ${order.couponCode ? '(' + order.couponCode + ')' : ''}</span><span>− ${inr(order.discount)}</span></div>` : ''}
             <div><span>Delivery</span><span>${order.delivery ? inr(order.delivery) : 'Free'}</span></div>
             <div class="grand"><span>Total</span><span>${inr(orderTotal(order))}</span></div>
-          </div>
+          </div>`}
           <p class="foot">Thank you for shopping with THE RESET.</p>
           <script>window.onload = () => window.print();</script>
         </body>
@@ -307,6 +324,7 @@ export default function AdminOrders() {
                 <span className="cell orow-cust">
                   <span className="cell-main">{customerName(o)}</span>
                   <span className="cell-sub">
+                    {o.gift?.isGift && <span className="orow-gift" title="Gift order">🎁 Gift</span>}
                     <span>{shortId(o._id)}</span>
                     <span>{plural(itemCount(o), 'item')}</span>
                     {o.shippingAddress?.city && <span>{o.shippingAddress.city}</span>}
@@ -437,6 +455,23 @@ export default function AdminOrders() {
                         Discard
                       </button>
                     </div>
+                  )}
+                </Section>
+              )}
+
+              {(open.gift?.isGift || open.deliveryNote) && (
+                <Section title={open.gift?.isGift ? '🎁 Gift order' : 'Courier note'}>
+                  {open.gift?.isGift && (
+                    <div className="od-gift">
+                      {open.gift.to && <p className="od-gift-to">For {open.gift.to}</p>}
+                      {open.gift.message
+                        ? <p className="od-gift-msg">“{open.gift.message}”</p>
+                        : <p className="od-note-hint">No note — just leave the prices off.</p>}
+                      <p className="od-note-hint">The packing slip prints this note and no prices.</p>
+                    </div>
+                  )}
+                  {open.deliveryNote && (
+                    <p className="od-delnote"><strong>Courier note:</strong> {open.deliveryNote}</p>
                   )}
                 </Section>
               )}

@@ -95,3 +95,11 @@
   .od-ship { grid-template-columns: minmax(0, 1fr); }
   .od-ship .input, .od-ship-url .input { height: 46px; font-size: 16px; }
 }
+
+/* ── Gift orders ── */
+.od-gift { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1.5px solid #000; border-radius: var(--r-md); }
+.od-gift-to { font-size: 14px; font-weight: 600; }
+.od-gift-msg { font-size: 15px; line-height: 1.55; font-style: italic; white-space: pre-line; overflow-wrap: anywhere; }
+.od-gift .od-note-hint { margin: 0; }
+.od-delnote { margin-top: 10px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.orow-gift { font-weight: 600; color: var(--text); }

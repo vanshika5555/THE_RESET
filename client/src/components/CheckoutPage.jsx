@@ -25,6 +25,8 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   const [guestEmail, setGuestEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [summaryOpen, setSummaryOpen] = useState(false);   // phone: collapsed by default
+  const [gift, setGift] = useState({ isGift: false, to: '', message: '' });
+  const [deliveryNote, setDeliveryNote] = useState('');
 
   const subtotal = cartSubtotal(cart);
   const discount = coupon ? coupon.discount : 0;
@@ -156,6 +158,8 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
           couponCode: coupon ? coupon.code : '',
           guestEmail: user ? '' : guestEmail.trim(),
           guestName: user ? '' : address.fullName,
+          gift: gift.isGift ? gift : { isGift: false },
+          deliveryNote,
         }
       );
 
@@ -317,6 +321,56 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 <p><strong>{address.fullName}</strong> — +91 {address.phone}</p>
                 <p>{address.address}, {address.city} - {address.pincode}</p>
               </div>
+
+              {/* Gift + courier note */}
+              <div className={`co-extra ${gift.isGift ? 'co-extra--on' : ''}`}>
+                <label className="co-gift-toggle">
+                  <input
+                    type="checkbox"
+                    checked={gift.isGift}
+                    onChange={(e) => setGift((g) => ({ ...g, isGift: e.target.checked }))}
+                  />
+                  <span className="co-gift-text">
+                    <strong>Send it as a gift</strong>
+                    <span>We add your note and leave the prices off the packing slip. Free.</span>
+                  </span>
+                </label>
+                {gift.isGift && (
+                  <div className="co-gift-fields">
+                    <label className="co-field">
+                      <span>To</span>
+                      <input
+                        type="text"
+                        maxLength={60}
+                        placeholder="Their name"
+                        value={gift.to}
+                        onChange={(e) => setGift((g) => ({ ...g, to: e.target.value }))}
+                      />
+                    </label>
+                    <label className="co-field">
+                      <span>Note <em>{250 - gift.message.length} left</em></span>
+                      <textarea
+                        rows={3}
+                        maxLength={250}
+                        placeholder="Happy birthday — this one's very you."
+                        value={gift.message}
+                        onChange={(e) => setGift((g) => ({ ...g, message: e.target.value }))}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <label className="co-field co-note">
+                <span>Delivery instructions <em>optional</em></span>
+                <input
+                  type="text"
+                  maxLength={200}
+                  placeholder="e.g. Leave with the guard, call before coming"
+                  value={deliveryNote}
+                  onChange={(e) => setDeliveryNote(e.target.value)}
+                />
+              </label>
 
               {/* Payment method — fake UPI */}
               <div className="co-payment-methods">

@@ -171,12 +171,24 @@ export default function OrderDetail() {
             </div>
           )}
 
+          {order.gift?.isGift && (
+            <div className="od-box od-gift">
+              <h2 className="od-section-title">Sent as a gift</h2>
+              {order.gift.to && <p className="od-addr-name">To {order.gift.to}</p>}
+              {order.gift.message
+                ? <p className="od-gift-msg">“{order.gift.message}”</p>
+                : <p className="od-addr-line">No note added.</p>}
+              <p className="od-addr-line">The packing slip has no prices on it.</p>
+            </div>
+          )}
+
           <div className="od-box">
             <h2 className="od-section-title">Delivery Address</h2>
             <p className="od-addr-name">{a.fullName}</p>
             <p className="od-addr-line">{addressLine}</p>
             <p className="od-addr-line">{a.pincode}</p>
             {a.phone && <p className="od-addr-line">+91 {a.phone}</p>}
+            {order.deliveryNote && <p className="od-addr-line od-delnote">Note for the courier: {order.deliveryNote}</p>}
           </div>
 
           <div className="od-box">

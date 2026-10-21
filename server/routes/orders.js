@@ -16,6 +16,14 @@ const cleanAddress = (a = {}) => Object.fromEntries(
 );
 
 const { reserve, restock } = require('../utils/stock');
+
+// Free text from the checkout: trimmed, single-spaced lines, length-capped.
+const cleanText = (v, max) => (typeof v === 'string'
+  ? v.replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, max)
+  : '');
+const cleanGift = (g) => (g && g.isGift
+  ? { isGift: true, to: cleanText(g.to, 60).replace(/\n/g, ' '), message: cleanText(g.message, 250) }
+  : { isGift: false, to: '', message: '' });
 const { buildShipment } = require('../utils/couriers');
 const { ensureInvoiceNumber, renderInvoice } = require('../utils/invoice');
 
@@ -157,6 +165,8 @@ router.post('/', protect, async (req, res) => {
         delivery,
         total,
         shippingAddress: cleanAddress(shippingAddress),
+        gift: cleanGift(req.body.gift),
+        deliveryNote: cleanText(req.body.deliveryNote, 200),
       });
     } catch (err) {
       await restock(reserved);
