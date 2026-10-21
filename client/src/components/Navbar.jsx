@@ -4,6 +4,7 @@ import { cdn } from "../utils/img";
 import StyleAnalyser from "./StyleAnalyser";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { searchProducts } from '../utils/search';
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import CartDrawer from "./CartDrawer";
@@ -94,16 +95,10 @@ export default function Navbar() {
     getProducts().then(d => setCatalog(Array.isArray(d) ? d : [])).catch(() => {});
   }, [searchOpen, catalog.length]);
 
-  // Every word typed must appear somewhere in the name, type or department.
+  // Same forgiving search as the results page (spelling slips, plurals, "for women").
   const suggestions = useMemo(() => {
-    const words = term.toLowerCase().split(/\s+/).filter(Boolean);
-    if (!words.length || term.trim().length < 2) return [];
-    return catalog
-      .filter(p => {
-        const hay = `${p.name} ${p.subcategory} ${p.category} ${p.tag || ''} ${p.season || ''}`.toLowerCase();
-        return words.every(w => hay.includes(w));
-      })
-      .slice(0, 6);
+    if (term.trim().length < 2) return [];
+    return searchProducts(catalog, term, { limit: 6 }).results;
   }, [term, catalog]);
 
   useEffect(() => { setHi(-1); }, [term]);

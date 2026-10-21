@@ -8,6 +8,8 @@ import '../components/CollectionPage.css';
 import usePageMeta from '../hooks/usePageMeta';
 import Price from '../components/Price';
 import ColourDots from '../components/ColourDots';
+import { searchProducts, suggestWord, parseQuery, recentSearches, rememberSearch, clearRecentSearches } from '../utils/search';
+import './SearchPage.css';
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
@@ -34,23 +36,34 @@ export default function SearchPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  // Men / Women chips: the same search, narrowed (or widened) to a department.
+  const dept = params.get('in') || '';
+  const { department: typedDept } = parseQuery(query);
+  const found = searchProducts(products, query);
+  const all = found.results;
+  const results = dept && !typedDept ? all.filter((p) => p.category === dept) : all;
+  const counts = { Men: all.filter((p) => p.category === 'Men').length, Women: all.filter((p) => p.category === 'Women').length };
+  const didYouMean = !loading && query && !all.length ? suggestWord(products, query) : null;
 
-  const results = terms.length === 0 ? [] : products.filter(p => {
-    const haystack = [
-      p.name,
-      p.subcategory,
-      p.category,
-      p.season,
-      p.tag,
-      p.description,
-    ].filter(Boolean).join(' ').toLowerCase();
-    return terms.every(t => haystack.includes(t));
-  });
+  const [recent, setRecent] = useState(recentSearches);
+  useEffect(() => {
+    // Only searches that found things as typed — not misspellings.
+    if (query && all.length && !found.corrected) { rememberSearch(query); setRecent(recentSearches()); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, all.length > 0, found.corrected]);
 
+  // Popular departments to offer when nothing is typed or nothing is found.
+  const popular = [...new Set(products.map((p) => p.subcategory).filter(Boolean))].slice(0, 8);
+
+  const go = (q) => setParams(q ? { q } : {});
   const submit = (e) => {
     e.preventDefault();
-    setParams(input.trim() ? { q: input.trim() } : {});
+    go(input.trim());
+  };
+  const pickDept = (d) => {
+    const next = { q: query };
+    if (d) next.in = d;
+    setParams(next, { replace: true });
   };
 
   return (
@@ -90,24 +103,62 @@ export default function SearchPage() {
       {loading ? (
         <div className="cp-loading">Loading...</div>
       ) : !query ? (
-        <div className="cp-empty">Type something above to search the collection.</div>
-      ) : results.length === 0 ? (
+        <div className="sp-start">
+          {recent.length > 0 && (
+            <div className="sp-block">
+              <div className="sp-block-head">
+                <p className="sp-label">Recent</p>
+                <button type="button" className="sp-clear" onClick={() => { clearRecentSearches(); setRecent([]); }}>Clear</button>
+              </div>
+              <div className="sp-chips">
+                {recent.map((r) => <button key={r} type="button" className="sp-chip" onClick={() => go(r)}>{r}</button>)}
+              </div>
+            </div>
+          )}
+          {popular.length > 0 && (
+            <div className="sp-block">
+              <p className="sp-label">Popular</p>
+              <div className="sp-chips">
+                {popular.map((c) => <button key={c} type="button" className="sp-chip" onClick={() => go(c)}>{c}</button>)}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : all.length === 0 ? (
         <div className="cp-empty">
           <p style={{ marginBottom: '14px' }}>
             No results for &ldquo;{query}&rdquo;.
           </p>
+          {didYouMean && (
+            <p className="sp-dym">Did you mean <button type="button" onClick={() => go(didYouMean)}>{didYouMean}</button>?</p>
+          )}
           <p style={{ fontSize: '14px', color: '#888' }}>
             Try a shorter word, or browse{' '}
             <Link to="/men" style={{ color: '#111' }}>Men</Link>{' '}or{' '}
             <Link to="/women" style={{ color: '#111' }}>Women</Link>.
           </p>
+          {popular.length > 0 && (
+            <div className="sp-chips sp-chips--center">
+              {popular.map((c) => <button key={c} type="button" className="sp-chip" onClick={() => go(c)}>{c}</button>)}
+            </div>
+          )}
         </div>
       ) : (
         <>
-          <div className="cp-toolbar">
+          <div className="cp-toolbar sp-toolbar">
             <p className="cp-count">
               {results.length} result{results.length !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
+              {found.corrected && <span className="sp-corrected"> · closest matches — check the spelling</span>}
             </p>
+            {!typedDept && counts.Men > 0 && counts.Women > 0 && (
+              <div className="sp-depts" role="tablist" aria-label="Department">
+                {[['', 'All', all.length], ['Men', 'Men', counts.Men], ['Women', 'Women', counts.Women]].map(([v, l, n]) => (
+                  <button key={l} type="button" role="tab" aria-selected={dept === v} className={`sp-dept ${dept === v ? 'is-on' : ''}`} onClick={() => pickDept(v)}>
+                    {l} <span>{n}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="cp-grid">

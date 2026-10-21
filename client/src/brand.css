@@ -168,7 +168,8 @@ body {
 
 @media (max-width: 768px) {
   .cp-hero { padding: 28px 16px 18px; }
-  .cp-hero-title { font-size: 26vw; }
+  /* 21vw: the longest heading ("SEARCH", "WOMEN") still fits the narrowest phone */
+  .cp-hero-title { font-size: 21vw; }
   .fc-header { padding: 0 16px; }
   .cp-card-name, .na-card-name, .cp-card-price, .na-card-price { font-size: 14px; }
   .cp-card-sub, .na-card-sub { font-size: 12px; }
