@@ -6,7 +6,7 @@ const rateLimit = require('express-rate-limit');
 const StockAlert = require('../models/StockAlert');
 const Product = require('../models/Product');
 const User = require('../models/User');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 const { sendMailLater } = require('../utils/mailer');
 const emails = require('../utils/emails');
 
@@ -64,7 +64,7 @@ router.post('/', alertLimiter, async (req, res) => {
 
 // GET /api/alerts/summary — what shoppers are waiting for (admin only).
 // ?product=<id> narrows it to one product (used by the edit screen).
-router.get('/summary', protect, adminOnly, async (req, res) => {
+router.get('/summary', protect, teamOnly, async (req, res) => {
   try {
     const filter = { notifiedAt: null };
     if (req.query.product) {

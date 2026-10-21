@@ -3,7 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const ReturnRequest = require('../models/ReturnRequest');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 const { adjustStock } = require('../utils/stock');
 const { sendMailLater } = require('../utils/mailer');
 const emails = require('../utils/emails');
@@ -156,7 +156,7 @@ router.get('/mine', protect, async (req, res) => {
 });
 
 // GET /api/returns — every request (admin)
-router.get('/', protect, adminOnly, async (req, res) => {
+router.get('/', protect, teamOnly, async (req, res) => {
   try {
     const list = await ReturnRequest.find({})
       .populate('user', 'name email')
@@ -169,7 +169,7 @@ router.get('/', protect, adminOnly, async (req, res) => {
 });
 
 // PUT /api/returns/:id — { status, shopMessage } (admin)
-router.put('/:id', protect, adminOnly, async (req, res) => {
+router.put('/:id', protect, teamOnly, async (req, res) => {
   try {
     const r = await ReturnRequest.findById(req.params.id).populate('user', 'name email');
     if (!r) return res.status(404).json({ message: 'Request not found' });
@@ -187,6 +187,7 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
       // Money back: online payments are refunded through Razorpay; cash orders
       // need the UPI transfer's reference so there's a record of it.
       if (status === 'Refunded') {
+        if (req.user.role !== 'admin') return res.status(403).json({ message: 'Only the owner can send refunds.' });
         const order = await Order.findById(r.order);
         const amount = r.refund?.amount || (order ? refundFor(order, r.items) : 0);
         if (order && paidOnline(order)) {

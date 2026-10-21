@@ -22,3 +22,4 @@
   .sec-steps { width: 100%; }
   .sec-code-input { max-width: none; flex: 1; }
 }
+.sec-ok { padding: 10px 12px; border-radius: var(--r-md); background: var(--green-bg); color: var(--green); font-size: 14px; }

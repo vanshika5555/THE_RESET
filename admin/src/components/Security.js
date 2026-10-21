@@ -31,6 +31,8 @@ export default function Security() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
+  const [pwMsg, setPwMsg] = useState('');
 
   const load = () => axios.get('/api/auth/2fa').then((r) => setStatus(r.data)).catch(() => setError('Could not load your security settings.'));
   useEffect(() => { load(); }, []);
@@ -72,6 +74,22 @@ export default function Security() {
       load();
     } catch (err) {
       setError(err.response?.data?.message || 'Could not turn it off.');
+    }
+    setBusy(false);
+  };
+
+  const changePassword = async (e) => {
+    e.preventDefault();
+    setPwMsg(''); setError('');
+    if (pw.next !== pw.confirm) { setError('The new passwords don’t match.'); return; }
+    setBusy(true);
+    try {
+      const r = await axios.put('/api/auth/changepassword', { currentPassword: pw.current, newPassword: pw.next });
+      keepSession(r.data?.token);
+      setPw({ current: '', next: '', confirm: '' });
+      setPwMsg('Password changed. Other devices have been signed out.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not change the password.');
     }
     setBusy(false);
   };
@@ -175,6 +193,28 @@ export default function Security() {
             )}
           </>
         )}
+      </section>
+
+      <section className="panel sec-panel">
+        <h2 className="panel-title">Password</h2>
+        {pwMsg && <p className="sec-ok" role="status">{pwMsg}</p>}
+        <form className="sec-off" onSubmit={changePassword}>
+          <label className="field">
+            <span className="field-label">Current password</span>
+            <input className="input" type="password" autoComplete="current-password" value={pw.current} onChange={(e) => setPw((p) => ({ ...p, current: e.target.value }))} />
+          </label>
+          <label className="field">
+            <span className="field-label">New password</span>
+            <input className="input" type="password" autoComplete="new-password" value={pw.next} onChange={(e) => setPw((p) => ({ ...p, next: e.target.value }))} placeholder="8+ characters, a letter and a number" />
+          </label>
+          <label className="field">
+            <span className="field-label">New password again</span>
+            <input className="input" type="password" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw((p) => ({ ...p, confirm: e.target.value }))} />
+          </label>
+          <div className="sec-actions">
+            <button type="submit" className="btn btn--primary" disabled={busy || !pw.current || !pw.next}>Change password</button>
+          </div>
+        </form>
       </section>
     </div>
   );

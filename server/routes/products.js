@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const { notifyRestocked } = require('./alerts');
 const { notifyPriceDrop } = require('../utils/priceDrops');
@@ -66,7 +66,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST create product  (admin only)
-router.post('/', protect, adminOnly, async (req, res) => {
+router.post('/', protect, teamOnly, async (req, res) => {
   try {
     const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, ...fields } = req.body || {};
     const group = await groupFor(linkTo);
@@ -80,7 +80,7 @@ router.post('/', protect, adminOnly, async (req, res) => {
 });
 
 // PUT update product  (admin only)
-router.put('/:id', protect, adminOnly, async (req, res) => {
+router.put('/:id', protect, teamOnly, async (req, res) => {
   try {
     // Bump the version so an order being placed at this exact moment
     // re-reads the product instead of overwriting this edit (see orders.js).

@@ -25,12 +25,12 @@ export default function AdminLogin({ onLogin }) {
         setLoading(false);
         return;
       }
-      if (res.data.role !== 'admin') {
-        setError('This account is a customer account. Sign in with an admin account.');
+      if (!['admin', 'staff'].includes(res.data.role)) {
+        setError('This is a customer account. Ask the shop owner to add you to the team.');
         setLoading(false);
         return;
       }
-      onLogin(res.data.token, res.data.name);
+      onLogin(res.data.token, res.data.name, res.data.role);
     } catch (err) {
       const msg = err.response
         ? (err.response.data?.message || `The server returned an error (${err.response.status}).`)

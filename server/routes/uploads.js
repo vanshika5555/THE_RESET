@@ -1,7 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 
 /**
  * Photo uploads go straight from the admin's browser to Cloudinary.
@@ -26,7 +26,7 @@ function sign(params, secret) {
 }
 
 // GET /api/uploads/signature — a one-off permission slip for one upload batch
-router.get('/signature', protect, adminOnly, (req, res) => {
+router.get('/signature', protect, teamOnly, (req, res) => {
   const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
   if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
     return res.status(503).json({

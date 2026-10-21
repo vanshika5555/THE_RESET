@@ -20,6 +20,7 @@ const Returns     = lazy(() => import('./components/Returns'));
 const Reports     = lazy(() => import('./components/Reports'));
 const Security    = lazy(() => import('./components/Security'));
 const Reviews     = lazy(() => import('./components/Reviews'));
+const Team        = lazy(() => import('./components/Team'));
 
 // After the first screen is up, quietly download the other pages so
 // tapping a tab opens instantly instead of flashing "Loading…".
@@ -37,6 +38,7 @@ const preloadPages = () => {
 
 const TOKEN_KEY = 'theresetAdminToken';
 const NAME_KEY  = 'theresetAdminName';
+const ROLE_KEY  = 'theresetAdminRole';   // 'admin' (owner) or 'staff'
 const SITE_URL  = import.meta.env.REACT_APP_SITE_URL || 'http://localhost:3001';
 
 // Attach the saved token to every request from the moment the app loads.
@@ -57,6 +59,7 @@ const TITLES = [
   ['/reports',           'Reports'],
   ['/security',          'Security'],
   ['/reviews',           'Reviews'],
+  ['/team',              'Team'],
   ['/',                  'Dashboard'],
 ];
 
@@ -65,7 +68,18 @@ const titleFor = (pathname) => {
   return hit ? hit[1] : 'Admin';
 };
 
-function Shell({ name, onLogout }) {
+// Pages only the owner sees. Staff get a short note instead.
+function OwnerOnly({ role, children }) {
+  if (role === 'admin') return children;
+  return (
+    <div className="panel" style={{ padding: 24 }}>
+      <p style={{ fontWeight: 600 }}>Only the shop owner can open this page.</p>
+      <p style={{ marginTop: 6, color: 'var(--text-2)' }}>Ask them if you need something here.</p>
+    </div>
+  );
+}
+
+function Shell({ name, role, onLogout }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const isForm = pathname.startsWith('/products/add') || pathname.startsWith('/products/edit');
@@ -84,7 +98,7 @@ function Shell({ name, onLogout }) {
 
   return (
     <div className={`admin-layout ${isForm ? 'admin-layout--form' : ''}`}>
-      <Sidebar />
+      <Sidebar role={role} />
 
       <main className="admin-main">
         <header className="admin-topbar">
@@ -103,7 +117,7 @@ function Shell({ name, onLogout }) {
           <h1 className="admin-topbar-title">{titleFor(pathname)}</h1>
 
           <span className="admin-topbar-user only-desktop">
-            {name ? `Signed in as ${name}` : 'Signed in'}
+            {name ? `Signed in as ${name}` : 'Signed in'}{role === 'staff' ? ' · Staff' : ''}
           </span>
 
           <a
@@ -139,12 +153,13 @@ function Shell({ name, onLogout }) {
             <Route path="/products/add" element={<AddProduct />} />
             <Route path="/products/edit/:id" element={<EditProduct />} />
             <Route path="/orders" element={<AdminOrders />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/coupons" element={<Coupons />} />
+            <Route path="/customers" element={<OwnerOnly role={role}><Customers /></OwnerOnly>} />
+            <Route path="/coupons" element={<OwnerOnly role={role}><Coupons /></OwnerOnly>} />
             <Route path="/returns" element={<Returns />} />
-            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports" element={<OwnerOnly role={role}><Reports /></OwnerOnly>} />
             <Route path="/security" element={<Security />} />
             <Route path="/reviews" element={<Reviews />} />
+            <Route path="/team" element={<OwnerOnly role={role}><Team /></OwnerOnly>} />
           </Routes>
           </Suspense>
         </div>
@@ -156,10 +171,13 @@ function Shell({ name, onLogout }) {
 function App() {
   const [token, setToken] = useState(savedToken || '');
   const [name, setName]   = useState(localStorage.getItem(NAME_KEY) || '');
+  // Sessions from before staff accounts existed belong to the owner.
+  const [role, setRole]   = useState(localStorage.getItem(ROLE_KEY) || 'admin');
 
   const handleLogout = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(NAME_KEY);
+    localStorage.removeItem(ROLE_KEY);
     localStorage.removeItem('theresetDashCache');   // saved dashboard numbers
     delete axios.defaults.headers.common.Authorization;
     setToken('');
@@ -171,7 +189,10 @@ function App() {
     const id = axios.interceptors.response.use(
       (res) => res,
       (err) => {
-        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+        // Signed out, or not on the team at all → back to the login screen.
+        // Other 403s (staff trying an owner-only action) just show their message.
+        const s = err.response?.status;
+        if (s === 401 || (s === 403 && /team access only/i.test(err.response?.data?.message || ''))) {
           handleLogout();
         }
         return Promise.reject(err);
@@ -180,9 +201,11 @@ function App() {
     return () => axios.interceptors.response.eject(id);
   }, []);
 
-  const handleLogin = (newToken, adminName) => {
+  const handleLogin = (newToken, adminName, adminRole = 'admin') => {
     localStorage.setItem(TOKEN_KEY, newToken);
     localStorage.setItem(NAME_KEY, adminName || '');
+    localStorage.setItem(ROLE_KEY, adminRole);
+    setRole(adminRole);
     axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
     setToken(newToken);
     setName(adminName || '');
@@ -192,7 +215,7 @@ function App() {
 
   return (
     <Router>
-      <Shell name={name} onLogout={handleLogout} />
+      <Shell name={name} role={role} onLogout={handleLogout} />
     </Router>
   );
 }

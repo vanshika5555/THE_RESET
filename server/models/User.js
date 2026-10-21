@@ -17,7 +17,8 @@ const userSchema = new mongoose.Schema({
   name:      { type: String, required: true, trim: true },
   email:     { type: String, required: true, unique: true, lowercase: true, trim: true },
   password:  { type: String, required: true, minlength: 6 },
-  role:      { type: String, enum: ['user', 'admin'], default: 'user' },
+  // user = shopper · staff = runs orders, returns and products · admin = the owner
+  role:      { type: String, enum: ['user', 'staff', 'admin'], default: 'user' },
 
   // Bumped whenever the password changes (or "sign out everywhere" is used).
   // Every login token carries the number it was issued with, so raising it

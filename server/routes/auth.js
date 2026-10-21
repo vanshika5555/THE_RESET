@@ -3,7 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 const { authLimiter, resetLimiter } = require('../middleware/security');
 const { sendMailLater, SHOP_URL } = require('../utils/mailer');
 const emails = require('../utils/emails');
@@ -209,14 +209,14 @@ router.get('/2fa', protect, async (req, res) => {
 });
 
 // POST /api/auth/2fa/setup — a fresh secret to add to the authenticator app (admins)
-router.post('/2fa/setup', protect, adminOnly, async (req, res) => {
+router.post('/2fa/setup', protect, teamOnly, async (req, res) => {
   const secret = totp.newSecret();
   await User.updateOne({ _id: req.user._id }, { $set: { twoFactorPending: secret } });
   res.json({ secret, otpauth: totp.otpauthUrl(secret, req.user.email) });
 });
 
 // POST /api/auth/2fa/enable — { code } proves the app is set up; returns backup codes once
-router.post('/2fa/enable', protect, adminOnly, authLimiter, async (req, res) => {
+router.post('/2fa/enable', protect, teamOnly, authLimiter, async (req, res) => {
   const user = await User.findById(req.user._id).select('+twoFactorPending');
   if (!user?.twoFactorPending) return res.status(400).json({ message: 'Start the setup again.' });
   const step = totp.verify(user.twoFactorPending, req.body.code);
@@ -503,6 +503,66 @@ router.get('/reminders/off', async (req, res) => {
 <p><a href="${shop}" style="color:#111">Back to the shop</a></p></div>`);
 });
 
+/* ───────────── Team: staff accounts (owner only) ───────────── */
+
+const ADMIN_URL = () => (process.env.ADMIN_URL || 'https://the-reset-admin.vercel.app').replace(/\/$/, '');
+
+// GET /api/auth/team — everyone who can open the admin
+router.get('/team', protect, adminOnly, async (req, res) => {
+  const people = await User.find({ role: { $in: ['admin', 'staff'] } })
+    .select('name email role twoFactorEnabled createdAt').sort({ role: 1, createdAt: 1 }).lean();
+  res.json(people);
+});
+
+// POST /api/auth/team — { name, email } add someone as staff
+router.post('/team', protect, adminOnly, async (req, res) => {
+  const email = normEmail(req.body.email);
+  const name = str(req.body.name).trim().slice(0, 60);
+  if (!EMAIL_RE.test(email)) return res.status(400).json({ message: 'Enter a valid email address.' });
+  try {
+    let user = await User.findOne({ email });
+    let tempPassword = '';
+    if (user) {
+      if (user.role === 'admin') return res.status(400).json({ message: 'That’s the owner account.' });
+      if (user.role === 'staff') return res.status(400).json({ message: 'They’re already on the team.' });
+      user.role = 'staff';
+      user.tokenVersion = (user.tokenVersion || 0) + 1;   // fresh sign-in with the new access
+      await user.save();
+    } else {
+      if (name.length < 2) return res.status(400).json({ message: 'Add their name.' });
+      // A one-time password they change after signing in (Security → Password).
+      tempPassword = `${crypto.randomBytes(4).toString('hex')}-${crypto.randomBytes(3).toString('hex')}A1`;
+      user = await User.create({ name, email, password: tempPassword, role: 'staff' });
+    }
+    sendMailLater({
+      to: user.email,
+      subject: 'You’ve been added to THE RESET team',
+      text: `Hi ${user.name.split(' ')[0]},\n\nYou can now sign in to the shop admin at ${ADMIN_URL()} with ${user.email}.`
+        + (tempPassword ? `\nYour first password: ${tempPassword}\nPlease change it after signing in (Security → Password).` : '\nUse your usual password.')
+        + '\n\nTHE RESET',
+      html: `<p>Hi ${emails.esc(user.name.split(' ')[0])},</p><p>You can now sign in to the shop admin at <a href="${ADMIN_URL()}">${ADMIN_URL()}</a> with <strong>${emails.esc(user.email)}</strong>.</p>`
+        + (tempPassword ? `<p>Your first password: <strong>${tempPassword}</strong><br>Please change it after signing in (Security → Password).</p>` : '<p>Use your usual password.</p>')
+        + '<p>THE RESET</p>',
+    });
+    res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: 'staff', tempPassword });
+  } catch (err) {
+    res.status(400).json({ message: 'Could not add them. Try again.' });
+  }
+});
+
+// DELETE /api/auth/team/:id — take away admin access (they keep a normal shop account)
+router.delete('/team/:id', protect, adminOnly, async (req, res) => {
+  try {
+    if (String(req.params.id) === String(req.user._id)) return res.status(400).json({ message: 'You can’t remove yourself.' });
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== 'staff') return res.status(404).json({ message: 'Not a staff account.' });
+    await User.updateOne({ _id: user._id }, { $set: { role: 'user' }, $inc: { tokenVersion: 1 } });
+    res.json({ removed: true });
+  } catch (err) {
+    res.status(400).json({ message: 'Could not remove them.' });
+  }
+});
+
 /* ───────────── Privacy: email choices, a copy of your data, deleting the account ───────────── */
 
 // GET /api/auth/preferences
@@ -564,7 +624,7 @@ router.delete('/account', protect, authLimiter, async (req, res) => {
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'Account not found.' });
-    if (user.role === 'admin') return res.status(400).json({ message: 'Admin accounts can’t be deleted from the shop.' });
+    if (isTeam(user)) return res.status(400).json({ message: 'Team accounts can’t be deleted from the shop. Ask the owner to remove you from the team first.' });
     if (!(await user.matchPassword(str(req.body.password)))) {
       return res.status(400).json({ message: 'That password is not right.' });
     }

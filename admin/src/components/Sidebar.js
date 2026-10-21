@@ -55,6 +55,11 @@ const icons = {
       <polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/>
     </svg>
   ),
+  team: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/>
+    </svg>
+  ),
   security: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
@@ -70,28 +75,30 @@ const icons = {
 };
 
 // Desktop sidebar
-const links = [
+const LINKS = [
   { to: '/',             label: 'Dashboard',   icon: icons.dashboard },
   { to: '/orders',       label: 'Orders',      icon: icons.orders },
   { to: '/returns',      label: 'Returns',     icon: icons.returns },
-  { to: '/reports',      label: 'Reports',     icon: icons.reports },
-  { to: '/customers',    label: 'Customers',   icon: icons.customers },
+  { to: '/reports',      label: 'Reports',     icon: icons.reports, owner: true },
+  { to: '/customers',    label: 'Customers',   icon: icons.customers, owner: true },
   { to: '/reviews',      label: 'Reviews',     icon: icons.reviews },
-  { to: '/coupons',      label: 'Discount codes', icon: icons.discounts },
+  { to: '/coupons',      label: 'Discount codes', icon: icons.discounts, owner: true },
   { to: '/products',     label: 'Products',    icon: icons.products },
   { to: '/products/add', label: 'Add product', icon: icons.add },
+  { to: '/team',         label: 'Team',        icon: icons.team, owner: true },
   { to: '/security',     label: 'Security',    icon: icons.security },
 ];
 
 // Phone bottom tab bar — five tabs, thumb-reachable. "Add Product" lives
 // as a floating button on the Products tab instead.
-const tabs = [
+const TABS = [
   { to: '/',          label: 'Home',      icon: icons.dashboard },
   { to: '/orders',    label: 'Orders',    icon: icons.orders },
   { to: '/products',  label: 'Products',  icon: icons.products },
-  { to: '/customers', label: 'Customers', icon: icons.customers },
+  { to: '/customers', label: 'Customers', icon: icons.customers, owner: true },
   { to: '/returns',   label: 'Returns',   icon: icons.returns },
-  { to: '/coupons',   label: 'Discounts', icon: icons.discounts },
+  { to: '/coupons',   label: 'Discounts', icon: icons.discounts, owner: true },
+  { to: '/reviews',   label: 'Reviews',   icon: icons.reviews, staffOnly: true },
 ];
 
 const isActive = (pathname, to) => {
@@ -100,8 +107,12 @@ const isActive = (pathname, to) => {
   return pathname === to;
 };
 
-export default function Sidebar() {
+export default function Sidebar({ role = 'admin' }) {
   const { pathname } = useLocation();
+  // Staff don't see the owner's pages (customers, discounts, reports, team).
+  const owner = role === 'admin';
+  const links = LINKS.filter((l) => owner || !l.owner);
+  const tabs = TABS.filter((t) => (owner ? !t.staffOnly : !t.owner));
 
   return (
     <>

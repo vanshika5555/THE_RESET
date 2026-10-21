@@ -35,9 +35,18 @@ const protect = async (req, res, next) => {
   }
 };
 
+// The owner: everything, including money settings, customers and the team.
 const adminOnly = (req, res, next) => {
   if (req.user && req.user.role === 'admin') return next();
-  return res.status(403).json({ message: 'Admin access only' });
+  return res.status(403).json({ message: 'Only the shop owner can do this.' });
 };
 
-module.exports = { protect, adminOnly };
+// Anyone on the team (owner or staff): orders, returns, products, reviews.
+const TEAM = ['admin', 'staff'];
+const isTeam = (user) => !!user && TEAM.includes(user.role);
+const teamOnly = (req, res, next) => {
+  if (isTeam(req.user)) return next();
+  return res.status(403).json({ message: 'Team access only' });
+};
+
+module.exports = { protect, adminOnly, teamOnly, isTeam };

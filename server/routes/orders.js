@@ -7,7 +7,7 @@ const { deliveryCharge, COD_MAX, COD_FEE } = require('../utils/shipping');
 const rzp = require('../utils/razorpay');
 const Coupon = require('../models/Coupon');
 const User = require('../models/User');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 const { sendMailLater } = require('../utils/mailer');
 const emails = require('../utils/emails');
 
@@ -292,7 +292,7 @@ router.get('/myorders', protect, async (req, res) => {
 });
 
 // GET /api/orders — every order (admin only)
-router.get('/', protect, adminOnly, async (req, res) => {
+router.get('/', protect, teamOnly, async (req, res) => {
   try {
     const orders = await Order.find({ 'payment.status': { $ne: 'Awaiting' } })
       .populate('user', 'name email')
@@ -304,7 +304,7 @@ router.get('/', protect, adminOnly, async (req, res) => {
 });
 
 // PUT /api/orders/:id/status — move an order along (admin only)
-router.put('/:id/status', protect, adminOnly, async (req, res) => {
+router.put('/:id/status', protect, teamOnly, async (req, res) => {
   const allowed = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
   try {
     if (!allowed.includes(req.body.status)) {
@@ -334,9 +334,13 @@ router.put('/:id/status', protect, adminOnly, async (req, res) => {
       }
       if (req.body.status === 'Cancelled' && order.payment.status === 'Pending') order.payment.status = 'Void';
     }
-    // Cancelling an order that was paid online sends the money back first.
+    // Cancelling an order that was paid online sends the money back first —
+    // that's the owner's call, not staff's.
     if (previous !== 'Cancelled' && req.body.status === 'Cancelled'
         && order.payment?.method === 'online' && order.payment.status === 'Paid') {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'This order was paid online — cancelling it refunds the customer, so only the owner can do it.' });
+      }
       try {
         const rf = await rzp.refund(order.payment.razorpayPaymentId);
         order.payment.status = 'Refunded';
@@ -364,7 +368,7 @@ router.put('/:id/status', protect, adminOnly, async (req, res) => {
  * PUT /api/orders/:id/shipment — add or correct tracking details (admin only).
  * No email goes out; the customer sees the change on their order page.
  */
-router.put('/:id/shipment', protect, adminOnly, async (req, res) => {
+router.put('/:id/shipment', protect, teamOnly, async (req, res) => {
   try {
     const { shipment, error } = buildShipment(req.body);
     if (error) return res.status(400).json({ message: error });
@@ -442,7 +446,7 @@ router.get('/:id/invoice', protect, async (req, res) => {
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
     const ownerId = order.user?._id || order.user;
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = isTeam(req.user);
     if (String(ownerId) !== String(req.user._id) && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized to view this order' });
     }
@@ -467,7 +471,7 @@ router.get('/:id', protect, async (req, res) => {
 
     const ownerId = order.user?._id || order.user;
     const isOwner = String(ownerId) === String(req.user._id);
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = isTeam(req.user);
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized to view this order' });
@@ -480,7 +484,7 @@ router.get('/:id', protect, async (req, res) => {
 });
 
 // PUT /api/orders/:id/note — save the shop's private note on an order (admin only)
-router.put('/:id/note', protect, adminOnly, async (req, res) => {
+router.put('/:id/note', protect, teamOnly, async (req, res) => {
   try {
     const note = String(req.body.note ?? '').slice(0, 2000);
     const updated = await Order.findByIdAndUpdate(

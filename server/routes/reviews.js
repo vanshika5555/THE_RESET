@@ -2,7 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const Review  = require('../models/Review');
 const Order   = require('../models/Order');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 
 // A review photo must be one of this shopper's own uploads to our Cloudinary.
 const photoOk = (url, userId) => {
@@ -85,7 +85,7 @@ router.delete('/:id', protect, async (req, res) => {
     const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ message: 'Review not found' });
     // The author, or an admin taking down something that breaks the rules.
-    if (review.user.toString() !== req.user._id.toString() && req.user.role !== 'admin')
+    if (review.user.toString() !== req.user._id.toString() && !isTeam(req.user))
       return res.status(403).json({ message: 'Not authorized' });
     await Review.findByIdAndDelete(req.params.id);
     res.json({ message: 'Review deleted' });
@@ -95,7 +95,7 @@ router.delete('/:id', protect, async (req, res) => {
 });
 
 // GET /api/reviews/all — latest reviews for moderation (admin)
-router.get('/all', protect, adminOnly, async (req, res) => {
+router.get('/all', protect, teamOnly, async (req, res) => {
   try {
     const filter = req.query.photos === '1' ? { 'photos.0': { $exists: true } } : {};
     const list = await Review.find(filter).populate('product', 'name image').sort({ createdAt: -1 }).limit(200);
@@ -106,7 +106,7 @@ router.get('/all', protect, adminOnly, async (req, res) => {
 });
 
 // PUT /api/reviews/:id/remove-photo — { url } (admin)
-router.put('/:id/remove-photo', protect, adminOnly, async (req, res) => {
+router.put('/:id/remove-photo', protect, teamOnly, async (req, res) => {
   try {
     const r = await Review.findByIdAndUpdate(req.params.id, { $pull: { photos: String(req.body.url || '') } }, { new: true });
     if (!r) return res.status(404).json({ message: 'Review not found' });
