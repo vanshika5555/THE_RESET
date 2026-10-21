@@ -12,6 +12,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/vanshika5555/THE_RESET/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/vanshika5555/THE_RESET/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="React 19" src="https://img.shields.io/badge/React-19-000?logo=react&logoColor=61DAFB">
   <img alt="Vite 6" src="https://img.shields.io/badge/Vite-6-000?logo=vite&logoColor=FFC517">
   <img alt="Express 5" src="https://img.shields.io/badge/Express-5-000?logo=express">
@@ -88,6 +89,8 @@ cd client && npm install && npm start      # http://localhost:3001
 # 3. Admin (new terminal)
 cd admin && npm install && npm start       # http://localhost:3000
 ```
+
+Run the tests with `npm test` inside `server/`, `client/` or `admin/`. GitHub runs them — plus a full build of the shop and admin — on every push.
 
 Create the first admin account with `node seedAdmin.js` inside `server/` (it reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from `.env`).
 
