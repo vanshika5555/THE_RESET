@@ -9,6 +9,7 @@ import { parsePrice } from "../utils/price";
 import Loading from "../components/Loading";
 import usePageMeta from '../hooks/usePageMeta';
 import Price from '../components/Price';
+import ColourDots from "../components/ColourDots";
 
 
 const SEASONS = ['All', 'Summer', 'Winter', 'Monsoon', 'All Season'];
@@ -464,6 +465,7 @@ export default function CollectionPage({ category = 'Men' }) {
                   <p className="cp-card-name">{p.name}</p>
                 </Link>
                 <p className="cp-card-price"><Price value={p.price} mrp={p.mrp} /></p>
+                <ColourDots product={p} all={products} />
               </div>
             </div>
           ))}

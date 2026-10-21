@@ -7,6 +7,7 @@ import { useWishlist } from '../context/WishlistContext';
 import '../components/CollectionPage.css';
 import usePageMeta from '../hooks/usePageMeta';
 import Price from '../components/Price';
+import ColourDots from '../components/ColourDots';
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
@@ -144,6 +145,7 @@ export default function SearchPage() {
                     <p className="cp-card-name">{p.name}</p>
                   </Link>
                   <p className="cp-card-price"><Price value={p.price} mrp={p.mrp} /></p>
+                  <ColourDots product={p} all={products} />
                 </div>
               </div>
             ))}

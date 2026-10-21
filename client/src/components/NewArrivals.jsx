@@ -6,6 +6,7 @@ import QuickAdd from './QuickAdd';
 import { useWishlist } from '../context/WishlistContext';
 import './NewArrivals.css';
 import Price from './Price';
+import ColourDots from './ColourDots';
 
 const isSoldOut = (p) => {
   if (!p.inStock) return true;
@@ -96,6 +97,7 @@ export default function NewArrivals() {
                   <p className="na-card-name">{p.name}</p>
                 </Link>
                 <p className="na-card-price"><Price value={p.price} mrp={p.mrp} /></p>
+                <ColourDots product={p} all={products} />
               </div>
             </div>
           ))}
