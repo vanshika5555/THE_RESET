@@ -373,6 +373,56 @@ router.get('/users', protect, adminOnly, async (req, res) => {
   }
 });
 
+// ---- Store credit ----
+
+async function creditStatement(userId) {
+  const CreditLog = require('../models/CreditLog');
+  const credit = require('../utils/credit');
+  const [balance, history] = await Promise.all([
+    credit.balanceOf(userId),
+    CreditLog.find({ user: userId }).sort({ createdAt: -1 }).limit(50).select('-__v -user').lean(),
+  ]);
+  return { balance, history };
+}
+
+// GET /api/auth/credit — my store credit and its statement
+router.get('/credit', protect, async (req, res) => {
+  try {
+    const st = await creditStatement(req.user._id);
+    // Who adjusted it is the shop's business.
+    st.history = st.history.map(({ by, ...h }) => h); // eslint-disable-line no-unused-vars
+    res.json(st);
+  } catch (err) {
+    res.status(500).json({ message: 'Could not load your store credit.' });
+  }
+});
+
+// GET /api/auth/users/:id/credit — a customer's credit (owner)
+router.get('/users/:id/credit', protect, adminOnly, async (req, res) => {
+  if (!/^[a-f0-9]{24}$/i.test(req.params.id)) return res.status(404).json({ message: 'Customer not found' });
+  res.json(await creditStatement(req.params.id));
+});
+
+// POST /api/auth/users/:id/credit — { amount, note } add (or take back) credit by hand (owner)
+router.post('/users/:id/credit', protect, adminOnly, async (req, res) => {
+  try {
+    if (!/^[a-f0-9]{24}$/i.test(req.params.id)) return res.status(404).json({ message: 'Customer not found' });
+    const amount = Math.round(Number(req.body?.amount) * 100) / 100;
+    const note = typeof req.body?.note === 'string' ? req.body.note.trim().slice(0, 120) : '';
+    if (!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > 100000) {
+      return res.status(400).json({ message: 'Enter an amount between ₹1 and ₹1,00,000 (use − to take credit away).' });
+    }
+    if (!note) return res.status(400).json({ message: 'Add a short reason — the customer sees it on their statement.' });
+    const customer = await User.findById(req.params.id).select('email name');
+    if (!customer) return res.status(404).json({ message: 'Customer not found' });
+    const credit = require('../utils/credit');
+    await credit.add(customer._id, amount, 'adjust', note, { by: req.user.name || 'Owner' });
+    res.json(await creditStatement(customer._id));
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.status ? err.message : 'Could not change the credit.' });
+  }
+});
+
 // ---- Saved addresses (the logged-in customer's own) ----
 
 // GET /api/auth/addresses
@@ -628,15 +678,17 @@ router.get('/export', protect, async (req, res) => {
     const Subscriber = require('../models/Subscriber');
     const user = await User.findById(req.user._id)
       .select('-password -tokenVersion -resetPasswordHash -resetPasswordExpires -__v').lean();
-    const [orders, reviews, returns, alerts, newsletter] = await Promise.all([
+    const CreditLog = require('../models/CreditLog');
+    const [orders, reviews, returns, alerts, newsletter, storeCredit] = await Promise.all([
       Order.find({ user: req.user._id }).select('-adminNote -history.by -__v').lean(),
       Review.find({ user: req.user._id }).select('-__v').lean(),
       ReturnRequest.find({ user: req.user._id }).select('-__v').lean(),
       StockAlert.find({ email: user.email }).select('-__v').lean(),
       Subscriber.findOne({ email: user.email }).select('-__v').lean(),
+      CreditLog.find({ user: req.user._id }).select('-__v -by').lean(),
     ]);
     res.set('Content-Disposition', 'attachment; filename="the-reset-my-data.json"');
-    res.json({ exportedAt: new Date(), account: user, orders, reviews, returns, backInStockAlerts: alerts, newsletter });
+    res.json({ exportedAt: new Date(), account: user, orders, reviews, returns, backInStockAlerts: alerts, newsletter, storeCredit });
   } catch (err) {
     res.status(500).json({ message: 'Could not prepare your data. Try again.' });
   }

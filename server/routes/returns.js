@@ -10,6 +10,16 @@ const emails = require('../utils/emails');
 const rzp = require('../utils/razorpay');
 const { parsePrice } = require('../utils/price');
 const { pushLog, rupees } = require('../utils/orderLog');
+const credit = require('../utils/credit');
+
+// "₹990 to name@okaxis + ₹500 as store credit"
+function refundWords(rf = {}) {
+  const amt = (n) => rupees(n);
+  if (rf.method === 'credit') return `${amt(rf.amount)} as store credit`;
+  const where = rf.method === 'upi' ? `by UPI${rf.reference ? ` · ref ${rf.reference}` : ''}` : 'to the original payment';
+  const c = Number(rf.creditAmount) || 0;
+  return c > 0 ? `${amt(rf.amount - c)} ${where} + ${amt(c)} as store credit` : `${amt(rf.amount)} ${where}`;
+}
 
 const pieces = (items) => {
   const n = items.reduce((t, i) => t + (Number(i.qty) || 0), 0);
@@ -80,7 +90,10 @@ router.get('/options/:orderId', protect, async (req, res) => {
     res.json({
       eligible: order.status === 'Delivered' && daysLeft > 0,
       // Paid online → refunds go back automatically; cash → we ask for a UPI ID.
-      refundTo: paidOnline(order) ? 'original' : 'upi',
+      refundTo: order.payment?.method === 'credit' ? 'credit' : paidOnline(order) ? 'original' : 'upi',
+      // Part of the order paid with store credit comes back as credit.
+      creditShare: order.payment?.method === 'credit' ? 1
+        : (Number(order.payment?.credit) || 0) / ((Number(order.total) || Number(order.subtotal)) || 1),
       daysLeft: Math.max(0, daysLeft),
       reasons: REASONS,
       items: order.items.map(i => ({
@@ -136,12 +149,17 @@ router.post('/', protect, async (req, res) => {
 
     let refund;
     if (type === 'return') {
-      if (paidOnline(order)) {
-        refund = { amount: refundFor(order, items), method: 'razorpay' };
+      const amount = refundFor(order, items);
+      const wantsCredit = req.body.refundTo === 'credit' || order.payment?.method === 'credit';
+      const { credit: creditAmount } = credit.splitRefund(order, amount, wantsCredit);
+      if (wantsCredit) {
+        refund = { amount, method: 'credit', creditAmount };
+      } else if (paidOnline(order)) {
+        refund = { amount, method: 'razorpay', creditAmount };
       } else {
         const upi = typeof req.body.refundUpi === 'string' ? req.body.refundUpi.trim() : '';
         if (!UPI_RE.test(upi)) return res.status(400).json({ message: 'Enter the UPI ID we should send your refund to, like name@okaxis.' });
-        refund = { amount: refundFor(order, items), method: 'upi', upi };
+        refund = { amount, method: 'upi', upi, creditAmount };
       }
     }
 
@@ -201,20 +219,32 @@ router.put('/:id', protect, teamOnly, async (req, res) => {
         if (req.user.role !== 'admin') return res.status(403).json({ message: 'Only the owner can send refunds.' });
         const order = await Order.findById(r.order);
         const amount = r.refund?.amount || (order ? refundFor(order, r.items) : 0);
-        if (order && paidOnline(order)) {
-          try {
-            const rf = await rzp.refund(order.payment.razorpayPaymentId, amount);
-            Object.assign(r.refund, { amount, method: 'razorpay', reference: rf.id || '', refundedAt: new Date() });
-          } catch (err) {
-            return res.status(502).json({ message: `Razorpay refused the refund (${err.message}). Try again, or refund it from the Razorpay dashboard and then mark it with the reference.` });
+        const wantsCredit = r.refund?.method === 'credit';
+        const split = order ? credit.splitRefund(order, amount, wantsCredit) : { credit: wantsCredit ? amount : 0, money: wantsCredit ? 0 : amount };
+        let paid = {};
+        if (split.money > 0) {
+          if (order && paidOnline(order)) {
+            try {
+              const rf = await rzp.refund(order.payment.razorpayPaymentId, split.money);
+              paid = { method: 'razorpay', reference: rf.id || '' };
+            } catch (err) {
+              return res.status(502).json({ message: `Razorpay refused the refund (${err.message}). Try again, or refund it from the Razorpay dashboard and then mark it with the reference.` });
+            }
+          } else {
+            const ref = typeof req.body.reference === 'string' ? req.body.reference.trim().slice(0, 60) : '';
+            if (!ref) {
+              return res.status(400).json({ message: `Send ₹${split.money.toLocaleString('en-IN')} to ${r.refund?.upi || 'the customer'} first, then add the UPI reference number.` });
+            }
+            paid = { method: 'upi', reference: ref };
           }
-        } else {
-          const ref = typeof req.body.reference === 'string' ? req.body.reference.trim().slice(0, 60) : '';
-          if (!ref) {
-            return res.status(400).json({ message: `Send ₹${amount.toLocaleString('en-IN')} to ${r.refund?.upi || 'the customer'} first, then add the UPI reference number.` });
-          }
-          Object.assign(r.refund, { amount, method: 'upi', reference: ref, refundedAt: new Date() });
         }
+        if (split.credit > 0) {
+          await credit.add(r.user?._id || r.user, split.credit, 'refund', `Return #${String(r._id).slice(-8).toUpperCase()}`, { order: r.order });
+        }
+        Object.assign(r.refund, {
+          amount, creditAmount: split.credit, refundedAt: new Date(),
+          method: split.money > 0 ? paid.method : 'credit', reference: paid.reference || '',
+        });
       }
 
       // Exchange: the new size goes out — make sure it is there before saying so.
@@ -241,8 +271,7 @@ router.put('/:id', protect, teamOnly, async (req, res) => {
     if (r.status !== statusBefore) {
       const kind = r.type === 'exchange' ? 'Exchange' : 'Return';
       if (r.status === 'Refunded') {
-        const via = r.refund?.method === 'upi' ? `by UPI · ref ${r.refund.reference}` : 'to the original payment';
-        await pushLog(Order, r.order, 'refund', `${rupees(r.refund?.amount)} refunded for the return ${via}`, req.user);
+        await pushLog(Order, r.order, 'refund', `Return refunded · ${refundWords(r.refund)}`, req.user);
       } else {
         await pushLog(Order, r.order, 'return', `${kind} ${RETURN_WORDS[r.status] || r.status.toLowerCase()}`, req.user);
       }
@@ -255,3 +284,4 @@ router.put('/:id', protect, teamOnly, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.refundWords = refundWords;

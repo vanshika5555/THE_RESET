@@ -41,13 +41,25 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
       .catch(() => {});
   }, []);
 
+  // Store credit (from returns or from us) comes off the total if they want.
+  const [creditBalance, setCreditBalance] = useState(0);
+  const [useCredit, setUseCredit] = useState(true);
+  useEffect(() => {
+    if (!user) return;
+    axios.get('/api/auth/credit').then((res) => setCreditBalance(Number(res.data?.balance) || 0)).catch(() => {});
+  }, [user]);
+
   const subtotal = cartSubtotal(cart);
   const discount = coupon ? coupon.discount : 0;
   const afterDiscount = subtotal - discount;
   const delivery = deliveryCharge(afterDiscount);
-  const codFee = payMethod === 'cod' ? cod.fee : 0;
+  const applyCredit = useCredit && creditBalance > 0;
+  const coversAll = applyCredit && creditBalance >= afterDiscount + delivery;
+  const codFee = !coversAll && payMethod === 'cod' ? cod.fee : 0;
   const total = afterDiscount + delivery + codFee;
-  const overCod = payMethod === 'cod' && total > cod.max;
+  const creditUsed = applyCredit ? Math.min(creditBalance, total) : 0;
+  const due = Math.round((total - creditUsed) * 100) / 100;
+  const overCod = !coversAll && payMethod === 'cod' && due > cod.max;
   const toFree = amountToFreeDelivery(afterDiscount);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
 
@@ -172,6 +184,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
           guestEmail: user ? '' : guestEmail.trim(),
           guestName: user ? '' : address.fullName,
           paymentMethod: payMethod,
+          useCredit: applyCredit,
           gift: gift.isGift ? gift : { isGift: false },
           deliveryNote,
         }
@@ -376,8 +389,10 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 {gift.isGift && (
                   <div className="co-gift-fields">
                     <p className="co-gift-cod">
-                      {payMethod === 'cod'
-                        ? `Heads up: with cash on delivery, the person receiving it pays the courier ${formatPrice(total)}.${onlineOn ? ' Pay online so it arrives already paid.' : ''}`
+                      {coversAll
+                        ? 'Paid with your store credit — it arrives with nothing to pay.'
+                        : payMethod === 'cod'
+                        ? `Heads up: with cash on delivery, the person receiving it pays the courier ${formatPrice(due)}.${onlineOn ? ' Pay online so it arrives already paid.' : ''}`
                         : 'Paid online — it arrives with nothing to pay.'}
                     </p>
                     <label className="co-field">
@@ -415,7 +430,25 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 />
               </label>
 
+              {/* Store credit */}
+              {creditBalance > 0 && (
+                <label className={`co-credit ${applyCredit ? 'co-credit--on' : ''}`}>
+                  <input type="checkbox" checked={useCredit} onChange={(e) => setUseCredit(e.target.checked)} />
+                  <span className="co-credit-text">
+                    <strong>Use my store credit</strong>
+                    <span>
+                      {formatPrice(creditBalance)} available
+                      {applyCredit && ` · ${formatPrice(creditUsed)} comes off this order`}
+                      {applyCredit && creditBalance > creditUsed && `, ${formatPrice(Math.round((creditBalance - creditUsed) * 100) / 100)} stays for next time`}
+                    </span>
+                  </span>
+                </label>
+              )}
+
               {/* Payment method */}
+              {coversAll ? (
+                <p className="co-credit-all">Your store credit covers the whole order — nothing else to pay.</p>
+              ) : (
               <div className="co-payment-methods" role="radiogroup" aria-label="Payment method">
                 <button
                   type="button"
@@ -449,6 +482,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                   </div>
                 </button>
               </div>
+              )}
 
               {overCod && (
                 <p className="co-cod-limit" role="alert">
@@ -458,7 +492,9 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
               )}
 
               <button className="co-btn co-btn--place co-btn--sticky" onClick={handlePlaceOrder} disabled={loading || overCod}>
-                {payMethod === 'online' ? `Pay ${formatPrice(total)}` : `Place order · Pay ${formatPrice(total)} on delivery`}
+                {coversAll
+                  ? 'Place order · paid with store credit'
+                  : payMethod === 'online' ? `Pay ${formatPrice(due)}` : `Place order · Pay ${formatPrice(due)} on delivery`}
               </button>
               <p className="co-disclaimer">By placing this order you agree to our Terms & Conditions</p>
             </div>
@@ -480,7 +516,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
             </span>
-            <span className="co-summary-toggle-total">₹{total.toLocaleString('en-IN')}</span>
+            <span className="co-summary-toggle-total">₹{due.toLocaleString('en-IN')}</span>
           </button>
 
           <div className="co-summary-body">
@@ -570,9 +606,21 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
               </p>
             )}
 
+            {creditUsed > 0 && (
+              <>
+                <div className="co-total-row">
+                  <span>Total</span>
+                  <span>₹{total.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="co-total-row co-total-row--discount">
+                  <span>Store credit</span>
+                  <span>− ₹{creditUsed.toLocaleString('en-IN')}</span>
+                </div>
+              </>
+            )}
             <div className="co-total-row co-total-row--final">
-              <span>Total</span>
-              <span>₹{total.toLocaleString('en-IN')}</span>
+              <span>{creditUsed > 0 ? 'To pay' : 'Total'}</span>
+              <span>₹{due.toLocaleString('en-IN')}</span>
             </div>
           </div>
           </div>

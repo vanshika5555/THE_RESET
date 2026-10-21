@@ -14,6 +14,15 @@ const fmt = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', mon
  * Returns & exchanges for one delivered order:
  * shows any requests already made, and the form to start a new one.
  */
+// "₹990 to name@okaxis + ₹500 as store credit"
+function refundWords(rf = {}) {
+  const r = (n) => `₹${(Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-IN')}`;
+  if (rf.method === 'credit') return `${r(rf.amount)} as store credit`;
+  const where = rf.method === 'upi' ? `to ${rf.upi}` : 'to your original payment';
+  const c = Number(rf.creditAmount) || 0;
+  return c > 0 ? `${r(rf.amount - c)} ${where} + ${r(c)} as store credit` : `${r(rf.amount)} ${where}`;
+}
+
 export default function ReturnPanel({ orderId, delivered }) {
   const [requests, setRequests] = useState([]);
   const [options, setOptions] = useState(null);
@@ -23,6 +32,7 @@ export default function ReturnPanel({ orderId, delivered }) {
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [upi, setUpi] = useState('');               // where cash-order refunds go
+  const [refundTo, setRefundTo] = useState('money');  // money back, or store credit
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -49,14 +59,19 @@ export default function ReturnPanel({ orderId, delivered }) {
     if (!items.length) { setError('Pick at least one piece.'); return; }
     if (type === 'exchange' && items.some(i => !i.exchangeSize)) { setError('Pick the new size for each piece.'); return; }
     if (!reason) { setError('Choose a reason.'); return; }
-    const needsUpi = type === 'return' && options?.refundTo === 'upi';
+    const asCredit = options?.refundTo === 'credit' || refundTo === 'credit';
+    const needsUpi = type === 'return' && options?.refundTo === 'upi' && !asCredit;
     if (needsUpi && !/^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9.]{1,63}$/.test(upi.trim())) {
       setError('Enter the UPI ID for your refund, like name@okaxis.'); return;
     }
 
     setSending(true);
     try {
-      await axios.post('/api/returns', { orderId, type, reason, note, items, refundUpi: needsUpi ? upi.trim() : undefined });
+      await axios.post('/api/returns', {
+        orderId, type, reason, note, items,
+        refundTo: type === 'return' && asCredit ? 'credit' : undefined,
+        refundUpi: needsUpi ? upi.trim() : undefined,
+      });
       setOpen(false); setPicked({}); setReason(''); setNote(''); setSent(true);
       load();
     } catch (err) {
@@ -102,8 +117,8 @@ export default function ReturnPanel({ orderId, delivered }) {
             {r.type === 'return' && r.refund?.amount > 0 && r.status !== 'Rejected' && (
               <p className="rp-refund">
                 {r.status === 'Refunded'
-                  ? `₹${r.refund.amount.toLocaleString('en-IN')} refunded ${r.refund.method === 'upi' ? `to ${r.refund.upi}` : 'to your original payment'}${r.refund.reference ? ` · ref ${r.refund.reference}` : ''}`
-                  : `Refund of ₹${r.refund.amount.toLocaleString('en-IN')} ${r.refund.method === 'upi' ? `to ${r.refund.upi}` : 'to your original payment'} once the pieces reach us`}
+                  ? `${refundWords(r.refund)} refunded${r.refund.reference ? ` · ref ${r.refund.reference}` : ''}`
+                  : `Refund: ${refundWords(r.refund)}, once the pieces reach us`}
               </p>
             )}
             {r.shopMessage && <p className="rp-msg"><strong>From us:</strong> {r.shopMessage}</p>}
@@ -195,7 +210,21 @@ export default function ReturnPanel({ orderId, delivered }) {
             <textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Fits well on the shoulders but the sleeves are long" />
           </label>
 
-          {type === 'return' && options?.refundTo === 'upi' && (
+          {type === 'return' && options?.refundTo !== 'credit' && (
+            <div className="rp-seg rp-seg--refund" role="radiogroup" aria-label="How would you like your money back?">
+              {[['money', options?.refundTo === 'upi' ? 'Refund by UPI' : 'Refund to my payment'], ['credit', 'Store credit — instant']].map(([v, l]) => (
+                <button type="button" key={v} role="radio" aria-checked={refundTo === v} className={refundTo === v ? 'is-on' : ''} onClick={() => setRefundTo(v)}>{l}</button>
+              ))}
+            </div>
+          )}
+          {type === 'return' && (options?.refundTo === 'credit' || refundTo === 'credit') && (
+            <p className="rp-hint">The amount goes onto your store credit the moment the pieces reach us — it comes off at checkout on your next order.</p>
+          )}
+          {type === 'return' && refundTo === 'money' && options?.creditShare > 0 && options?.refundTo !== 'credit' && (
+            <p className="rp-hint">Part of this order was paid with store credit, so that share comes back as credit.</p>
+          )}
+
+          {type === 'return' && options?.refundTo === 'upi' && refundTo === 'money' && (
             <label className="rp-field">UPI ID for your refund
               <input
                 type="text"
@@ -210,7 +239,7 @@ export default function ReturnPanel({ orderId, delivered }) {
               <span className="rp-hint">You paid cash, so we send the money back by UPI as soon as the pieces reach us.</span>
             </label>
           )}
-          {type === 'return' && options?.refundTo === 'original' && (
+          {type === 'return' && options?.refundTo === 'original' && refundTo === 'money' && (
             <p className="rp-hint">The refund goes back to the card or UPI account you paid with.</p>
           )}
 

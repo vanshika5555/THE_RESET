@@ -52,11 +52,15 @@ const orderSchema = new mongoose.Schema({
   // How the customer pays. Cash on delivery is "Pending" until the courier
   // hands the parcel over (the order is marked Delivered).
   payment: {
-    method: { type: String, enum: ['cod', 'online'], default: 'cod' },
+    // credit = paid in full with store credit.
+    method: { type: String, enum: ['cod', 'online', 'credit'], default: 'cod' },
     // Awaiting = online order whose payment hasn't come through yet; it is
     // hidden from the shop's order list and cancelled if never paid.
     status: { type: String, enum: ['Pending', 'Awaiting', 'Paid', 'Refunded', 'Void'], default: 'Pending' },
     codFee: { type: Number, default: 0 },
+    // Store credit used on this order; the rest is paid by cash or online.
+    credit:     { type: Number, default: 0 },
+    creditBack: { type: Boolean, default: false },   // given back after a cancel
     paidAt: { type: Date, default: null },
     razorpayOrderId:   { type: String, default: '' },
     razorpayPaymentId: { type: String, default: '' },

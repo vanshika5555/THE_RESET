@@ -114,9 +114,15 @@ export default function OrderConfirm({ orderId, order: passedOrder }) {
             <div className="oc-total">
               Order Total: <span>₹{(Number(order.total) || Number(order.subtotal) || 0).toLocaleString('en-IN')}</span>
             </div>
-            {order.payment?.method !== 'online' && (
+            {order.payment?.credit > 0 && (
               <p className="oc-cod">
-                <strong>Cash on delivery.</strong> Keep ₹{(Number(order.total) || Number(order.subtotal) || 0).toLocaleString('en-IN')} ready —
+                <strong>₹{order.payment.credit.toLocaleString('en-IN')} paid with store credit.</strong>
+                {order.payment.method === 'credit' && ' Nothing else to pay.'}
+              </p>
+            )}
+            {order.payment?.method === 'cod' && (
+              <p className="oc-cod">
+                <strong>Cash on delivery.</strong> Keep ₹{Math.max(0, (Number(order.total) || Number(order.subtotal) || 0) - (Number(order.payment?.credit) || 0)).toLocaleString('en-IN')} ready —
                 pay the courier in cash or by UPI when it arrives.
               </p>
             )}

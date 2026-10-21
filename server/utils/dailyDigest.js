@@ -45,7 +45,7 @@ async function gather(now = new Date()) {
   const [pending, toShip, onTheRoad, yOrders, returnsNew, returnsBack, products, waitingRows] = await Promise.all([
     Order.find({ ...live, status: 'Pending' }).select('createdAt payment total').lean(),
     Order.countDocuments({ status: 'Confirmed' }),
-    Order.find({ status: 'Shipped', 'payment.method': 'cod', 'payment.status': 'Pending' }).select('total subtotal').lean(),
+    Order.find({ status: 'Shipped', 'payment.method': 'cod', 'payment.status': 'Pending' }).select('total subtotal payment.credit').lean(),
     Order.find({ ...live, createdAt: { $gte: yesterday, $lt: today }, status: { $ne: 'Cancelled' } })
       .select('total subtotal items').lean(),
     ReturnRequest.countDocuments({ status: 'Requested' }),
@@ -74,7 +74,7 @@ async function gather(now = new Date()) {
     toShip,
     returnsNew,
     returnsBack,
-    cashOnTheRoad: { orders: onTheRoad.length, amount: onTheRoad.reduce((n, o) => n + amount(o), 0) },
+    cashOnTheRoad: { orders: onTheRoad.length, amount: onTheRoad.reduce((n, o) => n + Math.max(0, amount(o) - (Number(o.payment?.credit) || 0)), 0) },
     sales: {
       orders: yOrders.length,
       amount: yOrders.reduce((n, o) => n + amount(o), 0),

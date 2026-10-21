@@ -11,6 +11,8 @@ const esc = (s) => String(s ?? '')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const inr = (n) => `₹${(Number(n) || 0).toLocaleString('en-IN')}`;
+// What's left to pay after store credit.
+const due = (o) => Math.max(0, Math.round(((Number(o.total) || Number(o.subtotal) || 0) - (Number(o.payment?.credit) || 0)) * 100) / 100);
 const shortId = (id) => String(id).slice(-8).toUpperCase();
 const firstName = (name) => String(name || '').trim().split(/\s+/)[0] || 'there';
 
@@ -73,6 +75,7 @@ function totalsTable(order) {
     ${line('Delivery', order.delivery > 0 ? inr(order.delivery) : 'Free')}
     ${order.payment && order.payment.codFee > 0 ? line('Cash on delivery fee', inr(order.payment.codFee)) : ''}
     ${line('Total', inr(order.total || order.subtotal), true)}
+    ${order.payment && order.payment.credit > 0 ? `${line('Paid with store credit', `− ${inr(order.payment.credit)}`)}${due(order) > 0 ? line(order.payment.method === 'cod' ? 'To pay on delivery' : 'Paid online', inr(due(order)), true) : ''}` : ''}
   </table>`;
 }
 
@@ -80,7 +83,7 @@ function totalsTable(order) {
 function payLine(order) {
   if (!order.payment || order.payment.method !== 'cod' || order.payment.status !== 'Pending') return '';
   return `<p style="margin:16px 0 0;padding:12px 14px;border:1.5px solid #111;font:400 14px/1.5 Helvetica,Arial,sans-serif;color:#111">
-    <strong>Cash on delivery:</strong> please keep <strong>${inr(order.total || order.subtotal)}</strong> ready — pay the courier in cash or by UPI when it arrives.</p>`;
+    <strong>Cash on delivery:</strong> please keep <strong>${inr(due(order))}</strong> ready — pay the courier in cash or by UPI when it arrives.</p>`;
 }
 
 function addressBlock(a = {}) {
@@ -146,7 +149,8 @@ function orderPlaced({ name, order }) {
     + order.items.map(i => `- ${i.name} (size ${i.size}) x${i.qty} — ${i.price}`).join('\n')
     + `\nTotal: ${inr(order.total || order.subtotal)}`
     + (order.payment && order.payment.method === 'cod' && order.payment.status === 'Pending'
-      ? `\nCash on delivery: keep ${inr(order.total || order.subtotal)} ready — pay the courier in cash or by UPI.` : '')
+      ? `\nCash on delivery: keep ${inr(due(order))} ready — pay the courier in cash or by UPI.` : '')
+    + (order.payment && order.payment.method === 'credit' ? '\nPaid in full with your store credit.' : '')
     + `\n\nTrack it: ${SHOP_URL()}/orders/${order._id}`;
   const html = layout({
     preheader: `We've got it. Total ${inr(order.total || order.subtotal)}.`,
@@ -226,13 +230,20 @@ function returnUpdate({ name, request }) {
   if (!copy) return null;
   // Say exactly how much went back, and where.
   const rf = request.refund || {};
+  const c = Number(rf.creditAmount) || 0;
+  const money = Math.max(0, (Number(rf.amount) || 0) - c);
+  const creditBit = c > 0 ? ` and ${inr(c)} to your store credit` : '';
   if (request.status === 'Refunded' && rf.amount) {
-    copy = { ...copy, line: rf.method === 'upi'
-      ? `We've sent ${inr(rf.amount)} to your UPI ID ${esc(rf.upi)}${rf.reference ? ` (reference ${esc(rf.reference)})` : ''}. It should already be in your account.`
-      : `We've refunded ${inr(rf.amount)} to your original payment method. It usually shows up in 5–7 working days.` };
+    copy = { ...copy, line: rf.method === 'credit'
+      ? `We've added ${inr(rf.amount)} to your store credit. It's ready to use on your next order — it comes off at checkout.`
+      : rf.method === 'upi'
+        ? `We've sent ${inr(money)} to your UPI ID ${esc(rf.upi)}${rf.reference ? ` (reference ${esc(rf.reference)})` : ''}${creditBit}. It should already be in your account.`
+        : `We've refunded ${inr(money)} to your original payment method${creditBit}. The card or UPI refund usually shows up in 5–7 working days.` };
   }
   if (request.status === 'Requested' && request.type === 'return' && rf.amount) {
-    copy = { ...copy, line: `${copy.line} Once the pieces reach us, ${inr(rf.amount)} comes back ${rf.method === 'upi' ? `to ${esc(rf.upi)} by UPI` : 'to your original payment method'}.` };
+    copy = { ...copy, line: `${copy.line} Once the pieces reach us, ${rf.method === 'credit'
+      ? `${inr(rf.amount)} goes straight onto your store credit`
+      : `${inr(money)} comes back ${rf.method === 'upi' ? `to ${esc(rf.upi)} by UPI` : 'to your original payment method'}${creditBit}`}.` };
   }
   const kind = request.type === 'exchange' ? 'Exchange' : 'Return';
   const id = shortId(request._id);

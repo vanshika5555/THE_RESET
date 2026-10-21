@@ -153,6 +153,17 @@ function inWords(amount) {
   return `${[rupees, paise ? `${two(paise)} Paise` : ''].filter(Boolean).join(' and ')} Only`;
 }
 
+// "₹500 store credit + ₹1,490 cash on delivery"
+function paidBy(order, money) {
+  const p = order.payment || {};
+  const creditPart = Number(p.credit) || 0;
+  const rest = Math.max(0, round2((Number(order.total) || 0) - creditPart));
+  const way = p.method === 'online' ? 'paid online' : 'cash on delivery';
+  if (p.method === 'credit' || (creditPart && !rest)) return 'Store credit';
+  if (creditPart) return `${money(creditPart)} store credit + ${money(rest)} ${way}`;
+  return p.method === 'online' ? 'Paid online' : 'Cash on delivery';
+}
+
 function renderInvoice(order) {
   const inv = computeInvoice(order);
   const s = inv.seller;
@@ -288,8 +299,8 @@ function renderInvoice(order) {
     ${inv.discount ? `<tr><td>Discount${order.couponCode ? ` (${esc(order.couponCode)})` : ''}</td><td class="r">− ${money(inv.discount)}</td></tr>` : ''}
     <tr><td>${order.payment && order.payment.codFee > 0 ? 'Delivery &amp; COD fee' : 'Delivery'}</td><td class="r">${inv.delivery ? money(inv.delivery) : 'Free'}</td></tr>
     ${inv.withTax ? `<tr><td style="color:#888">Includes GST</td><td class="r" style="color:#888">${money(inv.taxTotal)}</td></tr>` : ''}
-    <tr class="total"><td>${order.payment && order.payment.method === 'cod' && order.payment.status === 'Pending' ? 'Total to pay' : 'Total paid'}</td><td class="r">${money(inv.total)}</td></tr>
-    <tr><td colspan="2" style="color:#888;font-size:12px">Payment: ${order.payment && order.payment.method === 'online' ? 'Paid online' : 'Cash on delivery'}</td></tr>
+    <tr class="total"><td>${order.payment && order.payment.method === 'cod' && order.payment.status === 'Pending' && !(order.payment.credit > 0) ? 'Total to pay' : 'Total'}</td><td class="r">${money(inv.total)}</td></tr>
+    <tr><td colspan="2" style="color:#888;font-size:12px">Payment: ${esc(paidBy(order, money))}</td></tr>
   </table></div>
 
   <p class="words">Amount in words: <strong>${esc(inWords(inv.total))}</strong></p>

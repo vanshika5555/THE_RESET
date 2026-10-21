@@ -87,6 +87,8 @@ export default function OrderDetail() {
 
   const a = order.shippingAddress || {};
   const isCancelled = order.status === 'Cancelled';
+  // What's left after store credit.
+  const due = Math.max(0, (Number(order.total) || Number(order.subtotal) || 0) - (Number(order.payment?.credit) || 0));
   const shipment = ['Shipped', 'Delivered'].includes(order.status) && order.shipment?.trackingNumber
     ? order.shipment : null;
   const copyAwb = () => {
@@ -251,12 +253,19 @@ export default function OrderDetail() {
             <div className="od-sum-row od-sum-row--total">
               <span>Total</span><span>{inr(order.total || order.subtotal)}</span>
             </div>
+            {order.payment?.credit > 0 && (
+              <div className="od-sum-row od-sum-row--discount">
+                <span>Paid with store credit</span><span>− {inr(order.payment.credit)}</span>
+              </div>
+            )}
             <p className={`od-pay od-pay--${(order.payment?.status || 'Pending').toLowerCase()}`}>
-              {order.payment?.method === 'online'
-                ? (order.payment.status === 'Refunded' ? 'Paid online — refunded to your account (5–7 working days)' : 'Paid online')
+              {order.payment?.method === 'credit'
+                ? (order.payment.status === 'Refunded' ? 'Store credit — given back to your account' : 'Paid with store credit')
+                : order.payment?.method === 'online'
+                ? (order.payment.status === 'Refunded' ? 'Paid online — refunded to your account (5–7 working days)' : `Paid online${order.payment.credit > 0 ? ` · ${inr(due)}` : ''}`)
                 : order.payment?.status === 'Paid' ? 'Paid in cash on delivery'
                 : order.payment?.status === 'Void' || order.status === 'Cancelled' ? 'Cash on delivery — nothing to pay'
-                : `Cash on delivery — pay ${inr(order.total || order.subtotal)} when it arrives`}
+                : `Cash on delivery — pay ${inr(due)} when it arrives`}
             </p>
           </div>
 

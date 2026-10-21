@@ -1,0 +1,22 @@
+.sc-balance { padding: 28px 24px; background: #111; color: #fff; margin-bottom: 32px; }
+.sc-amount { margin: 0 0 6px; font-size: 40px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.sc-sub { margin: 0; max-width: 460px; font-size: 14px; line-height: 1.55; color: #bbb; }
+.sc-btn { display: inline-flex; align-items: center; height: 44px; margin-top: 18px; padding: 0 22px; background: #fff; color: #111; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; }
+
+.sc-head { margin: 0 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #888; }
+.sc-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid #eee; }
+.sc-row { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid #eee; }
+.sc-what { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.sc-note { font-size: 14.5px; color: #111; overflow-wrap: anywhere; }
+.sc-meta { font-size: 12.5px; color: #888; }
+.sc-meta a { color: #111; }
+.sc-nums { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.sc-amt { font-size: 14.5px; font-weight: 600; color: #111; white-space: nowrap; }
+.sc-amt--in { color: #15803d; }
+.sc-bal { font-size: 12px; color: #999; white-space: nowrap; }
+.sc-error { color: #b91c1c; font-size: 14px; }
+
+@media (max-width: 480px) {
+  .sc-balance { padding: 22px 18px; }
+  .sc-amount { font-size: 34px; }
+}

@@ -28,6 +28,7 @@ const cleanGift = (g) => (g && g.isGift
 const { buildShipment } = require('../utils/couriers');
 const { ensureInvoiceNumber, renderInvoice } = require('../utils/invoice');
 const { log, entry, forCustomer, rupees } = require('../utils/orderLog');
+const credit = require('../utils/credit');
 
 // "Delhivery · 123456" — or '' when there's no tracking number.
 const trackingLine = (order) => (order.shipment?.trackingNumber
@@ -142,13 +143,22 @@ router.post('/', protect, async (req, res) => {
     const afterDiscount = subtotal - discount;
     const delivery = deliveryCharge(afterDiscount);
 
-    const method = req.body.paymentMethod === 'online' ? 'online' : 'cod';
+    // Store credit: covers the whole order, or part of it with the rest
+    // paid as usual. The balance is read here and taken off further down.
+    const base = afterDiscount + delivery;
+    const balance = req.body.useCredit ? await credit.balanceOf(req.user._id) : 0;
+    const coversAll = balance > 0 && balance >= base;
+
+    let method = req.body.paymentMethod === 'online' ? 'online' : 'cod';
+    if (coversAll) method = 'credit';
     if (method === 'online' && !rzp.enabled()) {
       return res.status(400).json({ message: 'Online payment isn’t available yet. Please choose cash on delivery.' });
     }
     const codFee = method === 'cod' ? COD_FEE : 0;
-    const total = afterDiscount + delivery + codFee;
-    if (method === 'cod' && total > COD_MAX) {
+    const total = base + codFee;
+    const creditUsed = credit.round(Math.min(balance, total));
+    const due = credit.round(total - creditUsed);
+    if (method === 'cod' && due > COD_MAX) {
       return res.status(400).json({
         message: `Cash on delivery is available on orders up to ₹${COD_MAX.toLocaleString('en-IN')}. Remove something from your bag, or contact us to arrange payment.`,
       });
@@ -180,6 +190,13 @@ router.post('/', protect, async (req, res) => {
       }
     }
 
+    // Take the credit off now — only if it's all still there.
+    if (creditUsed > 0 && !(await credit.spend(req.user._id, creditUsed))) {
+      await restock(reserved);
+      if (coupon) await Coupon.updateOne({ _id: coupon._id }, { $inc: { usedCount: -1 } });
+      return res.status(409).json({ message: 'Your store credit has just changed. Please check the total and try again.' });
+    }
+
     let order;
     try {
       order = await Order.create({
@@ -191,25 +208,29 @@ router.post('/', protect, async (req, res) => {
         delivery,
         total,
         shippingAddress: cleanAddress(shippingAddress),
-        payment: method === 'online'
-          ? { method: 'online', status: 'Awaiting', codFee: 0 }
-          : { method: 'cod', status: 'Pending', codFee },
+        payment: method === 'credit'
+          ? { method: 'credit', status: 'Paid', codFee: 0, credit: creditUsed, paidAt: new Date() }
+          : method === 'online'
+            ? { method: 'online', status: 'Awaiting', codFee: 0, credit: creditUsed }
+            : { method: 'cod', status: 'Pending', codFee, credit: creditUsed },
         gift: cleanGift(req.body.gift),
         deliveryNote: cleanText(req.body.deliveryNote, 200),
-        history: [entry('placed', method === 'online'
-          ? `Order placed · ${rupees(total)} · paying online`
-          : `Order placed · ${rupees(total)} · cash on delivery`, req.user)],
+        history: [entry('placed', `Order placed · ${rupees(total)} · ${
+          method === 'credit' ? 'paid with store credit'
+            : `${creditUsed ? `${rupees(creditUsed)} store credit + ` : ''}${method === 'online' ? 'paying online' : 'cash on delivery'}`}`, req.user)],
       });
     } catch (err) {
       await restock(reserved);
       if (coupon) await Coupon.updateOne({ _id: coupon._id }, { $inc: { usedCount: -1 } });
+      if (creditUsed > 0) await credit.add(req.user._id, creditUsed, 'returned', 'Order could not be placed');
       throw err;
     }
+    if (creditUsed > 0) await credit.logSpent(req.user._id, creditUsed, order._id);
 
     if (method === 'online') {
       // Ask Razorpay for a payment order; the shopper pays in the Razorpay window.
       try {
-        const ro = await rzp.createOrder({ amount: total, receipt: String(order._id), notes: { order: String(order._id) } });
+        const ro = await rzp.createOrder({ amount: due, receipt: String(order._id), notes: { order: String(order._id) } });
         order.payment.razorpayOrderId = ro.id;
         await order.save();
         return res.status(201).json({
@@ -244,7 +265,17 @@ async function releaseOrder(order, paymentStatus = 'Void') {
   if (!r.modifiedCount) return false;
   await restock(order.items);
   if (order.couponCode) await Coupon.updateOne({ code: order.couponCode, usedCount: { $gt: 0 } }, { $inc: { usedCount: -1 } });
+  await creditBack(order);
   return true;
+}
+
+// A cancelled order puts its store credit back, and says so on the order.
+async function creditBack(order) {
+  const back = await credit.giveBack(order, 'Order cancelled');
+  if (back) {
+    await Order.updateOne({ _id: order._id }, { $push: { history: entry('refund', `${rupees(back)} store credit given back`, null) } });
+  }
+  return back;
 }
 
 // Marks an online order paid (once) and sends the confirmation email.
@@ -253,7 +284,7 @@ async function markPaid(order, paymentId) {
     { _id: order._id, 'payment.status': 'Awaiting' },
     {
       $set: { 'payment.status': 'Paid', 'payment.paidAt': new Date(), 'payment.razorpayPaymentId': paymentId },
-      $push: { history: entry('paid', `Paid online · ${rupees(order.total)}`, null) },
+      $push: { history: entry('paid', `Paid online · ${rupees(credit.amountDue(order))}`, null) },
     }
   );
   const fresh = await Order.findById(order._id);
@@ -353,6 +384,10 @@ router.put('/:id/status', protect, teamOnly, async (req, res) => {
       }
       if (req.body.status === 'Cancelled' && order.payment.status === 'Pending') order.payment.status = 'Void';
     }
+    // Paid entirely with store credit: cancelling gives it all back as credit.
+    if (previous !== 'Cancelled' && req.body.status === 'Cancelled' && order.payment?.method === 'credit') {
+      order.payment.status = 'Refunded';
+    }
     // Cancelling an order that was paid online sends the money back first —
     // that's the owner's call, not staff's.
     if (previous !== 'Cancelled' && req.body.status === 'Cancelled'
@@ -375,16 +410,17 @@ router.put('/:id/status', protect, teamOnly, async (req, res) => {
       if (req.body.status === 'Cancelled') {
         log(order, 'cancelled', 'Order cancelled by the shop', req.user);
         if (order.payment?.status === 'Refunded' && order.payment.refundId) {
-          log(order, 'refund', `${rupees(order.total)} refunded to the original payment`, req.user);
+          log(order, 'refund', `${rupees(credit.amountDue(order))} refunded to the original payment`, req.user);
         }
       } else {
-        log(order, 'status', `Marked ${req.body.status}${cashCollected ? ` · ${rupees(order.total)} cash collected` : ''}`, req.user);
+        log(order, 'status', `Marked ${req.body.status}${cashCollected ? ` · ${rupees(credit.amountDue(order))} cash collected` : ''}`, req.user);
       }
     }
     const updated = await order.save();
 
     if (previous !== 'Cancelled' && req.body.status === 'Cancelled') {
       await restock(order.items);
+      if (await creditBack(updated)) updated.history = (await Order.findById(updated._id).select('history')).history;
     }
     if (previous !== req.body.status) {
       notify(updated, emails.orderStatus);
@@ -448,7 +484,9 @@ router.put('/:id/cancel', protect, async (req, res) => {
       {
         $set: order.payment?.method === 'cod' && order.payment.status === 'Pending'
           ? { status: 'Cancelled', 'payment.status': 'Void' }
-          : { status: 'Cancelled' },
+          : order.payment?.method === 'credit'
+            ? { status: 'Cancelled', 'payment.status': 'Refunded' }
+            : { status: 'Cancelled' },
         $push: { history: entry('cancelled', 'Cancelled by the customer', req.user) },
       },
       { new: true }
@@ -464,12 +502,13 @@ router.put('/:id/cancel', protect, async (req, res) => {
         const rf = await rzp.refund(updated.payment.razorpayPaymentId);
         updated.payment.status = 'Refunded';
         updated.payment.refundId = rf.id || '';
-        log(updated, 'refund', `${rupees(updated.total)} refunded to the original payment`, null);
+        log(updated, 'refund', `${rupees(credit.amountDue(updated))} refunded to the original payment`, null);
         await updated.save();
       } catch (err) {
         console.error(`Refund failed for order ${updated._id}:`, err.message);
       }
     }
+    if (await creditBack(updated)) updated.history = (await Order.findById(updated._id).select('history')).history;
     notify(updated, emails.orderStatus);
     res.json(forCustomer(updated));
   } catch (err) {

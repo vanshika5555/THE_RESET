@@ -32,12 +32,15 @@ const returnSchema = new mongoose.Schema({
   // Shown to the customer (e.g. pickup date, why it was rejected).
   shopMessage: { type: String, default: '' },
   restocked:   { type: Boolean, default: false },
-  // Money back for a return: to the original online payment, or by UPI for
-  // orders paid in cash. amount is what the returned pieces cost after any
+  // Money back for a return: to the original online payment, by UPI for
+  // orders paid in cash, or as store credit. amount is what the returned pieces cost after any
   // order discount (delivery and COD fees aren't refunded).
   refund: {
     amount:     { type: Number, default: 0 },
-    method:     { type: String, enum: ['', 'razorpay', 'upi'], default: '' },
+    // credit = all of it as store credit. With razorpay/upi, creditAmount is
+    // the part that goes back as credit because the order was partly paid with it.
+    method:     { type: String, enum: ['', 'razorpay', 'upi', 'credit'], default: '' },
+    creditAmount: { type: Number, default: 0 },
     upi:        { type: String, default: '' },
     reference:  { type: String, default: '' },
     refundedAt: { type: Date, default: null },
