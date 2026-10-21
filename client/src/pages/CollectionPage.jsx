@@ -91,6 +91,7 @@ export default function CollectionPage({ category = 'Men' }) {
   const [activeSub, setActiveSub]         = useState('All');
   const [priceRange, setPriceRange]       = useState(0); // index of PRICE_RANGES
   const [activeSizes, setActiveSizes]     = useState([]);  // empty means any size
+  const [activeColours, setActiveColours] = useState([]);  // lower-cased colour names; empty means any
   const [sort, setSort]                   = useState('newest');
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
   const [sheetOpen, setSheetOpen]         = useState(false);   // phone: Filter & sort
@@ -165,7 +166,10 @@ export default function CollectionPage({ category = 'Men' }) {
       const sizeMatch = activeSizes.length === 0
         || activeSizes.some(sz => sizeAvailable(p, sz));
 
-      return seasonMatch && subMatch && priceMatch && sizeMatch;
+      const colourMatch = activeColours.length === 0
+        || activeColours.includes((p.colorName || '').trim().toLowerCase());
+
+      return seasonMatch && subMatch && priceMatch && sizeMatch && colourMatch;
     })
     .sort((a, b) => {
       if (sort === 'price_asc')  return getPrice(a.price) - getPrice(b.price);
@@ -177,6 +181,20 @@ export default function CollectionPage({ category = 'Men' }) {
   // in the order the size list defines rather than alphabetically.
   const SIZE_ORDER = ['XS','S','M','L','XL','XXL','6','8','10','12','14','16','28','30','32','34','36','38'];
   const offeredSizes = SIZE_ORDER.filter(sz => products.some(p => (p.sizes || []).includes(sz)));
+
+  // Colours on offer here, from the colour names set in the admin.
+  const offeredColours = Object.values(products.reduce((acc, p) => {
+    const name = (p.colorName || '').trim();
+    if (!name) return acc;
+    const key = name.toLowerCase();
+    acc[key] = acc[key] || { key, name, swatch: p.swatch || p.color || '#ddd', count: 0 };
+    acc[key].count += 1;
+    return acc;
+  }, {})).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const showColours = offeredColours.length > 1;
+  const toggleColour = (key) => setActiveColours(prev =>
+    prev.includes(key) ? prev.filter(c => c !== key) : [...prev, key]);
+  const colourNames = activeColours.map(k => offeredColours.find(c => c.key === k)?.name || k);
 
   const toggleSize = (sz) => {
     setActiveSizes(prev =>
@@ -195,8 +213,25 @@ export default function CollectionPage({ category = 'Men' }) {
   const activeRange = PRICE_RANGES[priceRange];
 
   // Filters that live in the phone sheet (season/category stay on the page).
-  const sheetCount = activeSizes.length + (priceRange !== 0 ? 1 : 0) + (sort !== 'newest' ? 1 : 0);
-  const clearSheet = () => { setActiveSizes([]); setPriceRange(0); setSort('newest'); };
+  const sheetCount = activeSizes.length + activeColours.length + (priceRange !== 0 ? 1 : 0) + (sort !== 'newest' ? 1 : 0);
+  const clearSheet = () => { setActiveSizes([]); setActiveColours([]); setPriceRange(0); setSort('newest'); };
+
+  const colourChips = (
+    <div className="cp-colour-chips">
+      {offeredColours.map(c => (
+        <button
+          key={c.key}
+          type="button"
+          aria-pressed={activeColours.includes(c.key)}
+          className={`cp-colour-chip ${activeColours.includes(c.key) ? 'cp-colour-chip--on' : ''}`}
+          onClick={() => toggleColour(c.key)}
+        >
+          <span className="cp-colour-dot" style={{ '--sw': c.swatch }} aria-hidden="true" />
+          {c.name}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="cp-page">
@@ -259,6 +294,18 @@ export default function CollectionPage({ category = 'Men' }) {
             )}
           </div>
         )}
+
+        {showColours && (
+          <div className="cp-size-filter cp-colour-filter cp-desktop-only">
+            <span className="cp-size-filter-label">Colour</span>
+            {colourChips}
+            {activeColours.length > 0 && (
+              <button className="cp-size-clear" onClick={() => setActiveColours([])}>
+                Clear
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Toolbar — count + price filter + sort */}
@@ -268,6 +315,7 @@ export default function CollectionPage({ category = 'Men' }) {
           {activeSeason !== 'All' && <span className="cp-count-filter"> · {activeSeason}{activeSub !== 'All' ? ` · ${activeSub}` : ''}</span>}
           {priceRange !== 0 && <span className="cp-count-filter"> · {activeRange.label}</span>}
           {activeSizes.length > 0 && <span className="cp-count-filter"> · size {activeSizes.join(', ')}</span>}
+          {colourNames.length > 0 && <span className="cp-count-filter"> · {colourNames.join(', ')}</span>}
         </p>
 
         {/* Phone: one button opens size, price and sort */}
@@ -375,6 +423,13 @@ export default function CollectionPage({ category = 'Men' }) {
                       );
                     })}
                   </div>
+                </fieldset>
+              )}
+
+              {showColours && (
+                <fieldset className="cp-sheet-group">
+                  <legend>Colour</legend>
+                  {colourChips}
                 </fieldset>
               )}
 
