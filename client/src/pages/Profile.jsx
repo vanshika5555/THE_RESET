@@ -365,6 +365,153 @@ function ChangePassword() {
   );
 }
 
+// ─── Privacy: emails, my data, delete account ───
+function Privacy() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [prefs, setPrefs] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [password, setPassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  useEffect(() => {
+    axios.get('/api/auth/preferences').then((res) => setPrefs(res.data)).catch(() => setPrefs({ shoppingEmails: true, newsletter: false }));
+  }, []);
+
+  const savePref = async (change) => {
+    const before = prefs;
+    setPrefs((p) => ({ ...p, ...change }));
+    setSaving(true); setMsg(''); setError('');
+    try {
+      await axios.put('/api/auth/preferences', change);
+      setMsg('Saved.');
+    } catch {
+      setPrefs(before);
+      setError('Could not save that. Try again.');
+    }
+    setSaving(false);
+  };
+
+  const downloadData = async () => {
+    setExporting(true); setError('');
+    try {
+      const res = await axios.get('/api/auth/export');
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'the-reset-my-data.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setError('Could not prepare your data. Try again.');
+    }
+    setExporting(false);
+  };
+
+  const deleteAccount = async (e) => {
+    e.preventDefault();
+    setDeleting(true); setDeleteError('');
+    try {
+      await axios.delete('/api/auth/account', { data: { password } });
+      try {
+        ['thereset_cart', 'thereset_wishlist', 'thereset_recent', 'thereset_pin'].forEach((k) => localStorage.removeItem(k));
+      } catch { /* nothing to clear */ }
+      logout();
+      navigate('/', { replace: true });
+    } catch (err) {
+      setDeleteError(err.response?.data?.message || 'Could not delete the account. Try again.');
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="prof-section">
+      <h2 className="prof-section-title">Privacy &amp; emails</h2>
+      {msg && <div className="prof-success" role="status">{msg}</div>}
+      {error && <div className="prof-error" role="alert">{error}</div>}
+
+      <div className="prof-privacy">
+        <label className="prof-pref">
+          <span>
+            <span className="prof-security-title">Bag reminders &amp; price drops</span>
+            <span className="prof-security-text">One email if you leave something in your bag, and when a wishlist piece gets cheaper.</span>
+          </span>
+          <input
+            type="checkbox"
+            className="prof-switch"
+            checked={!!prefs?.shoppingEmails}
+            disabled={!prefs || saving}
+            onChange={(e) => savePref({ shoppingEmails: e.target.checked })}
+          />
+        </label>
+
+        {prefs?.newsletter && (
+          <div className="prof-security">
+            <div>
+              <p className="prof-security-title">Newsletter</p>
+              <p className="prof-security-text">You get new drops and restocks by email.</p>
+            </div>
+            <button type="button" className="prof-btn prof-btn--outline" onClick={() => savePref({ newsletter: false })} disabled={saving}>
+              Unsubscribe
+            </button>
+          </div>
+        )}
+
+        <p className="prof-privacy-note">Order, delivery and password emails always arrive — they're about things you asked for.</p>
+
+        <div className="prof-security">
+          <div>
+            <p className="prof-security-title">Download your data</p>
+            <p className="prof-security-text">Your account, addresses, orders, reviews and returns, as one file.</p>
+          </div>
+          <button type="button" className="prof-btn prof-btn--outline" onClick={downloadData} disabled={exporting}>
+            {exporting ? 'Preparing…' : 'Download'}
+          </button>
+        </div>
+
+        <div className="prof-security prof-danger">
+          <div>
+            <p className="prof-security-title">Delete your account</p>
+            <p className="prof-security-text">
+              Removes your account, addresses, wishlist and reviews for good. Past orders are kept for tax records,
+              no longer linked to you.
+            </p>
+          </div>
+          {!confirming && (
+            <button type="button" className="prof-btn prof-btn--danger" onClick={() => setConfirming(true)}>
+              Delete account
+            </button>
+          )}
+        </div>
+
+        {confirming && (
+          <form className="prof-delete" onSubmit={deleteAccount}>
+            <p className="prof-delete-warn">This can't be undone. Enter your password to confirm.</p>
+            {deleteError && <div className="prof-error" role="alert">{deleteError}</div>}
+            <div className="prof-form-field prof-form-field--full">
+              <label htmlFor="del-pw">Password</label>
+              <input id="del-pw" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <div className="prof-form-actions">
+              <button type="button" className="prof-btn prof-btn--outline" onClick={() => { setConfirming(false); setPassword(''); setDeleteError(''); }}>
+                Keep my account
+              </button>
+              <button type="submit" className="prof-btn prof-btn--danger-fill" disabled={deleting || !password}>
+                {deleting ? 'Deleting…' : 'Delete forever'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Profile Layout ───────────────────
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -384,6 +531,7 @@ export default function Profile() {
     { to: '/profile/addresses', label: 'Addresses', icon: '📍' },
     { to: '/profile/reviews', label: 'Reviews', icon: '⭐' },
     { to: '/profile/password', label: 'Security', icon: '🔒' },
+    { to: '/profile/privacy', label: 'Privacy', icon: '🛡️' },
   ];
 
   return (
@@ -428,6 +576,7 @@ export default function Profile() {
           <Route path="addresses" element={<Addresses />} />
           <Route path="reviews" element={<ProfileReviews />} />
           <Route path="password" element={<ChangePassword />} />
+          <Route path="privacy" element={<Privacy />} />
         </Routes>
       </main>
     </div>

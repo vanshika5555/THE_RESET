@@ -408,6 +408,92 @@ router.get('/reminders/off', async (req, res) => {
 <p><a href="${shop}" style="color:#111">Back to the shop</a></p></div>`);
 });
 
+/* ───────────── Privacy: email choices, a copy of your data, deleting the account ───────────── */
+
+// GET /api/auth/preferences
+router.get('/preferences', protect, async (req, res) => {
+  const user = await User.findById(req.user._id).select('bagReminders email').lean();
+  const Subscriber = require('../models/Subscriber');
+  const sub = user ? await Subscriber.findOne({ email: user.email }).select('unsubscribed').lean() : null;
+  res.json({ shoppingEmails: user?.bagReminders !== false, newsletter: !!sub && !sub.unsubscribed });
+});
+
+// PUT /api/auth/preferences — { shoppingEmails?, newsletter? }
+router.put('/preferences', protect, async (req, res) => {
+  try {
+    const set = {};
+    if (typeof req.body.shoppingEmails === 'boolean') set.bagReminders = req.body.shoppingEmails;
+    if (Object.keys(set).length) await User.updateOne({ _id: req.user._id }, { $set: set });
+    if (req.body.newsletter === false) {
+      const Subscriber = require('../models/Subscriber');
+      await Subscriber.updateOne({ email: req.user.email }, { $set: { unsubscribed: true } });
+    }
+    res.json({ saved: true });
+  } catch (err) {
+    res.status(400).json({ message: 'Could not save your choices.' });
+  }
+});
+
+// GET /api/auth/export — everything the shop holds about this customer, as JSON
+router.get('/export', protect, async (req, res) => {
+  try {
+    const Order = require('../models/Order');
+    const Review = require('../models/Review');
+    const ReturnRequest = require('../models/ReturnRequest');
+    const StockAlert = require('../models/StockAlert');
+    const Subscriber = require('../models/Subscriber');
+    const user = await User.findById(req.user._id)
+      .select('-password -tokenVersion -resetPasswordHash -resetPasswordExpires -__v').lean();
+    const [orders, reviews, returns, alerts, newsletter] = await Promise.all([
+      Order.find({ user: req.user._id }).select('-adminNote -__v').lean(),
+      Review.find({ user: req.user._id }).select('-__v').lean(),
+      ReturnRequest.find({ user: req.user._id }).select('-__v').lean(),
+      StockAlert.find({ email: user.email }).select('-__v').lean(),
+      Subscriber.findOne({ email: user.email }).select('-__v').lean(),
+    ]);
+    res.set('Content-Disposition', 'attachment; filename="the-reset-my-data.json"');
+    res.json({ exportedAt: new Date(), account: user, orders, reviews, returns, backInStockAlerts: alerts, newsletter });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not prepare your data. Try again.' });
+  }
+});
+
+// DELETE /api/auth/account — { password } — close the account for good.
+router.delete('/account', protect, authLimiter, async (req, res) => {
+  try {
+    const Order = require('../models/Order');
+    const Review = require('../models/Review');
+    const ReturnRequest = require('../models/ReturnRequest');
+    const StockAlert = require('../models/StockAlert');
+    const Subscriber = require('../models/Subscriber');
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'Account not found.' });
+    if (user.role === 'admin') return res.status(400).json({ message: 'Admin accounts can’t be deleted from the shop.' });
+    if (!(await user.matchPassword(str(req.body.password)))) {
+      return res.status(400).json({ message: 'That password is not right.' });
+    }
+
+    // Not while something is still on its way, or a return is open.
+    const openOrder = await Order.exists({ user: user._id, status: { $in: ['Pending', 'Confirmed', 'Shipped'] } });
+    if (openOrder) return res.status(409).json({ message: 'You have an order that hasn’t been delivered yet. You can delete your account once it arrives (or cancel it first).' });
+    const openReturn = await ReturnRequest.exists({ user: user._id, status: { $in: ['Requested', 'Approved', 'Received'] } });
+    if (openReturn) return res.status(409).json({ message: 'You have a return in progress. You can delete your account once it’s finished.' });
+
+    // Orders and returns stay for tax records, but no longer point to a person's account.
+    await Order.updateMany({ user: user._id }, { $set: { user: null, guest: { name: 'Deleted account', email: '' } } });
+    await ReturnRequest.updateMany({ user: user._id }, { $set: { user: null } });
+    await Review.deleteMany({ user: user._id });
+    await StockAlert.deleteMany({ $or: [{ user: user._id }, { email: user.email }] });
+    await Subscriber.deleteOne({ email: user.email });
+    await User.deleteOne({ _id: user._id });
+
+    res.json({ deleted: true });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not delete the account. Try again.' });
+  }
+});
+
 // GET /api/auth/saved — the bag and wishlist stored on this account
 router.get('/saved', protect, async (req, res) => {
   try {
