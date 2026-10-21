@@ -104,6 +104,7 @@
   letter-spacing: .04em;
 }
 .od-step--done .od-step-label { color: #111; }
+.od-step-date { margin-top: -6px; font-size: 11px; color: #888; }
 
 .od-cancelled-banner {
   background: #fef2f2;
@@ -208,6 +209,7 @@
 
 @media (max-width: 480px) {
   .od-step-label { font-size: 10px; }
+  .od-step-date { font-size: 10px; }
 }
 /* ---------- shipment / tracking ---------- */
 .od-ship { display: flex; flex-direction: column; gap: 10px; }
@@ -256,3 +258,16 @@
 /* ---------- payment ---------- */
 .od-pay { margin: 12px 0 0; padding: 10px 12px; font-size: 13px; line-height: 1.45; background: #f6f6f4; color: #444; }
 .od-pay--pending { background: #111; color: #fff; }
+
+/* ---------- order updates ---------- */
+.od-updates { margin-top: 36px; }
+.od-log { list-style: none; margin: 0; padding: 0; }
+.od-log-row { position: relative; display: flex; gap: 14px; padding: 0 0 18px; }
+.od-log-row:last-child { padding-bottom: 0; }
+.od-log-row:not(:last-child)::before { content: ''; position: absolute; left: 4px; top: 16px; bottom: 0; width: 1.5px; background: #eee; }
+.od-log-dot { flex: 0 0 auto; width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; background: #d4d4d4; }
+.od-log-row:first-child .od-log-dot { background: #111; }
+.od-log-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.od-log-text { font-size: 14px; line-height: 1.45; color: #111; overflow-wrap: anywhere; }
+.od-log-row:not(:first-child) .od-log-text { color: #555; }
+.od-log-when { font-size: 12.5px; color: #888; }

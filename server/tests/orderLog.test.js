@@ -21,7 +21,16 @@ test('customers never see the internal note, note lines or staff names', () => {
   };
   const out = forCustomer(order);
   assert.equal('adminNote' in out, false);
-  assert.deepEqual(out.history.map((h) => h.text), ['Order placed', 'Marked Shipped']);
+  assert.deepEqual(out.history.map((h) => h.text), ['Order placed', 'Shipped']);
   assert.ok(out.history.every((h) => !('by' in h)));
   assert.equal(order.adminNote, 'fake order?');   // the original is untouched
+});
+
+test('the shop’s wording is turned into the customer’s', () => {
+  const { customerText } = require('../utils/orderLog');
+  assert.equal(customerText('Marked Delivered · ₹2,580 cash collected'), 'Delivered · ₹2,580 paid in cash');
+  assert.equal(customerText('Return requested · 2 pieces · Too small'), 'You asked for a return · 2 pieces');
+  assert.equal(customerText('Exchange received back at the shop'), 'Exchange received by us');
+  assert.equal(customerText('Return declined'), 'Return request declined');
+  assert.equal(customerText('Cancelled by the customer'), 'You cancelled the order');
 });

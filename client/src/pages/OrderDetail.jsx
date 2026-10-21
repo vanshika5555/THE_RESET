@@ -15,6 +15,23 @@ const fmtDate = (d) =>
 
 // The journey an order moves through, in order.
 const STEPS = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
+const STEP_LINE = { Confirmed: 'Order confirmed', Shipped: 'Shipped', Delivered: 'Delivered' };
+
+const fmtShort = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+const fmtWhen = (d) => new Date(d).toLocaleString('en-IN', {
+  day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true,
+});
+
+// When the order reached each step — from its updates, or the dates it kept.
+function stepDate(order, step) {
+  if (step === 'Pending') return order.createdAt;
+  const line = [...(order.history || [])].reverse()
+    .find((h) => h.type === 'status' && h.text.startsWith(STEP_LINE[step]));
+  if (line) return line.at;
+  if (step === 'Shipped') return order.shipment?.shippedAt || null;
+  if (step === 'Delivered') return order.deliveredAt || null;
+  return null;
+}
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -106,7 +123,10 @@ export default function OrderDetail() {
               className={`od-step ${i <= currentStep ? 'od-step--done' : ''} ${i === currentStep ? 'od-step--current' : ''}`}
             >
               <span className="od-step-dot" />
-              <span className="od-step-label">{step}</span>
+              <span className="od-step-label">{step === 'Pending' ? 'Placed' : step}</span>
+              {i <= currentStep && stepDate(order, step) && (
+                <span className="od-step-date">{fmtShort(stepDate(order, step))}</span>
+              )}
             </div>
           ))}
         </div>
@@ -138,6 +158,23 @@ export default function OrderDetail() {
           </div>
 
           <ReturnPanel orderId={order._id} delivered={order.status === 'Delivered'} />
+
+          {order.history?.length > 0 && (
+            <section className="od-updates" aria-labelledby="od-updates-title">
+              <h2 className="od-section-title" id="od-updates-title">Order updates</h2>
+              <ol className="od-log">
+                {[...order.history].reverse().map((h, i) => (
+                  <li key={i} className={`od-log-row od-log-row--${h.type}`}>
+                    <span className="od-log-dot" aria-hidden="true" />
+                    <span className="od-log-body">
+                      <span className="od-log-text">{h.text}</span>
+                      <time className="od-log-when" dateTime={h.at}>{fmtWhen(h.at)}</time>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
         </div>
 
         <aside className="od-side">
