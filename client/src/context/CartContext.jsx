@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
@@ -21,6 +22,34 @@ export function CartProvider({ children }) {
   // The piece just added, shown in a small "Added to bag" pop-up.
   const [justAdded, setJustAdded] = useState(null);
   const firstRun = useRef(true);
+  const { user } = useAuth();
+
+  // Signed in with an empty bag here (another device, or the reminder email)?
+  // Bring back the bag saved on the account.
+  useEffect(() => {
+    if (!user || !axios.defaults.headers.common.Authorization) return;
+    let active = true;
+    axios.get('/api/auth/saved')
+      .then((res) => {
+        const saved = Array.isArray(res.data?.cart) ? res.data.cart : [];
+        if (active && saved.length) setCart((now) => (now.length ? now : saved));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id || user?.email]);
+
+  // "Back to your bag" links (?bag=open) open the bag drawer.
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('bag') === 'open') {
+        setCartOpen(true);
+        url.searchParams.delete('bag');
+        window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+      }
+    } catch { /* old browser — nothing to do */ }
+  }, []);
 
   // Save the cart every time it changes.
   useEffect(() => {

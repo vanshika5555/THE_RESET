@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema({
     default: [],
   },
 
+  // "Still in your bag?" reminder: one email per bag, a day after it was last changed.
+  cartUpdatedAt:      { type: Date, default: null },
+  cartReminderSentAt: { type: Date, default: null },
+  bagReminders:       { type: Boolean, default: true },   // turned off from the email's link
+
   wishlist: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     default: [],

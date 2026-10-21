@@ -239,4 +239,35 @@ function welcomeCode({ code, percent, minOrder, maxOff, days, unsubscribe }) {
   return { subject, html, text };
 }
 
-module.exports = { passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };
+function bagReminder({ name, items, stopUrl }) {
+  const first = items[0];
+  const subject = items.length === 1 ? `Still thinking about the ${first.name}?` : 'Still in your bag';
+  const bagUrl = `${SHOP_URL()}/?bag=open`;
+  const rows = items.slice(0, 4).map((i) => `
+    <tr>
+      <td width="76" style="padding:12px 14px 12px 0;border-bottom:1px solid #f0f0f0;vertical-align:top">
+        ${i.image ? `<a href="${SHOP_URL()}/product/${i.id}"><img src="${esc(i.image)}" alt="" width="64" style="display:block;width:64px;height:80px;object-fit:cover;background:#f2f2f1"></a>` : ''}
+      </td>
+      <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;font:400 14px/1.45 Helvetica,Arial,sans-serif;color:#111;vertical-align:top">
+        <a href="${SHOP_URL()}/product/${i.id}" style="color:#111;text-decoration:none">${esc(i.name)}</a><br>
+        <span style="color:#888;font-size:12px">Size ${esc(i.size)}${i.qty > 1 ? ` · Qty ${i.qty}` : ''}</span>
+        ${i.fewLeft ? `<br><span style="color:#8a4b06;font-size:12px">Only ${i.fewLeft} left in ${esc(i.size)}</span>` : ''}
+      </td>
+      <td align="right" style="padding:12px 0;border-bottom:1px solid #f0f0f0;font:600 14px Helvetica,Arial,sans-serif;color:#111;white-space:nowrap;vertical-align:top">
+        ${inr(i.price)}${i.mrp > i.price ? `<br><span style="font-weight:400;color:#999;text-decoration:line-through;font-size:12px">${inr(i.mrp)}</span>` : ''}
+      </td>
+    </tr>`).join('');
+  const extra = items.length > 4 ? `<p style="margin:10px 0 0;color:#888;font-size:13px">+ ${items.length - 4} more in your bag</p>` : '';
+  const text = `Hi ${firstName(name)},\n\nYou left ${items.length === 1 ? 'something' : 'a few things'} in your bag:\n${items.map((i) => `- ${i.name} (size ${i.size}) ${inr(i.price)}`).join('\n')}\n\nYour bag: ${bagUrl}\n\nStop these reminders: ${stopUrl}`;
+  const html = layout({
+    preheader: 'Your picks are saved — but stock moves.',
+    heading: 'Still in your bag.',
+    body: `Hi ${esc(firstName(name))}, you left ${items.length === 1 ? 'this' : 'these'} behind. We've kept ${items.length === 1 ? 'it' : 'them'} saved for you.
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px">${rows}</table>${extra}
+      <br><span style="color:#aaa;font-size:12px">One reminder per bag. <a href="${esc(stopUrl)}" style="color:#888">Stop these reminders</a>.</span>`,
+    cta: { href: bagUrl, label: 'Back to your bag' },
+  });
+  return { subject, html, text };
+}
+
+module.exports = { bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };

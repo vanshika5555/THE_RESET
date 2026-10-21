@@ -365,7 +365,12 @@ router.put('/cart', protect, async (req, res) => {
       qty:   Math.max(1, Number(i.qty) || 1),
     }));
 
-    await User.updateOne({ _id: req.user._id }, { cart: clean });
+    // Any change to the bag restarts the reminder clock.
+    await User.updateOne({ _id: req.user._id }, {
+      cart: clean,
+      cartUpdatedAt: clean.length ? new Date() : null,
+      cartReminderSentAt: null,
+    });
     res.json({ saved: clean.length });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -383,11 +388,36 @@ router.put('/wishlist', protect, async (req, res) => {
   }
 });
 
+// GET /api/auth/reminders/off?u=&t= — "stop these reminders" link in the bag email
+router.get('/reminders/off', async (req, res) => {
+  const { validOff } = require('../utils/bagReminders');
+  const id = String(req.query.u || '');
+  let ok = false;
+  try {
+    ok = /^[a-f0-9]{24}$/i.test(id) && validOff(id, req.query.t);
+    if (ok) await User.updateOne({ _id: id }, { bagReminders: false });
+  } catch { ok = false; }
+  const shop = (process.env.SHOP_URL || 'https://the-reset-snowy.vercel.app').replace(/\/$/, '');
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE RESET</title>
+<div style="max-width:440px;margin:80px auto;padding:0 20px;font:16px/1.6 Helvetica,Arial,sans-serif;color:#111">
+<p style="font-weight:800;letter-spacing:.04em">THE RESET</p>
+<h1 style="font-size:24px">${ok ? 'Reminders turned off' : 'This link is not valid'}</h1>
+<p style="color:#555">${ok ? "We won't email you about items left in your bag. Order and delivery emails still arrive as usual." : 'It may have been copied incorrectly.'}</p>
+<p><a href="${shop}" style="color:#111">Back to the shop</a></p></div>`);
+});
+
 // GET /api/auth/saved — the bag and wishlist stored on this account
 router.get('/saved', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('cart wishlist');
-    res.json({ cart: user?.cart || [], wishlist: user?.wishlist || [] });
+    const user = await User.findById(req.user._id).select('cart wishlist').populate('cart.product');
+    // The bag comes back as full product details, ready to show — pieces
+    // that were deleted or hidden since are dropped.
+    const cart = (user?.cart || [])
+      .filter((i) => i.product && i.product.inStock !== false)
+      .map((i) => ({ ...i.product.toObject(), size: i.size, qty: i.qty || 1 }));
+    res.json({ cart, wishlist: user?.wishlist || [] });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
