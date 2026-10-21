@@ -33,9 +33,40 @@ export default function Security() {
   const [error, setError] = useState('');
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
   const [pwMsg, setPwMsg] = useState('');
+  const [digest, setDigest] = useState(null);         // { on, hour }
 
   const load = () => axios.get('/api/auth/2fa').then((r) => setStatus(r.data)).catch(() => setError('Could not load your security settings.'));
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    axios.get('/api/auth/digest').then((r) => setDigest(r.data)).catch(() => {});
+  }, []);
+
+  const toggleDigest = async () => {
+    const on = !digest.on;
+    setDigest((d) => ({ ...d, on }));
+    try {
+      await axios.put('/api/auth/digest', { on });
+    } catch {
+      setDigest((d) => ({ ...d, on: !on }));
+      setError('Could not change the morning email. Try again.');
+    }
+  };
+
+  // Today's email, opened in a new tab (inside the tap, so phones allow it).
+  const previewDigest = async () => {
+    const tab = window.open('', '_blank');
+    if (tab) tab.document.write('<p style="font:15px Helvetica,Arial,sans-serif;padding:24px">Preparing the preview…</p>');
+    try {
+      const r = await axios.get('/api/auth/digest/preview', { responseType: 'text' });
+      if (!tab) { window.location.href = URL.createObjectURL(new Blob([r.data], { type: 'text/html' })); return; }
+      tab.document.open(); tab.document.write(r.data); tab.document.close();
+    } catch {
+      if (tab) tab.close();
+      setError('Could not open the preview. Try again.');
+    }
+  };
+
+  const hourLabel = (h) => `${((h + 11) % 12) + 1} ${h < 12 ? 'am' : 'pm'}`;
 
   const start = async () => {
     setBusy(true); setError('');
@@ -194,6 +225,34 @@ export default function Security() {
           </>
         )}
       </section>
+
+      {digest && (
+        <section className="panel sec-panel">
+          <div className="sec-head">
+            <div>
+              <h2 className="panel-title">Morning email</h2>
+              <p className="sec-text">
+                Every day at {hourLabel(digest.hour)}: orders to confirm and ship, returns waiting and sizes running out
+                {digest.owner ? ', plus yesterday’s sales' : ''}.
+                Skipped on days with nothing to report.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={digest.on}
+              aria-label="Morning email"
+              className={`sec-switch ${digest.on ? 'sec-switch--on' : ''}`}
+              onClick={toggleDigest}
+            >
+              <span className="sec-switch-knob" />
+            </button>
+          </div>
+          <div className="sec-actions">
+            <button type="button" className="btn btn--secondary" onClick={previewDigest}>See today’s email</button>
+          </div>
+        </section>
+      )}
 
       <section className="panel sec-panel">
         <h2 className="panel-title">Password</h2>

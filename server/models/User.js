@@ -58,6 +58,7 @@ const userSchema = new mongoose.Schema({
   cartUpdatedAt:      { type: Date, default: null },
   cartReminderSentAt: { type: Date, default: null },
   bagReminders:       { type: Boolean, default: true },   // turned off from the email's link
+  dailyDigest:        { type: Boolean, default: true },   // team only: the morning email
 
   wishlist: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],

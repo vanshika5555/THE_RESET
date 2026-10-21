@@ -129,6 +129,7 @@ mongoose.connect(process.env.MONGO_URI)
       console.log(`Server running on port ${port}`);
       require('./utils/bagReminders').startBagReminders();
       require('./routes/payments').startPaymentSweeper();
+      require('./utils/dailyDigest').startDailyDigest();
     });
   })
   .catch((err) => console.log('MongoDB error:', err));

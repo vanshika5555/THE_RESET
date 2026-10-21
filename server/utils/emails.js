@@ -14,7 +14,7 @@ const inr = (n) => `₹${(Number(n) || 0).toLocaleString('en-IN')}`;
 const shortId = (id) => String(id).slice(-8).toUpperCase();
 const firstName = (name) => String(name || '').trim().split(/\s+/)[0] || 'there';
 
-function layout({ preheader = '', heading, body, cta }) {
+function layout({ preheader = '', heading, body, cta, footer }) {
   const button = cta
     ? `<tr><td style="padding:8px 0 28px">
          <a href="${esc(cta.href)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;
@@ -40,8 +40,8 @@ function layout({ preheader = '', heading, body, cta }) {
       </table>
     </td></tr>
     <tr><td style="padding:20px 32px 28px;border-top:1px solid #eee;font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#999">
-      Questions? Just reply to this email or visit <a href="${SHOP_URL()}/help" style="color:#666">our help page</a>.<br>
-      THE RESET · Dressed in silence. Built with intention.
+      ${footer || `Questions? Just reply to this email or visit <a href="${SHOP_URL()}/help" style="color:#666">our help page</a>.<br>
+      THE RESET · Dressed in silence. Built with intention.`}
     </td></tr>
   </table>
 </td></tr></table>
@@ -322,4 +322,4 @@ function priceDrop({ name, product, stopUrl }) {
   return { subject, html, text };
 }
 
-module.exports = { priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };
+module.exports = { layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };

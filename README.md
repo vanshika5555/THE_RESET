@@ -39,6 +39,7 @@
 - **Dashboard** — orders to confirm and ship, sales, low stock, and which sold-out sizes shoppers are waiting for.
 - **Products** — add and edit with drag-and-drop photo upload (signed Cloudinary uploads), per-size stock, sale price, hide/show.
 - **Orders, returns, customers, discount codes** — the full order life-cycle, including approving returns and restocking returned items.
+- **Team** — staff accounts with their own logins, an activity log on every order, and a morning email with the day's to-do list.
 
 ### API (`server/`)
 - **Express 5 + Mongoose 9** REST API.

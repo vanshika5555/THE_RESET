@@ -503,6 +503,35 @@ router.get('/reminders/off', async (req, res) => {
 <p><a href="${shop}" style="color:#111">Back to the shop</a></p></div>`);
 });
 
+/* ───────────── Morning email for the team ───────────── */
+
+// GET /api/auth/digest — is my morning email on?
+router.get('/digest', protect, teamOnly, async (req, res) => {
+  const me = await User.findById(req.user._id).select('dailyDigest');
+  res.json({ on: me?.dailyDigest !== false, owner: req.user.role === 'admin', hour: Math.min(23, Math.max(0, Number(process.env.DIGEST_HOUR) || 9)) });
+});
+
+// PUT /api/auth/digest — { on }
+router.put('/digest', protect, teamOnly, async (req, res) => {
+  const on = req.body?.on !== false;
+  await User.updateOne({ _id: req.user._id }, { dailyDigest: on });
+  res.json({ on });
+});
+
+// GET /api/auth/digest/preview — today's email as it would look for me
+router.get('/digest/preview', protect, teamOnly, async (req, res) => {
+  try {
+    const { gather, build } = require('../utils/dailyDigest');
+    const mail = build(await gather(), { name: req.user.name, owner: req.user.role === 'admin' });
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'private, no-store');
+    const { esc } = require('../utils/emails');
+    res.send(mail.html.replace('<head>', `<head><title>${esc(mail.subject)}</title>`));
+  } catch (err) {
+    res.status(500).json({ message: 'Could not build the preview.' });
+  }
+});
+
 /* ───────────── Team: staff accounts (owner only) ───────────── */
 
 const ADMIN_URL = () => (process.env.ADMIN_URL || 'https://the-reset-admin.vercel.app').replace(/\/$/, '');
