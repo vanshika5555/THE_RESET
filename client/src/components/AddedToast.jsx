@@ -27,7 +27,7 @@ export default function AddedToast() {
       </div>
       <div className="at-text">
         <p className="at-title">Added to bag</p>
-        <p className="at-meta">{product.name} · Size {size}</p>
+        <p className="at-meta">{product.name}{product.colorName ? ` · ${product.colorName}` : ''} · Size {size}</p>
       </div>
       <button
         type="button"

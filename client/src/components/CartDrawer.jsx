@@ -106,7 +106,7 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
                     </button>
                   </div>
                   <p className="cd-item-price">{formatPrice(item.price)}</p>
-                  <p className="cd-item-size">Size {item.size}</p>
+                  <p className="cd-item-size">{item.colorName ? `${item.colorName} · ` : ''}Size {item.size}</p>
 
                   <div className="cd-item-actions">
                     <div className="cd-stepper" role="group" aria-label={`Quantity of ${item.name}`}>

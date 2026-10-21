@@ -89,7 +89,7 @@ router.post('/', protect, async (req, res) => {
 
       verifiedItems.push({
         product: product._id,
-        name:  product.name,
+        name:  product.colorName ? `${product.name} — ${product.colorName}` : product.name,
         price: formatINR(unitPrice),     // frozen as text on the order, e.g. "₹2,990"
         image: (product.images && product.images[0]) || product.image,
         color: product.color,

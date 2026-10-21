@@ -27,6 +27,7 @@ export const BLANK_PRODUCT = {
   name: '', price: '', mrp: '', description: '', category: 'Men', season: 'All Season',
   subcategory: '', fitType: 'Top', tag: '', color: '#ececea', inStock: true,
   sizes: [], stock: [], image: '', images: [''], materials: '', delivery: '',
+  colorName: '', swatch: '',
 };
 
 // Prices are numbers now (2990); older products may still hold text ("₹2,990").
@@ -72,6 +73,23 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
       .catch(() => {});
   }, [initial?._id]);
   const waitingTotal = Object.values(waiting).reduce((n, v) => n + v, 0);
+
+  // Colours: other products that are this same style in another colour.
+  const [catalogue, setCatalogue] = useState([]);
+  const [linkTo, setLinkTo] = useState(undefined);   // undefined = leave as is, '' = unlink, id = join
+  useEffect(() => {
+    axios.get('/api/products').then((res) => setCatalogue(Array.isArray(res.data) ? res.data : [])).catch(() => {});
+  }, []);
+  const selfId = initial?._id;
+  const group = initial?.styleGroup || '';
+  const siblings = linkTo === ''
+    ? []
+    : catalogue.filter((p) => p._id !== selfId && group && p.styleGroup === group);
+  const linkTarget = linkTo ? catalogue.find((p) => p._id === linkTo) : null;
+  const linkChoices = catalogue
+    .filter((p) => p._id !== selfId)
+    .sort((a, b) => (a.category === form.category ? -1 : 0) - (b.category === form.category ? -1 : 0) || a.name.localeCompare(b.name));
+  const colourLabel = (p) => `${p.name}${p.colorName ? ` — ${p.colorName}` : ''}`;
 
   const listed = CATEGORIES[form.category]?.[form.season] || [];
   // Older products may carry a subcategory outside this season's list — keep it selectable.
@@ -174,7 +192,9 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
     try {
       const gallery = (form.images || []).map((u) => u.trim()).filter(Boolean);
       const stock = (form.sizes || []).map((size) => ({ size, qty: stockFor(size) }));
-      await onSave({ ...form, name: form.name.trim(), price: priceNum, mrp: mrpNum, images: gallery, image: gallery[0] || '', stock });
+      const payload = { ...form, name: form.name.trim(), price: priceNum, mrp: mrpNum, images: gallery, image: gallery[0] || '', stock };
+      if (linkTo !== undefined) payload.linkTo = linkTo;
+      await onSave(payload);
       navigate('/products');
     } catch (err) {
       fail(err.response
@@ -390,6 +410,74 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
             {form.subcategory && (
               <p className="pf-path">{form.category} › {form.season} › {form.subcategory}</p>
             )}
+          </Card>
+
+          <Card order={7} title="Colour" hint="Selling this style in more than one colour? Add each colour as its own product, then link them — the shop shows swatches to switch between them.">
+            <div className="pf-colour-row">
+              <div className="field">
+                <label className="field-label" htmlFor="pf-colour-name">Colour name</label>
+                <input
+                  id="pf-colour-name"
+                  className="input"
+                  maxLength={30}
+                  placeholder="e.g. Black"
+                  value={form.colorName || ''}
+                  onChange={(e) => set('colorName', e.target.value)}
+                />
+              </div>
+              <div className="field pf-swatch-field">
+                <span className="field-label">Swatch</span>
+                <label className="pf-swatch">
+                  <input
+                    type="color"
+                    value={form.swatch || '#1a1a1a'}
+                    onChange={(e) => set('swatch', e.target.value)}
+                    aria-label="Swatch colour"
+                  />
+                  {!form.swatch && <span className="pf-swatch-unset" aria-hidden="true">+</span>}
+                </label>
+              </div>
+            </div>
+            {form.swatch && (
+              <button type="button" className="btn btn--ghost btn--sm pf-swatch-clear" onClick={() => set('swatch', '')}>
+                Remove swatch
+              </button>
+            )}
+
+            <div className="field">
+              <span className="field-label">Same style, other colours</span>
+              {siblings.length > 0 ? (
+                <>
+                  <ul className="pf-siblings">
+                    {siblings.map((p) => (
+                      <li key={p._id} className="pf-sibling">
+                        <span className="pf-sibling-dot" style={{ background: p.swatch || p.color || '#ddd' }} aria-hidden="true" />
+                        <span className="pf-sibling-name">{p.colorName || p.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button type="button" className="btn btn--ghost btn--sm pf-swatch-clear" onClick={() => setLinkTo('')}>
+                    Unlink this colour
+                  </button>
+                </>
+              ) : (
+                <>
+                  <select
+                    className="select"
+                    value={linkTo || ''}
+                    onChange={(e) => setLinkTo(e.target.value || (group ? '' : undefined))}
+                  >
+                    <option value="">Not linked</option>
+                    {linkChoices.map((p) => <option key={p._id} value={p._id}>{colourLabel(p)}</option>)}
+                  </select>
+                  <span className="field-hint">
+                    {linkTarget
+                      ? `Will be linked with ${colourLabel(linkTarget)} when you save.`
+                      : linkTo === '' && group ? 'Will be unlinked when you save.' : 'Pick the same piece in another colour.'}
+                  </span>
+                </>
+              )}
+            </div>
           </Card>
         </aside>
       </div>

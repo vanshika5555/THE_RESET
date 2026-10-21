@@ -372,7 +372,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
                 </div>
                 <div className="co-item-info">
                   <p className="co-item-name">{item.name}</p>
-                  <p className="co-item-meta">Size: {item.size} · Qty: {item.qty}</p>
+                  <p className="co-item-meta">{item.colorName ? `${item.colorName} · ` : ''}Size: {item.size} · Qty: {item.qty}</p>
                   <p className="co-item-price">{formatPrice(item.price)}</p>
                 </div>
               </div>

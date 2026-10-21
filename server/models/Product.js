@@ -33,7 +33,11 @@ const productSchema = new mongoose.Schema({
   stock:       { type: [stockSchema], default: [] }, // how many of each are left
   image:       { type: String, default: null },
   images:      { type: [String], default: [] },
-  color:       { type: String, default: '#f0f0f0' },
+  color:       { type: String, default: '#f0f0f0' },   // shown behind the photo while it loads
+  // Colours: the same style in other colours is a separate product sharing a styleGroup.
+  colorName:   { type: String, default: '', trim: true, maxlength: 30 },   // e.g. "Black"
+  swatch:      { type: String, default: '', match: [/^(#[0-9a-fA-F]{6})?$/, 'Swatch must be a colour like #1a1a1a'] },
+  styleGroup:  { type: String, default: '', index: true },
   inStock:     { type: Boolean, default: true },     // master switch — hide it regardless of counts
 }, { timestamps: true });
 

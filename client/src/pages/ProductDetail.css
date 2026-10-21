@@ -537,3 +537,35 @@
   /* phones: icon only, the share sheet explains itself */
   .pd-share-btn:not(.pd-share-btn--done) span { display: none; }
 }
+
+/* ---------- colour swatches ---------- */
+.pd-colours { margin-top: 26px; }
+.pd-colour-name { font-weight: 400; color: #555; }
+.pd-swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.pd-swatch {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  transition: border-color .15s ease;
+}
+.pd-swatch:hover { border-color: #bbb; }
+.pd-swatch--on { border-color: #000; }
+.pd-swatch-fill {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--sw);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14);   /* so white and ecru still have an edge */
+}
+/* Sold out: a thin diagonal line through the swatch */
+.pd-swatch--out .pd-swatch-fill { opacity: .55; }
+.pd-swatch--out::after {
+  content: ''; position: absolute; left: 50%; top: 4px; bottom: 4px; width: 1.5px;
+  background: #111; transform: rotate(45deg); transform-origin: center;
+}
+.pd-swatch:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
+@media (max-width: 640px) {
+  .pd-colours { margin-top: 22px; }
+  .pd-swatch { width: 44px; height: 44px; }
+  .pd-swatch-fill { width: 34px; height: 34px; }
+}

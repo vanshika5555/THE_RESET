@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
@@ -46,6 +46,8 @@ export default function ProductDetail() {
   const [sizeWarning, setSizeWarning] = useState(false);
   const [showBar, setShowBar] = useState(false);   // phone: sticky Add to Bag
   const [copied, setCopied] = useState(false);     // "Link copied" after Share
+  const [colours, setColours] = useState([]);      // this style in every colour
+  const location = useLocation();
   const copiedTimer = useRef(null);
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
   const actionsRef = useRef(null);
@@ -71,7 +73,8 @@ export default function ProductDetail() {
     let active = true;
     setLoading(true);
     setActiveImg(0);
-    setChosenSize('');
+    // Switching colour keeps the size you'd picked.
+    setChosenSize(location.state?.size || '');
     setSizeWarning(false);
     setAdded(false);
     axios.get(`/api/products/${id}`)
@@ -87,6 +90,10 @@ export default function ProductDetail() {
         setLoading(false);
       });
 
+    axios.get(`/api/products/${id}/colours`)
+      .then(res => { if (active) setColours(Array.isArray(res.data) ? res.data : []); })
+      .catch(() => { if (active) setColours([]); });
+
     // Note the visit for signed-in customers. Fire and forget — this must
     // never slow down or break the page.
     if (axios.defaults.headers.common.Authorization) {
@@ -94,6 +101,7 @@ export default function ProductDetail() {
     }
 
     return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Phone: once the real buttons scroll off the top, a bar takes over at the bottom.
@@ -346,6 +354,39 @@ export default function ProductDetail() {
 
           {product.description && (
             <p className="pd-desc-text">{product.description}</p>
+          )}
+
+          {colours.length > 1 && (
+            <div className="pd-colours">
+              <p className="pd-sizes-label">
+                Colour{product.colorName && <span className="pd-colour-name">: {product.colorName}</span>}
+              </p>
+              <div className="pd-swatches" role="list">
+                {colours.map((c) => {
+                  const current = String(c._id) === String(product._id);
+                  const left = (c.stock || []).filter((s) => (c.sizes || []).includes(s.size)).reduce((n, s) => n + (s.qty || 0), 0);
+                  const soldOut = c.inStock === false || ((c.stock || []).length > 0 && left === 0);
+                  const label = `${c.colorName || c.name}${soldOut ? ' (sold out)' : ''}`;
+                  return (
+                    <Link
+                      key={c._id}
+                      role="listitem"
+                      to={`/product/${c._id}`}
+                      replace
+                      state={{ size: chosenSize }}
+                      className={`pd-swatch ${current ? 'pd-swatch--on' : ''} ${soldOut ? 'pd-swatch--out' : ''}`}
+                      style={{ '--sw': c.swatch || c.color || '#ddd' }}
+                      aria-label={label}
+                      aria-current={current ? 'true' : undefined}
+                      title={label}
+                      onClick={(e) => { if (current) e.preventDefault(); }}
+                    >
+                      <span className="pd-swatch-fill" />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           <div className="pd-sizes-block" ref={sizesRef}>

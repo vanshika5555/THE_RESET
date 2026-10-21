@@ -20,6 +20,39 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * Links a product to the same style in another colour.
+ * linkTo: a product id to join its group, or '' to leave the group.
+ * Returns the styleGroup to save, or undefined when nothing should change.
+ */
+async function groupFor(linkTo, selfId) {
+  if (linkTo === undefined) return undefined;
+  if (!linkTo) return '';
+  if (selfId && String(linkTo) === String(selfId)) return undefined;
+  const target = await Product.findById(linkTo).select('styleGroup');
+  if (!target) { const e = new Error('The product to link with no longer exists.'); e.status = 400; throw e; }
+  const group = target.styleGroup || String(target._id);
+  if (!target.styleGroup) await Product.updateOne({ _id: target._id }, { $set: { styleGroup: group } });
+  return group;
+}
+
+// GET /api/products/:id/colours — every colour of this style, this one included (public)
+router.get('/:id/colours', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).select('styleGroup');
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    if (!product.styleGroup) return res.json([]);
+    const all = await Product.find({ styleGroup: product.styleGroup })
+      .select('name colorName swatch color image images inStock stock sizes price mrp')
+      .sort({ createdAt: 1 })
+      .lean();
+    // Hidden colours stay hidden, but the one being viewed always shows.
+    res.json(all.filter((p) => p.inStock !== false || String(p._id) === String(product._id)));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // GET single product  (public)
 router.get('/:id', async (req, res) => {
   try {
@@ -34,12 +67,14 @@ router.get('/:id', async (req, res) => {
 // POST create product  (admin only)
 router.post('/', protect, adminOnly, async (req, res) => {
   try {
-    const { _id, __v, createdAt, updatedAt, ...fields } = req.body || {};
+    const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, ...fields } = req.body || {};
+    const group = await groupFor(linkTo);
+    if (group !== undefined) fields.styleGroup = group;
     const product = new Product(fields);
     const saved = await product.save();
     res.status(201).json(saved);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(err.status || 400).json({ message: err.message });
   }
 });
 
@@ -48,7 +83,9 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
   try {
     // Bump the version so an order being placed at this exact moment
     // re-reads the product instead of overwriting this edit (see orders.js).
-    const { _id, __v, createdAt, updatedAt, ...changes } = req.body || {};
+    const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, ...changes } = req.body || {};
+    const group = await groupFor(linkTo, req.params.id);
+    if (group !== undefined) changes.styleGroup = group;
     const before = await Product.findById(req.params.id).lean();
     const updated = await Product.findByIdAndUpdate(
       req.params.id,
@@ -59,7 +96,7 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
     notifyRestocked(before, updated.toObject());   // emails anyone waiting; never blocks the save
     res.json(updated);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(err.status || 400).json({ message: err.message });
   }
 });
 
