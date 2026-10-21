@@ -38,3 +38,7 @@
   .rt-order { display: none; }
   .rt-items { white-space: normal; }
 }
+
+/* ── Refund ── */
+.rt-upi { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-md); font-size: 14px; overflow-wrap: anywhere; }
+.rt-ref { margin-top: 12px; }

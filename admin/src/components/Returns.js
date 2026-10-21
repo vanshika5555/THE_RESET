@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { fmtDate, shortId, Badge, Empty, ErrorNote, Drawer, Section, FilterTabs, Thumb } from './ui';
+import { fmtDate, shortId, inr, Badge, Empty, ErrorNote, Drawer, Section, FilterTabs, Thumb } from './ui';
 import './Returns.css';
 
 const TONE = {
@@ -25,6 +25,8 @@ export default function Returns() {
   const [openId, setOpenId] = useState(null);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [reference, setReference] = useState('');   // UPI transfer reference for cash-order refunds
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(() => {
     axios.get('/api/returns')
@@ -41,7 +43,7 @@ export default function Returns() {
   const openCount = list.filter(r => OPEN.includes(r.status)).length;
   const current = list.find(r => r._id === openId) || null;
 
-  const openRequest = (r) => { setOpenId(r._id); setMessage(r.shopMessage || ''); };
+  const openRequest = (r) => { setOpenId(r._id); setMessage(r.shopMessage || ''); setReference(''); setCopied(false); };
 
   const update = async (status) => {
     if (!current) return;
@@ -52,7 +54,7 @@ export default function Returns() {
     setBusy(true);
     setError('');
     try {
-      const res = await axios.put(`/api/returns/${current._id}`, { status, shopMessage: message });
+      const res = await axios.put(`/api/returns/${current._id}`, { status, shopMessage: message, reference: reference.trim() });
       setList(l => l.map(x => (x._id === current._id ? { ...x, ...res.data, user: x.user, order: x.order } : x)));
     } catch (err) {
       setError(err.response?.data?.message || 'Could not update this request.');
@@ -76,7 +78,9 @@ export default function Returns() {
     ? current.status === 'Received'
       ? [current.type === 'exchange'
           ? { to: 'Exchanged', label: 'Send the new size' }
-          : { to: 'Refunded', label: 'Mark refunded' }]
+          : current.refund?.method !== 'razorpay'
+            ? { to: 'Refunded', label: current.refund?.amount ? `I've sent ${inr(current.refund.amount)} by UPI` : 'I\'ve sent the refund', needsRef: true }
+            : { to: 'Refunded', label: `Refund ${inr(current.refund?.amount || 0)} now` }]
       : (NEXT[current.status] || [])
     : [];
 
@@ -136,7 +140,7 @@ export default function Returns() {
                 key={a.to}
                 type="button"
                 className={`btn ${a.danger ? 'btn--danger' : 'btn--primary'} btn--lg`}
-                disabled={busy}
+                disabled={busy || (a.needsRef && !reference.trim())}
                 onClick={() => update(a.to)}
               >
                 {a.label}
@@ -153,10 +157,45 @@ export default function Returns() {
                 {current.status === 'Approved' && 'Once the pieces reach you and pass the check, mark them received — they go back into stock.'}
                 {current.status === 'Received' && (current.type === 'exchange'
                   ? 'Send the new size. Its stock is taken off automatically (it must be in stock).'
-                  : 'Refund the customer through your payment provider, then mark it refunded here.')}
+                  : current.refund?.method !== 'razorpay'
+                    ? 'They paid cash. Send the refund to their UPI ID from your bank app, then add the reference number below.'
+                    : 'They paid online. "Refund now" sends the money back to their card or UPI through Razorpay.')}
                 {['Refunded', 'Exchanged', 'Rejected'].includes(current.status) && 'This request is closed.'}
               </p>
             </Section>
+
+            {current.type === 'return' && (
+              <Section title="Refund" aside={current.refund?.amount > 0 && <strong>{inr(current.refund.amount)}</strong>}>
+                {current.refund?.method !== 'razorpay' ? (
+                  <>
+                    {current.refund?.upi && (
+                    <div className="rt-upi">
+                      <span>Send to <strong>{current.refund.upi}</strong></span>
+                      <button
+                        type="button"
+                        className="btn btn--secondary btn--sm"
+                        onClick={() => navigator.clipboard?.writeText(current.refund.upi).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); })}
+                      >
+                        {copied ? 'Copied' : 'Copy UPI ID'}
+                      </button>
+                    </div>
+                    )}
+                    {current.status === 'Received' && (
+                      <label className="field rt-ref">
+                        <span className="field-label">UPI reference (UTR) after you've paid</span>
+                        <input className="input" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. 429815736201" />
+                      </label>
+                    )}
+                  </>
+                ) : (
+                  <p className="rt-help">Back to the original online payment through Razorpay.</p>
+                )}
+                {current.refund?.refundedAt && (
+                  <p className="rt-help">Refunded {fmtDate(current.refund.refundedAt)}{current.refund.reference ? ` · ref ${current.refund.reference}` : ''}</p>
+                )}
+                <p className="rt-help">What the pieces cost after the order's discount. Delivery and COD fees aren't refunded.</p>
+              </Section>
+            )}
 
             <Section title="Pieces">
               {current.items.map((i, k) => (

@@ -222,8 +222,18 @@ const RETURN_COPY = {
 };
 
 function returnUpdate({ name, request }) {
-  const copy = RETURN_COPY[request.status];
+  let copy = RETURN_COPY[request.status];
   if (!copy) return null;
+  // Say exactly how much went back, and where.
+  const rf = request.refund || {};
+  if (request.status === 'Refunded' && rf.amount) {
+    copy = { ...copy, line: rf.method === 'upi'
+      ? `We've sent ${inr(rf.amount)} to your UPI ID ${esc(rf.upi)}${rf.reference ? ` (reference ${esc(rf.reference)})` : ''}. It should already be in your account.`
+      : `We've refunded ${inr(rf.amount)} to your original payment method. It usually shows up in 5–7 working days.` };
+  }
+  if (request.status === 'Requested' && request.type === 'return' && rf.amount) {
+    copy = { ...copy, line: `${copy.line} Once the pieces reach us, ${inr(rf.amount)} comes back ${rf.method === 'upi' ? `to ${esc(rf.upi)} by UPI` : 'to your original payment method'}.` };
+  }
   const kind = request.type === 'exchange' ? 'Exchange' : 'Return';
   const id = shortId(request._id);
   const lines = request.items.map(i =>

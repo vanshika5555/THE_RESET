@@ -7,6 +7,18 @@ const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { adjustStock } = require('../utils/stock');
 const { sendMailLater } = require('../utils/mailer');
 const emails = require('../utils/emails');
+const rzp = require('../utils/razorpay');
+const { parsePrice } = require('../utils/price');
+
+const UPI_RE = /^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9.]{1,63}$/;
+const paidOnline = (order) => order.payment && order.payment.method === 'online' && order.payment.razorpayPaymentId;
+
+// What these pieces cost after their share of the order's discount.
+function refundFor(order, lines) {
+  const value = lines.reduce((n, l) => n + parsePrice(l.price) * l.qty, 0);
+  const share = order.subtotal ? (value / order.subtotal) * (Number(order.discount) || 0) : 0;
+  return Math.max(0, Math.round((value - share) * 100) / 100);
+}
 
 const WINDOW_DAYS = 7;   // matches the Help page
 const REASONS = ['Too small', 'Too big', 'Not as pictured', 'Quality issue', 'Arrived damaged', 'Wrong item sent', 'Changed my mind'];
@@ -58,6 +70,8 @@ router.get('/options/:orderId', protect, async (req, res) => {
 
     res.json({
       eligible: order.status === 'Delivered' && daysLeft > 0,
+      // Paid online → refunds go back automatically; cash → we ask for a UPI ID.
+      refundTo: paidOnline(order) ? 'original' : 'upi',
       daysLeft: Math.max(0, daysLeft),
       reasons: REASONS,
       items: order.items.map(i => ({
@@ -111,7 +125,18 @@ router.post('/', protect, async (req, res) => {
       items.push({ orderItem: it._id, product: it.product, name: it.name, image: it.image, price: it.price, size: it.size, qty, exchangeSize });
     }
 
-    const request = await ReturnRequest.create({ order: order._id, user: req.user._id, type, reason, note, items });
+    let refund;
+    if (type === 'return') {
+      if (paidOnline(order)) {
+        refund = { amount: refundFor(order, items), method: 'razorpay' };
+      } else {
+        const upi = typeof req.body.refundUpi === 'string' ? req.body.refundUpi.trim() : '';
+        if (!UPI_RE.test(upi)) return res.status(400).json({ message: 'Enter the UPI ID we should send your refund to, like name@okaxis.' });
+        refund = { amount: refundFor(order, items), method: 'upi', upi };
+      }
+    }
+
+    const request = await ReturnRequest.create({ order: order._id, user: req.user._id, type, reason, note, items, refund });
     notify(request, req.user.email, req.user.name);
     res.status(201).json(request);
   } catch (err) {
@@ -158,6 +183,27 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
       }
       if (status === 'Exchanged' && r.type !== 'exchange') return res.status(400).json({ message: 'This is a return, not an exchange.' });
       if (status === 'Refunded' && r.type !== 'return') return res.status(400).json({ message: 'This is an exchange, not a return.' });
+
+      // Money back: online payments are refunded through Razorpay; cash orders
+      // need the UPI transfer's reference so there's a record of it.
+      if (status === 'Refunded') {
+        const order = await Order.findById(r.order);
+        const amount = r.refund?.amount || (order ? refundFor(order, r.items) : 0);
+        if (order && paidOnline(order)) {
+          try {
+            const rf = await rzp.refund(order.payment.razorpayPaymentId, amount);
+            Object.assign(r.refund, { amount, method: 'razorpay', reference: rf.id || '', refundedAt: new Date() });
+          } catch (err) {
+            return res.status(502).json({ message: `Razorpay refused the refund (${err.message}). Try again, or refund it from the Razorpay dashboard and then mark it with the reference.` });
+          }
+        } else {
+          const ref = typeof req.body.reference === 'string' ? req.body.reference.trim().slice(0, 60) : '';
+          if (!ref) {
+            return res.status(400).json({ message: `Send ₹${amount.toLocaleString('en-IN')} to ${r.refund?.upi || 'the customer'} first, then add the UPI reference number.` });
+          }
+          Object.assign(r.refund, { amount, method: 'upi', reference: ref, refundedAt: new Date() });
+        }
+      }
 
       // Exchange: the new size goes out — make sure it is there before saying so.
       if (status === 'Exchanged') {

@@ -22,6 +22,7 @@ export default function ReturnPanel({ orderId, delivered }) {
   const [picked, setPicked] = useState({});         // orderItem -> { qty, exchangeSize }
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
+  const [upi, setUpi] = useState('');               // where cash-order refunds go
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -48,10 +49,14 @@ export default function ReturnPanel({ orderId, delivered }) {
     if (!items.length) { setError('Pick at least one piece.'); return; }
     if (type === 'exchange' && items.some(i => !i.exchangeSize)) { setError('Pick the new size for each piece.'); return; }
     if (!reason) { setError('Choose a reason.'); return; }
+    const needsUpi = type === 'return' && options?.refundTo === 'upi';
+    if (needsUpi && !/^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9.]{1,63}$/.test(upi.trim())) {
+      setError('Enter the UPI ID for your refund, like name@okaxis.'); return;
+    }
 
     setSending(true);
     try {
-      await axios.post('/api/returns', { orderId, type, reason, note, items });
+      await axios.post('/api/returns', { orderId, type, reason, note, items, refundUpi: needsUpi ? upi.trim() : undefined });
       setOpen(false); setPicked({}); setReason(''); setNote(''); setSent(true);
       load();
     } catch (err) {
@@ -93,6 +98,13 @@ export default function ReturnPanel({ orderId, delivered }) {
                   <li key={s} className={k <= at ? 'is-done' : ''}>{s}</li>
                 ))}
               </ol>
+            )}
+            {r.type === 'return' && r.refund?.amount > 0 && r.status !== 'Rejected' && (
+              <p className="rp-refund">
+                {r.status === 'Refunded'
+                  ? `₹${r.refund.amount.toLocaleString('en-IN')} refunded ${r.refund.method === 'upi' ? `to ${r.refund.upi}` : 'to your original payment'}${r.refund.reference ? ` · ref ${r.refund.reference}` : ''}`
+                  : `Refund of ₹${r.refund.amount.toLocaleString('en-IN')} ${r.refund.method === 'upi' ? `to ${r.refund.upi}` : 'to your original payment'} once the pieces reach us`}
+              </p>
             )}
             {r.shopMessage && <p className="rp-msg"><strong>From us:</strong> {r.shopMessage}</p>}
           </div>
@@ -182,6 +194,25 @@ export default function ReturnPanel({ orderId, delivered }) {
           <label className="rp-field">Anything else? <span>(optional)</span>
             <textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Fits well on the shoulders but the sleeves are long" />
           </label>
+
+          {type === 'return' && options?.refundTo === 'upi' && (
+            <label className="rp-field">UPI ID for your refund
+              <input
+                type="text"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                value={upi}
+                onChange={e => setUpi(e.target.value)}
+                placeholder="name@okaxis"
+              />
+              <span className="rp-hint">You paid cash, so we send the money back by UPI as soon as the pieces reach us.</span>
+            </label>
+          )}
+          {type === 'return' && options?.refundTo === 'original' && (
+            <p className="rp-hint">The refund goes back to the card or UPI account you paid with.</p>
+          )}
 
           <p className="rp-policy">Pieces must be unworn and unwashed, with tags on. We'll arrange the pickup.</p>
           {error && <p className="rp-error" role="alert">{error}</p>}

@@ -32,6 +32,16 @@ const returnSchema = new mongoose.Schema({
   // Shown to the customer (e.g. pickup date, why it was rejected).
   shopMessage: { type: String, default: '' },
   restocked:   { type: Boolean, default: false },
+  // Money back for a return: to the original online payment, or by UPI for
+  // orders paid in cash. amount is what the returned pieces cost after any
+  // order discount (delivery and COD fees aren't refunded).
+  refund: {
+    amount:     { type: Number, default: 0 },
+    method:     { type: String, enum: ['', 'razorpay', 'upi'], default: '' },
+    upi:        { type: String, default: '' },
+    reference:  { type: String, default: '' },
+    refundedAt: { type: Date, default: null },
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('ReturnRequest', returnSchema);
