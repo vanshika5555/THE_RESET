@@ -59,3 +59,4 @@
   .login { justify-content: flex-start; padding-top: 64px; }
   .login-card { padding: 26px 20px; }
 }
+.login-code { font-size: 22px; letter-spacing: .3em; text-align: center; font-variant-numeric: tabular-nums; }

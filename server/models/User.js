@@ -28,6 +28,13 @@ const userSchema = new mongoose.Schema({
   // leaked database cannot be used to reset anyone's password.
   resetPasswordHash:    { type: String, default: null, select: false },
   resetPasswordExpires: { type: Date,   default: null, select: false },
+
+  // 2-step verification (admins): an authenticator-app code after the password.
+  twoFactorEnabled: { type: Boolean, default: false },
+  twoFactorSecret:  { type: String, default: '', select: false },
+  twoFactorPending: { type: String, default: '', select: false },   // during setup
+  twoFactorLastStep: { type: Number, default: 0, select: false },   // stops a code being reused
+  twoFactorBackup:  { type: [String], default: [], select: false }, // SHA-256 of one-use backup codes
   addresses: { type: [addressSchema], default: [] },
 
   // What this customer is currently interested in. Kept on the account so

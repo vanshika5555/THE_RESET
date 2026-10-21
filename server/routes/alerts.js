@@ -28,7 +28,7 @@ async function optionalUser(req) {
   try {
     const d = jwt.verify(h.slice(7), process.env.JWT_SECRET);
     const u = await User.findById(d.id).select('email tokenVersion');
-    return u && (d.v || 0) === (u.tokenVersion || 0) ? u : null;
+    return u && !d.purpose && (d.v || 0) === (u.tokenVersion || 0) ? u : null;
   } catch { return null; }
 }
 

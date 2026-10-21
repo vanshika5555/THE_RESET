@@ -145,10 +145,105 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     clearFailures(key);
+    // 2-step verification on: the password alone isn't enough. Hand back a
+    // 5-minute ticket that only /login/2fa accepts.
+    if (user.twoFactorEnabled) {
+      const ticket = jwt.sign({ id: user._id, purpose: '2fa' }, process.env.JWT_SECRET, { expiresIn: '5m' });
+      return res.json({ twoFactorRequired: true, ticket, message: 'Enter the 6-digit code from your authenticator app.' });
+    }
     res.json(session(user));
   } catch (err) {
     res.status(400).json({ message: 'Could not sign in. Please try again.' });
   }
+});
+
+/* ───────────── 2-step verification ───────────── */
+
+const totp = require('../utils/totp');
+const sha = (v) => crypto.createHash('sha256').update(String(v)).digest('hex');
+const backupCodes = () => Array.from({ length: 8 }, () => {
+  const raw = crypto.randomBytes(5).toString('hex').toUpperCase();   // 10 characters
+  return `${raw.slice(0, 5)}-${raw.slice(5)}`;
+});
+
+// Checks an authenticator code (never the same one twice) or a backup code (used up).
+async function secondFactorOk(user, code) {
+  const c = String(code || '').trim();
+  const step = totp.verify(user.twoFactorSecret, c);
+  if (step !== null) {
+    const r = await User.updateOne(
+      { _id: user._id, twoFactorLastStep: { $lt: step } },
+      { $set: { twoFactorLastStep: step } }
+    );
+    return r.modifiedCount === 1;
+  }
+  const hashed = sha(c.toUpperCase().replace(/\s/g, ''));
+  if (user.twoFactorBackup.includes(hashed)) {
+    const r = await User.updateOne({ _id: user._id, twoFactorBackup: hashed }, { $pull: { twoFactorBackup: hashed } });
+    return r.modifiedCount === 1;
+  }
+  return false;
+}
+
+// POST /api/auth/login/2fa — { ticket, code } → the real session
+router.post('/login/2fa', authLimiter, async (req, res) => {
+  try {
+    let data;
+    try { data = jwt.verify(str(req.body.ticket), process.env.JWT_SECRET); } catch { data = null; }
+    if (!data || data.purpose !== '2fa') return res.status(401).json({ message: 'That sign-in took too long. Enter your password again.' });
+    const user = await User.findById(data.id).select('+twoFactorSecret +twoFactorBackup +twoFactorLastStep');
+    if (!user || !user.twoFactorEnabled) return res.status(401).json({ message: 'Please sign in again.' });
+    if (!(await secondFactorOk(user, req.body.code))) {
+      return res.status(401).json({ message: 'That code isn’t right. Use the newest code from your app, or a backup code.' });
+    }
+    res.json(session(user));
+  } catch (err) {
+    res.status(400).json({ message: 'Could not sign in. Please try again.' });
+  }
+});
+
+// GET /api/auth/2fa — is it on, and how many backup codes are left
+router.get('/2fa', protect, async (req, res) => {
+  const user = await User.findById(req.user._id).select('+twoFactorBackup');
+  res.json({ enabled: !!user?.twoFactorEnabled, backupLeft: user?.twoFactorBackup?.length || 0 });
+});
+
+// POST /api/auth/2fa/setup — a fresh secret to add to the authenticator app (admins)
+router.post('/2fa/setup', protect, adminOnly, async (req, res) => {
+  const secret = totp.newSecret();
+  await User.updateOne({ _id: req.user._id }, { $set: { twoFactorPending: secret } });
+  res.json({ secret, otpauth: totp.otpauthUrl(secret, req.user.email) });
+});
+
+// POST /api/auth/2fa/enable — { code } proves the app is set up; returns backup codes once
+router.post('/2fa/enable', protect, adminOnly, authLimiter, async (req, res) => {
+  const user = await User.findById(req.user._id).select('+twoFactorPending');
+  if (!user?.twoFactorPending) return res.status(400).json({ message: 'Start the setup again.' });
+  const step = totp.verify(user.twoFactorPending, req.body.code);
+  if (step === null) return res.status(400).json({ message: 'That code isn’t right. Check the time on your phone is set automatically, and try the newest code.' });
+  const codes = backupCodes();
+  await User.updateOne({ _id: user._id }, {
+    $set: {
+      twoFactorEnabled: true,
+      twoFactorSecret: user.twoFactorPending,
+      twoFactorPending: '',
+      twoFactorLastStep: step,
+      twoFactorBackup: codes.map((c) => sha(c)),
+    },
+    $inc: { tokenVersion: 1 },   // other devices sign in again, this time with a code
+  });
+  const fresh = await User.findById(user._id);
+  res.json({ ...session(fresh), backupCodes: codes });
+});
+
+// POST /api/auth/2fa/disable — { password, code }
+router.post('/2fa/disable', protect, authLimiter, async (req, res) => {
+  const user = await User.findById(req.user._id).select('+twoFactorSecret +twoFactorBackup +twoFactorLastStep');
+  if (!user?.twoFactorEnabled) return res.json({ enabled: false });
+  if (!(await user.matchPassword(str(req.body.password)))) return res.status(400).json({ message: 'That password is not right.' });
+  if (!(await secondFactorOk(user, req.body.code))) return res.status(400).json({ message: 'That code isn’t right.' });
+  await User.updateOne({ _id: user._id }, { $set: { twoFactorEnabled: false, twoFactorSecret: '', twoFactorBackup: [], twoFactorLastStep: 0 } });
+  res.json({ enabled: false });
 });
 
 /**

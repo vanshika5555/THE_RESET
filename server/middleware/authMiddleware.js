@@ -17,6 +17,8 @@ const protect = async (req, res, next) => {
   try {
     const token = header.slice(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Short-lived tickets (e.g. half-way through 2-step sign-in) are not sessions.
+    if (decoded.purpose) return res.status(401).json({ message: 'Not authorized, please sign in again' });
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {

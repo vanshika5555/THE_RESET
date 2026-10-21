@@ -50,6 +50,11 @@ const icons = {
       <rect x="12" y="8" width="3" height="10" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/>
     </svg>
   ),
+  security: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+    </svg>
+  ),
   add: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <circle cx="12" cy="12" r="10"/>
@@ -69,6 +74,7 @@ const links = [
   { to: '/coupons',      label: 'Discount codes', icon: icons.discounts },
   { to: '/products',     label: 'Products',    icon: icons.products },
   { to: '/products/add', label: 'Add product', icon: icons.add },
+  { to: '/security',     label: 'Security',    icon: icons.security },
 ];
 
 // Phone bottom tab bar — five tabs, thumb-reachable. "Add Product" lives

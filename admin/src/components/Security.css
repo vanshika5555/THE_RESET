@@ -1,0 +1,24 @@
+.sec { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.sec-panel { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.sec-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.sec-text { margin-top: 4px; font-size: 14px; color: var(--text-2); line-height: 1.55; }
+.sec-badge { flex-shrink: 0; padding: 4px 12px; border-radius: 999px; background: var(--grey-bg); color: var(--text-2); font-size: 13px; font-weight: 600; }
+.sec-badge--on { background: var(--green-bg); color: var(--green); }
+.sec-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sec-setup { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: start; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+.sec-qr { padding: 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: #fff; }
+.sec-qr img { display: block; image-rendering: pixelated; }
+.sec-steps { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.sec-step { font-size: 14.5px; font-weight: 600; margin-top: 4px; }
+.sec-key { display: block; padding: 10px 12px; background: var(--hover); border-radius: var(--r-sm); font-size: 15px; letter-spacing: .06em; overflow-wrap: anywhere; user-select: all; }
+.sec-confirm { display: flex; gap: 8px; width: 100%; }
+.sec-code-input { max-width: 160px; font-size: 18px; letter-spacing: .25em; text-align: center; }
+.sec-codes { padding: 16px; border: 1.5px solid #000; border-radius: var(--r-md); display: flex; flex-direction: column; gap: 10px; }
+.sec-code-list { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; }
+.sec-off { display: flex; flex-direction: column; gap: 12px; max-width: 360px; }
+.sec-left { margin-top: 0; }
+@media (max-width: 768px) {
+  .sec-setup { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .sec-steps { width: 100%; }
+  .sec-code-input { max-width: none; flex: 1; }
+}

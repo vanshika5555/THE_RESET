@@ -44,6 +44,12 @@ export default function AuthPage() {
         : { name: form.name.trim(), email: form.email.trim(), password: form.password };
 
       const res = await axios.post(url, payload);
+      // Admin accounts with 2-step verification sign in from the admin panel.
+      if (res.data.twoFactorRequired) {
+        setError('This account uses 2-step verification. Sign in from the admin panel.');
+        setLoading(false);
+        return;
+      }
       login(res.data);
       navigate(from, { replace: true });
     } catch (err) {

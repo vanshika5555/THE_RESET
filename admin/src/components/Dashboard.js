@@ -109,6 +109,7 @@ export default function Dashboard({ name }) {
         </p>
       </div>
       <Link to="/products/add" className="btn btn--primary only-desktop">Add product</Link>
+      <Link to="/security" className="panel-link only-mobile">Security</Link>
     </div>
   );
 
