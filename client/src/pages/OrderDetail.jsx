@@ -7,6 +7,7 @@ import { cdn } from '../utils/img';
 import ReturnPanel from '../components/ReturnPanel';
 import openInvoice from '../utils/openInvoice';
 import { formatPrice } from '../utils/price';
+import useBuyAgain from '../hooks/useBuyAgain';
 
 const inr = (n) => '₹' + (n || 0).toLocaleString('en-IN');
 
@@ -43,6 +44,7 @@ export default function OrderDetail() {
   const [cancelling, setCancelling] = useState(false);
   const [awbCopied, setAwbCopied] = useState(false);
   const [invoiceError, setInvoiceError] = useState('');
+  const [buyAgain, buying, buyNote] = useBuyAgain();
 
   usePageMeta({ title: 'Order details' });
 
@@ -286,6 +288,15 @@ export default function OrderDetail() {
                 Download invoice
               </button>
               {invoiceError && <p className="od-invoice-error" role="alert">{invoiceError}</p>}
+            </>
+          )}
+
+          {['Delivered', 'Cancelled'].includes(order.status) && (
+            <>
+              <button type="button" className="od-again-btn" onClick={() => buyAgain(order)} disabled={buying}>
+                {buying ? 'Adding…' : 'Buy again'}
+              </button>
+              {buyNote && <p className="od-again-note" role="status">{buyNote}</p>}
             </>
           )}
 

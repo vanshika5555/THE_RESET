@@ -26,9 +26,10 @@ function readCache() {
   } catch { return null; }
 }
 
-function writeCache(products, orders) {
+function writeCache(products, orders, questions = 0) {
   try {
     localStorage.setItem(DASH_CACHE_KEY, JSON.stringify({
+      questions,
       products: (products || []).map((p) => ({
         _id: p._id, name: p.name, inStock: p.inStock, stock: p.stock, sizes: p.sizes,
         category: p.category, subcategory: p.subcategory, image: p.image, color: p.color,
@@ -81,24 +82,25 @@ export default function Dashboard({ name }) {
   const [failed, setFailed]     = useState(false);
   // Shoppers who asked "notify me" on a sold-out size: [{ product, name, size, waiting }]
   const [waiting, setWaiting]   = useState([]);
-  const [questions, setQuestions] = useState(0);   // shoppers' questions waiting for an answer
+  // Shoppers' questions waiting for an answer — loaded with the rest so the card doesn't pop in late.
+  const [questions, setQuestions] = useState(Number(cached?.questions) || 0);
 
   useEffect(() => {
     let ok = true;
     Promise.all([
       axios.get('/api/products').catch(() => { ok = false; return { data: null }; }),
       axios.get('/api/orders').catch(() => { ok = false; return { data: null }; }),
-    ]).then(([p, o]) => {
+      axios.get('/api/questions/count').catch(() => ({ data: null })),
+    ]).then(([p, o, q]) => {
       if (p.data) setProducts(p.data);
       if (o.data) setOrders(o.data);
+      const openQuestions = Number(q.data?.open) || 0;
+      setQuestions(openQuestions);
       setFailed(!ok);
       setLoading(false);
-      if (ok) writeCache(p.data, o.data);
+      if (ok) writeCache(p.data, o.data, openQuestions);
     });
     // Extra, not essential: if this fails the dashboard simply doesn't show it.
-    axios.get('/api/questions/count')
-      .then((res) => setQuestions(Number(res.data?.open) || 0))
-      .catch(() => {});
     axios.get('/api/alerts/summary')
       .then((res) => setWaiting(Array.isArray(res.data) ? res.data : []))
       .catch(() => {});

@@ -271,3 +271,9 @@
 .od-log-text { font-size: 14px; line-height: 1.45; color: #111; overflow-wrap: anywhere; }
 .od-log-row:not(:first-child) .od-log-text { color: #555; }
 .od-log-when { font-size: 12.5px; color: #888; }
+
+/* ---------- buy again ---------- */
+.od-again-btn { width: 100%; min-height: 48px; border: 1px solid #111; background: #111; color: #fff; font: inherit; font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.od-again-btn:hover { background: #333; }
+.od-again-btn:disabled { opacity: .5; cursor: wait; }
+.od-again-note { margin: -8px 0 0; font-size: 13px; line-height: 1.5; color: #8a4b06; }

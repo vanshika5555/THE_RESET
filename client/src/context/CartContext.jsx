@@ -89,6 +89,21 @@ export function CartProvider({ children }) {
     setJustAdded({ product, size, at: Date.now() });
   };
 
+  // Several pieces at once ("Buy again"): [{ product, size, qty }], then open the bag.
+  const addManyToCart = (lines) => {
+    if (!lines.length) return;
+    setCart(prev => {
+      const next = [...prev];
+      for (const { product, size, qty } of lines) {
+        const at = next.findIndex(i => i._id === product._id && i.size === size);
+        if (at !== -1) next[at] = { ...next[at], qty: next[at].qty + qty };
+        else next.push({ ...product, size, qty });
+      }
+      return next;
+    });
+    setCartOpen(true);
+  };
+
   const removeFromCart = (i) => setCart(prev => prev.filter((_, idx) => idx !== i));
 
   const changeQty = (i, qty) =>
@@ -101,7 +116,7 @@ export function CartProvider({ children }) {
   return (
     <CartContext.Provider value={{
       cart, cartOpen, setCartOpen, justAdded, setJustAdded,
-      addToCart, removeFromCart, changeQty, clearCart, cartCount
+      addToCart, addManyToCart, removeFromCart, changeQty, clearCart, cartCount
     }}>
       {children}
     </CartContext.Provider>

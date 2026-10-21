@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './MyOrders.css';
 import { formatPrice } from '../utils/price';
+import useBuyAgain from '../hooks/useBuyAgain';
 
 const STATUS_COLORS = {
   Pending:   { bg: '#fefce8', color: '#854d0e', border: '#fde68a' },
@@ -20,6 +21,8 @@ export default function MyOrders() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
   const [error, setError] = useState('');
+  const [buyAgain, buying, buyNote] = useBuyAgain();
+  const [againFor, setAgainFor] = useState(null);   // which order the note is about
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -127,10 +130,24 @@ export default function MyOrders() {
                         {cancelling === order._id ? 'Cancelling...' : 'Cancel Order'}
                       </button>
                     </>
-                  ) : order.status === 'Cancelled' ? (
-                    <span className="mo-action-note">This order was cancelled.</span>
-                  ) : order.status === 'Delivered' ? (
-                    <span className="mo-action-note">Delivered. Need help? See our <Link to="/help#returns" className="mo-inline-link">returns page</Link>.</span>
+                  ) : ['Cancelled', 'Delivered'].includes(order.status) ? (
+                    <>
+                      <span className="mo-action-note">
+                        {againFor === order._id && buyNote
+                          ? buyNote
+                          : order.status === 'Cancelled'
+                            ? 'This order was cancelled.'
+                            : <>Delivered. Need help? See our <Link to="/help#returns" className="mo-inline-link">returns page</Link>.</>}
+                      </span>
+                      <button
+                        type="button"
+                        className="mo-again-btn"
+                        disabled={buying}
+                        onClick={() => { setAgainFor(order._id); buyAgain(order); }}
+                      >
+                        {buying && againFor === order._id ? 'Adding…' : 'Buy again'}
+                      </button>
+                    </>
                   ) : order.status === 'Shipped' && order.shipment?.trackingUrl ? (
                     <>
                       <span className="mo-action-note">
