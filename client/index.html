@@ -37,6 +37,32 @@
     <meta name="twitter:image" content="https://the-reset-snowy.vercel.app/og.jpg" />
     <meta name="robots" content="index, follow" />
     <title>THE RESET — Considered Essentials</title>
+    <!-- Tells Google the shop's name, logo and how to search it (a search box can show under the result). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://the-reset-snowy.vercel.app/#org",
+            "name": "THE RESET",
+            "url": "https://the-reset-snowy.vercel.app/",
+            "logo": "https://the-reset-snowy.vercel.app/logo512.png"
+          },
+          {
+            "@type": "WebSite",
+            "name": "THE RESET",
+            "url": "https://the-reset-snowy.vercel.app/",
+            "publisher": { "@id": "https://the-reset-snowy.vercel.app/#org" },
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://the-reset-snowy.vercel.app/search?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

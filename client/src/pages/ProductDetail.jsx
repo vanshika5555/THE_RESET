@@ -16,6 +16,8 @@ import ImageLightbox from '../components/ImageLightbox';
 import './ProductDetail.css';
 import { cdn } from '../utils/img';
 import usePageMeta from '../hooks/usePageMeta';
+import useJsonLd from '../hooks/useJsonLd';
+import { cachedGet } from '../utils/fetchCache';
 import Price from '../components/Price';
 import { formatPrice } from '../utils/price';
 
@@ -47,6 +49,7 @@ export default function ProductDetail() {
   const [showBar, setShowBar] = useState(false);   // phone: sticky Add to Bag
   const [copied, setCopied] = useState(false);     // "Link copied" after Share
   const [colours, setColours] = useState([]);      // this style in every colour
+  const [rating, setRating] = useState(null);      // { avg, count } for search results
   const location = useLocation();
   const copiedTimer = useRef(null);
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
@@ -63,6 +66,47 @@ export default function ProductDetail() {
       : undefined,
     image: product ? ((product.images && product.images[0]) || product.image) : undefined,
   });
+
+  // What Google shows under the link: price, stock, rating, breadcrumbs.
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const absolute = (u) => (!u ? undefined : u.startsWith('http') ? u : origin + u);
+  const totalLeft = product
+    ? ((product.stock || []).length
+      ? (product.stock || []).filter((s) => (product.sizes || []).includes(s.size)).reduce((n, s) => n + (s.qty || 0), 0)
+      : (product.inStock === false ? 0 : 1))
+    : 0;
+  useJsonLd('ld-product', product ? {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.colorName ? `${product.name} — ${product.colorName}` : product.name,
+    description: product.description || `${product.subcategory} for ${String(product.category).toLowerCase()}`,
+    image: ((product.images && product.images.length) ? product.images : [product.image]).filter(Boolean).map(absolute),
+    sku: String(product._id),
+    brand: { '@type': 'Brand', name: 'THE RESET' },
+    category: `${product.category} > ${product.subcategory}`,
+    ...(product.colorName ? { color: product.colorName } : {}),
+    offers: {
+      '@type': 'Offer',
+      url: `${origin}/product/${product._id}`,
+      priceCurrency: 'INR',
+      price: Number(product.price) || 0,
+      availability: product.inStock !== false && totalLeft > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+    },
+    ...(rating && rating.count > 0 ? {
+      aggregateRating: { '@type': 'AggregateRating', ratingValue: rating.avg, reviewCount: rating.count, bestRating: 5, worstRating: 1 },
+    } : {}),
+  } : null);
+  useJsonLd('ld-breadcrumbs', product ? {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${origin}/` },
+      { '@type': 'ListItem', position: 2, name: product.category, item: `${origin}/${String(product.category).toLowerCase()}` },
+      { '@type': 'ListItem', position: 3, name: product.subcategory, item: `${origin}/${String(product.category).toLowerCase()}?sub=${encodeURIComponent(product.subcategory)}` },
+      { '@type': 'ListItem', position: 4, name: product.name, item: `${origin}/product/${product._id}` },
+    ],
+  } : null);
 
   const { addToCart, setCartOpen, setJustAdded } = useCart();
   const { toggleWishlist, isWished } = useWishlist();
@@ -89,6 +133,11 @@ export default function ProductDetail() {
         setError('Sorry, we could not find that product.');
         setLoading(false);
       });
+
+    setRating(null);
+    cachedGet(`/api/reviews/summary/${id}`)
+      .then((r) => { if (active) setRating(r); })
+      .catch(() => {});
 
     axios.get(`/api/products/${id}/colours`)
       .then(res => { if (active) setColours(Array.isArray(res.data) ? res.data : []); })
