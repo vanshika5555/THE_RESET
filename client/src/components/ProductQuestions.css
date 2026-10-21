@@ -1,0 +1,18 @@
+.pq-section { margin-top: 48px; scroll-margin-top: 90px; }
+.pq-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+.pq-label { font-size: 13px; font-weight: 600; color: #111; }
+.pq-left { align-self: flex-end; font-size: 12px; color: #999; }
+.pq-sent { margin: 0 0 14px; padding: 10px 12px; background: #edf7f0; color: #166534; font-size: 14px; }
+.pq-list { list-style: none; margin: 24px 0 0; padding: 0; }
+.pq-item { padding: 18px 0; border-top: 1px solid #eee; }
+.pq-item:first-child { border-top: none; padding-top: 0; }
+.pq-q, .pq-a { display: flex; gap: 12px; margin: 0; }
+.pq-q { font-size: 15px; font-weight: 600; color: #111; line-height: 1.5; overflow-wrap: anywhere; }
+.pq-a { margin-top: 10px; }
+.pq-a-text { margin: 0; font-size: 14.5px; line-height: 1.6; color: #333; white-space: pre-line; overflow-wrap: anywhere; }
+.pq-mark { flex: 0 0 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #111; font-size: 11px; font-weight: 700; line-height: 1; margin-top: 1px; }
+.pq-mark--a { background: #111; color: #fff; }
+.pq-meta { margin: 6px 0 0; font-size: 12.5px; color: #6b6b6b; }
+.pq-asker { margin-left: 34px; }
+.pq-waiting { margin: 8px 0 0 34px; font-size: 13.5px; color: #8a4b06; }
+.pq-more { margin-top: 8px; border: 0; background: none; padding: 8px 0; font: inherit; font-size: 14px; color: #111; text-decoration: underline; cursor: pointer; }

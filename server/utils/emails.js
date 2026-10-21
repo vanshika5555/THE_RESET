@@ -333,6 +333,24 @@ function priceDrop({ name, product, stopUrl }) {
   return { subject, html, text };
 }
 
+// ---------- product questions ----------
+
+function questionAnswered({ name, question, product }) {
+  const url = `${SHOP_URL()}/product/${product._id}#questions`;
+  const subject = `We answered your question about ${product.name}`;
+  const text = `Hi ${firstName(name)},\n\nYou asked: "${question.text}"\n\nOur answer: ${question.answer.text}\n\nSee it on the product page: ${url}`;
+  const html = layout({
+    preheader: question.answer.text.slice(0, 90),
+    heading: 'Here’s your answer.',
+    body: `You asked about <strong>${esc(product.name)}</strong>:
+      <p style="margin:14px 0;padding:12px 14px;background:#f7f7f5;color:#555;font-style:italic">“${esc(question.text)}”</p>
+      <p style="margin:0;color:#111;white-space:pre-line">${esc(question.answer.text)}</p>
+      <p style="margin:16px 0 0;font-size:13px;color:#888">The answer is now on the product page too, for anyone with the same question.</p>`,
+    cta: { href: url, label: 'See the piece' },
+  });
+  return { subject, html, text };
+}
+
 // ---------- gift cards ----------
 
 function giftCard({ card, code }) {
@@ -373,4 +391,4 @@ function giftCardReceipt({ card, name }) {
   return { subject, html, text };
 }
 
-module.exports = { giftCard, giftCardReceipt, layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };
+module.exports = { questionAnswered, giftCard, giftCardReceipt, layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };

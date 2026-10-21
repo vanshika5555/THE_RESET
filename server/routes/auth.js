@@ -690,16 +690,17 @@ router.get('/export', protect, async (req, res) => {
     const user = await User.findById(req.user._id)
       .select('-password -tokenVersion -resetPasswordHash -resetPasswordExpires -__v').lean();
     const CreditLog = require('../models/CreditLog');
-    const [orders, reviews, returns, alerts, newsletter, storeCredit] = await Promise.all([
+    const [orders, reviews, returns, alerts, newsletter, storeCredit, questions] = await Promise.all([
       Order.find({ user: req.user._id }).select('-adminNote -history.by -__v').lean(),
       Review.find({ user: req.user._id }).select('-__v').lean(),
       ReturnRequest.find({ user: req.user._id }).select('-__v').lean(),
       StockAlert.find({ email: user.email }).select('-__v').lean(),
       Subscriber.findOne({ email: user.email }).select('-__v').lean(),
       CreditLog.find({ user: req.user._id }).select('-__v -by').lean(),
+      require('../models/Question').find({ user: req.user._id }).select('-__v -answer.by').lean(),
     ]);
     res.set('Content-Disposition', 'attachment; filename="the-reset-my-data.json"');
-    res.json({ exportedAt: new Date(), account: user, orders, reviews, returns, backInStockAlerts: alerts, newsletter, storeCredit });
+    res.json({ exportedAt: new Date(), account: user, orders, reviews, returns, backInStockAlerts: alerts, newsletter, storeCredit, questions });
   } catch (err) {
     res.status(500).json({ message: 'Could not prepare your data. Try again.' });
   }
@@ -731,6 +732,7 @@ router.delete('/account', protect, authLimiter, async (req, res) => {
     await Order.updateMany({ user: user._id }, { $set: { user: null, guest: { name: 'Deleted account', email: '' } } });
     await ReturnRequest.updateMany({ user: user._id }, { $set: { user: null } });
     await Review.deleteMany({ user: user._id });
+    await require('../models/Question').deleteMany({ user: user._id });
     await StockAlert.deleteMany({ $or: [{ user: user._id }, { email: user.email }] });
     await Subscriber.deleteOne({ email: user.email });
     await User.deleteOne({ _id: user._id });

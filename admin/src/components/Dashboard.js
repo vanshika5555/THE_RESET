@@ -81,6 +81,7 @@ export default function Dashboard({ name }) {
   const [failed, setFailed]     = useState(false);
   // Shoppers who asked "notify me" on a sold-out size: [{ product, name, size, waiting }]
   const [waiting, setWaiting]   = useState([]);
+  const [questions, setQuestions] = useState(0);   // shoppers' questions waiting for an answer
 
   useEffect(() => {
     let ok = true;
@@ -95,11 +96,15 @@ export default function Dashboard({ name }) {
       if (ok) writeCache(p.data, o.data);
     });
     // Extra, not essential: if this fails the dashboard simply doesn't show it.
+    axios.get('/api/questions/count')
+      .then((res) => setQuestions(Number(res.data?.open) || 0))
+      .catch(() => {});
     axios.get('/api/alerts/summary')
       .then((res) => setWaiting(Array.isArray(res.data) ? res.data : []))
       .catch(() => {});
   }, []);
 
+  const isOwner = (() => { try { return (localStorage.getItem('theresetAdminRole') || 'admin') === 'admin'; } catch { return true; } })();
   const hello = (
     <div className="dash-hello">
       <div>
@@ -109,7 +114,12 @@ export default function Dashboard({ name }) {
         </p>
       </div>
       <Link to="/products/add" className="btn btn--primary only-desktop">Add product</Link>
-      <Link to="/security" className="panel-link only-mobile">Security</Link>
+      {/* Phones have no sidebar: the owner's other pages are reached from here. */}
+      <span className="dash-more only-mobile">
+        {isOwner && <Link to="/gift-cards" className="panel-link">Gift cards</Link>}
+        {isOwner && <Link to="/team" className="panel-link">Team</Link>}
+        <Link to="/security" className="panel-link">Security</Link>
+      </span>
     </div>
   );
 
@@ -118,7 +128,7 @@ export default function Dashboard({ name }) {
     return (
       <div className="dash" aria-busy="true">
         {hello}
-        <div className="dash-tasks">
+        <div className={`dash-tasks ${tasks.length === 4 ? 'dash-tasks--4' : ''}`}>
           {[0, 1, 2].map((i) => <div key={i} className="skel skel--task" />)}
         </div>
         <div className="skel skel--sales" />
@@ -196,6 +206,13 @@ export default function Dashboard({ name }) {
       tone: 'red',
     },
   ];
+  // Only shown when there's something to answer.
+  if (questions > 0) {
+    tasks.push({
+      key: 'questions', to: '/questions', count: questions, label: 'Questions to answer',
+      detail: 'Shoppers asking about fit, fabric or care', tone: 'violet',
+    });
+  }
 
   return (
     <div className="dash">
@@ -208,7 +225,7 @@ export default function Dashboard({ name }) {
       )}
 
       {/* What needs doing */}
-      <div className="dash-tasks">
+      <div className={`dash-tasks ${tasks.length === 4 ? 'dash-tasks--4' : ''}`}>
         {tasks.map((t) => (
           <Link key={t.key} to={t.to} className={`task ${t.count ? `task--${t.tone}` : 'task--clear'}`}>
             <span className="task-count">{t.count}</span>

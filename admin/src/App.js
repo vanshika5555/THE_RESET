@@ -22,6 +22,7 @@ const Security    = lazy(() => import('./components/Security'));
 const Reviews     = lazy(() => import('./components/Reviews'));
 const Team        = lazy(() => import('./components/Team'));
 const GiftCards   = lazy(() => import('./components/GiftCards'));
+const Questions   = lazy(() => import('./components/Questions'));
 
 // After the first screen is up, quietly download the other pages so
 // tapping a tab opens instantly instead of flashing "Loading…".
@@ -60,6 +61,7 @@ const TITLES = [
   ['/reports',           'Reports'],
   ['/security',          'Security'],
   ['/reviews',           'Reviews'],
+  ['/questions',         'Questions'],
   ['/team',              'Team'],
   ['/gift-cards',        'Gift cards'],
   ['/',                  'Dashboard'],
@@ -161,6 +163,7 @@ function Shell({ name, role, onLogout }) {
             <Route path="/reports" element={<OwnerOnly role={role}><Reports /></OwnerOnly>} />
             <Route path="/security" element={<Security />} />
             <Route path="/reviews" element={<Reviews />} />
+            <Route path="/questions" element={<Questions />} />
             <Route path="/team" element={<OwnerOnly role={role}><Team /></OwnerOnly>} />
             <Route path="/gift-cards" element={<OwnerOnly role={role}><GiftCards /></OwnerOnly>} />
           </Routes>

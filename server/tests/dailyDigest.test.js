@@ -4,6 +4,7 @@ const { build, worthSending, istMidnight, dayKey } = require('../utils/dailyDige
 
 const data = (over = {}) => ({
   date: new Date('2026-10-21T00:00:00+05:30'),
+  questions: 0,
   toConfirm: 0, oldestPendingHours: 0, toShip: 0, returnsNew: 0, returnsBack: 0,
   cashOnTheRoad: { orders: 0, amount: 0 },
   sales: { orders: 0, amount: 0, pieces: 0 },

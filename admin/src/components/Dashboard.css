@@ -47,6 +47,7 @@
 }
 .task--amber .task-count { background: var(--amber-bg); color: var(--amber); }
 .task--blue  .task-count { background: var(--blue-bg);  color: var(--blue); }
+.task--violet .task-count { background: var(--violet-bg); color: var(--violet); }
 .task--red   .task-count { background: var(--red-bg);   color: var(--red); }
 
 .task-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -172,3 +173,10 @@
 }
 .dash-sales-head .panel-title { font-size: 15px; }
 @media (max-width: 768px) { .dash-sales-head { padding: 12px 16px; } }
+
+.dash-more { display: flex; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+@media (min-width: 769px) { .dash-more { display: none; } }
+
+/* Four to-dos (questions waiting): one row on wide screens, 2 × 2 on mid-size */
+@media (min-width: 1280px) { .dash-tasks--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 769px) and (max-width: 1279px) { .dash-tasks--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -65,6 +65,11 @@ const icons = {
       <rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M3 12h18"/><path d="M12 8v13"/><path d="M12 8c-1.5-3.5-5.5-4-5.5-1.5S10 8 12 8zM12 8c1.5-3.5 5.5-4 5.5-1.5S14 8 12 8z"/>
     </svg>
   ),
+  questions: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12z"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.3"/><path d="M12 16.6h.01"/>
+    </svg>
+  ),
   security: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
@@ -87,6 +92,7 @@ const LINKS = [
   { to: '/reports',      label: 'Reports',     icon: icons.reports, owner: true },
   { to: '/customers',    label: 'Customers',   icon: icons.customers, owner: true },
   { to: '/reviews',      label: 'Reviews',     icon: icons.reviews },
+  { to: '/questions',    label: 'Questions',   icon: icons.questions },
   { to: '/coupons',      label: 'Discount codes', icon: icons.discounts, owner: true },
   { to: '/gift-cards',   label: 'Gift cards',  icon: icons.gift, owner: true },
   { to: '/products',     label: 'Products',    icon: icons.products },

@@ -9,6 +9,7 @@ import StarRating from '../components/StarRating';
 import ProductReviews from '../components/ProductReviews';
 import RelatedProducts from '../components/RelatedProducts';
 import CompleteLook from '../components/CompleteLook';
+import ProductQuestions from '../components/ProductQuestions';
 import RecentlyViewed from '../components/RecentlyViewed';
 import NotifyMe from '../components/NotifyMe';
 import DeliveryCheck from '../components/DeliveryCheck';
@@ -592,6 +593,8 @@ export default function ProductDetail() {
       <CompleteLook productId={product._id} />
 
       <ProductReviews productId={product._id} />
+
+      <ProductQuestions productId={product._id} />
 
       <RelatedProducts product={product} />
 

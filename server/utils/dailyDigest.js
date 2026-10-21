@@ -16,6 +16,7 @@ const ReturnRequest = require('../models/ReturnRequest');
 const StockAlert = require('../models/StockAlert');
 const User = require('../models/User');
 const Counter = require('../models/Counter');
+const Question = require('../models/Question');
 const { sendMail } = require('./mailer');
 const { layout, inr, esc } = require('./emails');
 
@@ -42,7 +43,7 @@ async function gather(now = new Date()) {
   const yesterday = new Date(today.getTime() - DAY);
   const live = { 'payment.status': { $ne: 'Awaiting' } };
 
-  const [pending, toShip, onTheRoad, yOrders, returnsNew, returnsBack, products, waitingRows] = await Promise.all([
+  const [pending, toShip, onTheRoad, yOrders, returnsNew, returnsBack, products, waitingRows, questions] = await Promise.all([
     Order.find({ ...live, status: 'Pending' }).select('createdAt payment total').lean(),
     Order.countDocuments({ status: 'Confirmed' }),
     Order.find({ status: 'Shipped', 'payment.method': 'cod', 'payment.status': 'Pending' }).select('total subtotal payment.credit').lean(),
@@ -52,6 +53,7 @@ async function gather(now = new Date()) {
     ReturnRequest.countDocuments({ status: 'Received' }),
     Product.find({ inStock: { $ne: false } }).select('name stock').lean(),
     StockAlert.find({ notifiedAt: null }).select('product size').lean(),
+    Question.countDocuments({ status: 'open' }),
   ]);
 
   const waiting = {};
@@ -74,6 +76,7 @@ async function gather(now = new Date()) {
     toShip,
     returnsNew,
     returnsBack,
+    questions,
     cashOnTheRoad: { orders: onTheRoad.length, amount: onTheRoad.reduce((n, o) => n + Math.max(0, amount(o) - (Number(o.payment?.credit) || 0)), 0) },
     sales: {
       orders: yOrders.length,
@@ -89,7 +92,7 @@ async function gather(now = new Date()) {
 const plural = (n, word, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;
 
 // Is there anything worth an email?
-const worthSending = (d, owner) => d.toConfirm || d.toShip || d.returnsNew || d.returnsBack
+const worthSending = (d, owner) => d.toConfirm || d.toShip || d.returnsNew || d.returnsBack || d.questions
   || d.stock.length || (owner && d.sales.orders);
 
 function build(d, { name, owner }) {
@@ -108,6 +111,10 @@ function build(d, { name, owner }) {
       n: d.returnsBack, label: `${d.returnsBack === 1 ? 'return' : 'returns'} received — refund or exchange`,
       note: owner ? '' : 'refunds are sent by the owner', href: `${ADMIN_URL()}/returns`,
     });
+  }
+
+  if (d.questions) {
+    todo.push({ n: d.questions, label: `shopper ${d.questions === 1 ? 'question' : 'questions'} to answer`, href: `${ADMIN_URL()}/questions` });
   }
 
   const subjectBits = [];
