@@ -38,6 +38,8 @@ const productSchema = new mongoose.Schema({
   colorName:   { type: String, default: '', trim: true, maxlength: 30 },   // e.g. "Black"
   swatch:      { type: String, default: '', match: [/^(#[0-9a-fA-F]{6})?$/, 'Swatch must be a colour like #1a1a1a'] },
   styleGroup:  { type: String, default: '', index: true },
+  // The last lowered price wishlist shoppers were emailed about (0 = none yet).
+  lowestNotifiedPrice: { type: Number, default: 0 },
   inStock:     { type: Boolean, default: true },     // master switch — hide it regardless of counts
 }, { timestamps: true });
 

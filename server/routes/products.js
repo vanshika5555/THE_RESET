@@ -4,6 +4,7 @@ const Product = require('../models/Product');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const { notifyRestocked } = require('./alerts');
+const { notifyPriceDrop } = require('../utils/priceDrops');
 
 // GET all products  (public — the shop needs this)
 router.get('/', async (req, res) => {
@@ -83,7 +84,7 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
   try {
     // Bump the version so an order being placed at this exact moment
     // re-reads the product instead of overwriting this edit (see orders.js).
-    const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, ...changes } = req.body || {};
+    const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, lowestNotifiedPrice, ...changes } = req.body || {};
     const group = await groupFor(linkTo, req.params.id);
     if (group !== undefined) changes.styleGroup = group;
     const before = await Product.findById(req.params.id).lean();
@@ -94,6 +95,7 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
     );
     if (!updated) return res.status(404).json({ message: 'Product not found' });
     notifyRestocked(before, updated.toObject());   // emails anyone waiting; never blocks the save
+    notifyPriceDrop(before, updated.toObject());   // wishlist shoppers hear about a lower price
     res.json(updated);
   } catch (err) {
     res.status(err.status || 400).json({ message: err.message });

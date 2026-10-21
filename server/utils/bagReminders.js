@@ -95,4 +95,4 @@ function startBagReminders() {
   console.log('Bag reminders on (one email a day after a bag is left).');
 }
 
-module.exports = { startBagReminders, sendDue, validOff };
+module.exports = { startBagReminders, sendDue, validOff, offLink };

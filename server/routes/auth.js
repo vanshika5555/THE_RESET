@@ -403,8 +403,8 @@ router.get('/reminders/off', async (req, res) => {
 <title>THE RESET</title>
 <div style="max-width:440px;margin:80px auto;padding:0 20px;font:16px/1.6 Helvetica,Arial,sans-serif;color:#111">
 <p style="font-weight:800;letter-spacing:.04em">THE RESET</p>
-<h1 style="font-size:24px">${ok ? 'Reminders turned off' : 'This link is not valid'}</h1>
-<p style="color:#555">${ok ? "We won't email you about items left in your bag. Order and delivery emails still arrive as usual." : 'It may have been copied incorrectly.'}</p>
+<h1 style="font-size:24px">${ok ? 'Shopping emails turned off' : 'This link is not valid'}</h1>
+<p style="color:#555">${ok ? "We won't email you about your bag or price drops on your wishlist. Order and delivery emails still arrive as usual." : 'It may have been copied incorrectly.'}</p>
 <p><a href="${shop}" style="color:#111">Back to the shop</a></p></div>`);
 });
 

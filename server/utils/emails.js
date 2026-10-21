@@ -270,10 +270,35 @@ function bagReminder({ name, items, stopUrl }) {
     heading: 'Still in your bag.',
     body: `Hi ${esc(firstName(name))}, you left ${items.length === 1 ? 'this' : 'these'} behind. We've kept ${items.length === 1 ? 'it' : 'them'} saved for you.
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px">${rows}</table>${extra}
-      <br><span style="color:#aaa;font-size:12px">One reminder per bag. <a href="${esc(stopUrl)}" style="color:#888">Stop these reminders</a>.</span>`,
+      <br><span style="color:#aaa;font-size:12px">One reminder per bag. <a href="${esc(stopUrl)}" style="color:#888">Stop these emails</a>.</span>`,
     cta: { href: bagUrl, label: 'Back to your bag' },
   });
   return { subject, html, text };
 }
 
-module.exports = { bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };
+function priceDrop({ name, product, stopUrl }) {
+  const url = `${SHOP_URL()}/product/${product._id}`;
+  const img = (product.images && product.images[0]) || product.image;
+  const title = product.colorName ? `${product.name} — ${product.colorName}` : product.name;
+  const off = product.wasPrice > product.price ? Math.round((1 - product.price / product.wasPrice) * 100) : 0;
+  const subject = `Price drop: ${title} is now ${inr(product.price)}`;
+  const text = `Hi ${firstName(name)},\n\n${title} from your wishlist is now ${inr(product.price)}${off ? ` (was ${inr(product.wasPrice)}, ${off}% off)` : ''}.\n${url}\n\nStop these emails: ${stopUrl}`;
+  const html = layout({
+    preheader: `Now ${inr(product.price)}${off ? ` — ${off}% off` : ''}. From your wishlist.`,
+    heading: 'It just got cheaper.',
+    body: `Hi ${esc(firstName(name))}, something on your wishlist dropped in price.
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px"><tr>
+        ${img ? `<td width="120" style="padding-right:16px;vertical-align:top"><a href="${url}"><img src="${esc(img)}" alt="" width="120" style="display:block;width:120px;height:150px;object-fit:cover;background:#f2f2f1"></a></td>` : ''}
+        <td style="vertical-align:top;font:400 15px/1.5 Helvetica,Arial,sans-serif;color:#111">
+          <a href="${url}" style="color:#111;text-decoration:none;font-weight:600">${esc(title)}</a><br>
+          <span style="font-size:22px;font-weight:700">${inr(product.price)}</span>
+          ${off ? `<span style="color:#999;text-decoration:line-through;margin-left:6px">${inr(product.wasPrice)}</span><br><span style="color:#8a4b06;font-size:13px;font-weight:600">${off}% off</span>` : ''}
+        </td>
+      </tr></table>
+      <br><span style="color:#aaa;font-size:12px">You saved this to your wishlist. <a href="${esc(stopUrl)}" style="color:#888">Stop these emails</a>.</span>`,
+    cta: { href: url, label: 'Shop it now' },
+  });
+  return { subject, html, text };
+}
+
+module.exports = { priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };
