@@ -51,6 +51,9 @@ export default function Reviews() {
                   <span className="rv-stars" aria-label={`${r.rating} out of 5`}>{'★'.repeat(r.rating)}<span>{'★'.repeat(5 - r.rating)}</span></span>
                   <strong>{r.userName}</strong>
                   {r.verified && <span className="rv-verified">Verified buyer</span>}
+                  {(r.fit || r.size) && (
+                    <span className="rv-fit">{[r.fit && { small: 'Runs small', true: 'True to size', large: 'Runs large' }[r.fit], r.size && `Size ${r.size}`].filter(Boolean).join(' · ')}</span>
+                  )}
                   <span className="rv-date">{fmtDate(r.createdAt)}</span>
                 </div>
                 <p className="rv-product">{r.product?.name || 'Deleted product'}</p>

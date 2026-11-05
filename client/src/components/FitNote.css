@@ -1,0 +1,10 @@
+.fn { margin: 0 0 16px; font-family: 'Archivo', sans-serif; }
+.fn-line { margin: 0 0 10px; font-size: 13.5px; line-height: 1.5; color: #555; }
+.fn-line strong { color: #111; font-weight: 600; }
+.fn-n { color: #999; }
+.fn-guide { padding: 0; border: 0; background: none; font: inherit; color: #111; text-decoration: underline; cursor: pointer; }
+.fn-scale { max-width: 340px; }
+.fn-track { position: relative; display: block; height: 2px; background: #e5e5e5; margin: 0 6px; }
+.fn-track::before { content: ''; position: absolute; left: 50%; top: -3px; width: 1px; height: 8px; background: #ccc; }
+.fn-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: #111; transform: translate(-50%, -50%); }
+.fn-ends { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; letter-spacing: 0.04em; color: #999; }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FIT_OPTIONS, fitLabel } from '../utils/fit';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +24,7 @@ export default function ProductReviews({ productId }) {
   const [loading, setLoading] = useState(true);
 
   const [rating, setRating] = useState(0);
+  const [fit, setFit] = useState('');
   const [hover, setHover]   = useState(0);
   const [text, setText]     = useState('');
   const [saving, setSaving] = useState(false);
@@ -50,6 +52,7 @@ export default function ProductReviews({ productId }) {
 
   const openForm = () => {
     setRating(mine ? mine.rating : 0);
+    setFit(mine?.fit || '');
     setText(mine ? mine.review : '');
     setPhotos(mine?.photos || []);
     setError('');
@@ -67,6 +70,7 @@ export default function ProductReviews({ productId }) {
       await axios.post('/api/reviews', {
         product: productId,
         rating,
+        fit,
         review: text.trim(),
         photos,
       });
@@ -160,6 +164,22 @@ export default function ProductReviews({ productId }) {
             </span>
           </div>
 
+          <div className="pr-fit-row" role="radiogroup" aria-label="How does it fit?">
+            <span className="pr-rate-label">How does it fit? <em>optional</em></span>
+            <span className="pr-fit-opts">
+              {FIT_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={fit === o.value}
+                  className={`pr-fit-opt ${fit === o.value ? 'is-on' : ''}`}
+                  onClick={() => setFit(fit === o.value ? '' : o.value)}
+                >{o.label}</button>
+              ))}
+            </span>
+          </div>
+
           <textarea
             className="pr-textarea"
             rows={4}
@@ -237,6 +257,13 @@ export default function ProductReviews({ productId }) {
                     })}
                   </span>
                 </div>
+                {(r.fit || r.size) && (
+                  <p className="pr-fit-line">
+                    {r.fit && <>Fit: <strong>{fitLabel(r.fit)}</strong></>}
+                    {r.fit && r.size && ' · '}
+                    {r.size && <>Bought size <strong>{r.size}</strong></>}
+                  </p>
+                )}
                 <p className="pr-text">{r.review}</p>
                 {r.photos?.length > 0 && (
                   <div className="pr-photos">

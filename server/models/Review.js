@@ -10,6 +10,10 @@ const reviewSchema = new mongoose.Schema({
   verified:  { type: Boolean, default: false },
   // Up to 3 photos from verified buyers (Cloudinary links, checked on save).
   photos:    { type: [String], default: [] },
+  // How it fits: small = runs small, true = true to size, large = runs large ('' = not said).
+  fit:       { type: String, enum: ['', 'small', 'true', 'large'], default: '' },
+  // The size they received (from their delivered order), so "runs small" has context.
+  size:      { type: String, default: '' },
 }, { timestamps: true });
 
 // One review per user per product

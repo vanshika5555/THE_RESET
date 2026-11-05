@@ -5,6 +5,25 @@ const Order   = require('../models/Order');
 const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 
 // A review photo must be one of this shopper's own uploads to our Cloudinary.
+const FITS = ['', 'small', 'true', 'large'];
+
+/**
+ * "Most say it runs small" — needs at least 2 answers, and a clear majority.
+ * Returns { votes, small, true, large, verdict } where verdict is
+ * small | true | large | mixed | '' (not enough answers).
+ */
+function fitSummary(reviews) {
+  const f = { small: 0, true: 0, large: 0 };
+  reviews.forEach((r) => { if (f[r.fit] !== undefined) f[r.fit] += 1; });
+  const votes = f.small + f.true + f.large;
+  let verdict = '';
+  if (votes >= 2) {
+    const [top, n] = Object.entries(f).sort((a, b) => b[1] - a[1])[0];
+    verdict = n / votes >= 0.6 ? top : 'mixed';
+  }
+  return { votes, ...f, verdict };
+}
+
 const photoOk = (url, userId) => {
   const cloud = process.env.CLOUDINARY_CLOUD_NAME;
   return !!cloud && typeof url === 'string' && url.length < 500
@@ -17,6 +36,7 @@ router.post('/', protect, async (req, res) => {
   const product = typeof req.body.product === 'string' ? req.body.product : '';
   const rating = Math.round(Number(req.body.rating));
   const review = typeof req.body.review === 'string' ? req.body.review.trim() : '';
+  const fit = FITS.includes(req.body.fit) ? req.body.fit : '';
 
   if (!product) return res.status(400).json({ message: 'Which piece is this review for?' });
   if (!(rating >= 1 && rating <= 5)) return res.status(400).json({ message: 'Pick a rating from 1 to 5 stars.' });
@@ -25,7 +45,10 @@ router.post('/', protect, async (req, res) => {
 
   try {
     // "Verified buyer" = this customer has a delivered order with this piece.
-    const verified = !!(await Order.exists({ user: req.user._id, 'items.product': product, status: 'Delivered' }));
+    const delivered = await Order.findOne({ user: req.user._id, 'items.product': product, status: 'Delivered' })
+      .sort({ deliveredAt: -1, createdAt: -1 }).select('items.product items.size').lean();
+    const verified = !!delivered;
+    const size = delivered ? (delivered.items.find((i) => String(i.product) === String(product))?.size || '') : '';
 
     const photos = Array.isArray(req.body.photos) ? [...new Set(req.body.photos)].slice(0, 3) : [];
     if (photos.length && !verified) return res.status(403).json({ message: 'Photos can be added once you’ve received this piece.' });
@@ -37,6 +60,8 @@ router.post('/', protect, async (req, res) => {
       existing.review = review;
       existing.verified = verified;
       existing.photos = photos;
+      existing.fit = fit;
+      existing.size = size;
       const updated = await existing.save();
       return res.json(updated);
     }
@@ -48,6 +73,8 @@ router.post('/', protect, async (req, res) => {
       review,
       verified,
       photos,
+      fit,
+      size,
     });
     res.status(201).json(created);
   } catch (err) {
@@ -119,10 +146,10 @@ router.put('/:id/remove-photo', protect, teamOnly, async (req, res) => {
 // GET /api/reviews/summary/:productId — avg rating + count
 router.get('/summary/:productId', async (req, res) => {
   try {
-    const reviews = await Review.find({ product: req.params.productId });
+    const reviews = await Review.find({ product: req.params.productId }).select('rating fit').lean();
     const count = reviews.length;
     const avg   = count ? (reviews.reduce((s, r) => s + r.rating, 0) / count).toFixed(1) : 0;
-    res.json({ count, avg: parseFloat(avg) });
+    res.json({ count, avg: parseFloat(avg), fit: fitSummary(reviews) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -155,3 +182,4 @@ router.get('/recent', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.fitSummary = fitSummary;

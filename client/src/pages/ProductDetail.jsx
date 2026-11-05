@@ -13,6 +13,7 @@ import ProductQuestions from '../components/ProductQuestions';
 import RecentlyViewed from '../components/RecentlyViewed';
 import NotifyMe from '../components/NotifyMe';
 import DropPanel from '../components/DropPanel';
+import FitNote from '../components/FitNote';
 import useNow from '../hooks/useNow';
 import { isUpcoming } from '../utils/drops';
 import DeliveryCheck from '../components/DeliveryCheck';
@@ -468,6 +469,7 @@ export default function ProductDetail() {
                 Size Guide
               </button>
             </div>
+            <FitNote productId={product._id} onGuide={() => setGuideOpen(true)} />
             <div className="pd-sizes">
               {product.sizes.map(s => (
                 <button
