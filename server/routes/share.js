@@ -102,6 +102,29 @@ router.get('/product/:id', async (req, res) => {
   }
 });
 
+// GET /share/edit/:slug — an edit's cover, name and blurb
+router.get('/edit/:slug', async (req, res) => {
+  const slug = String(req.params.slug || '').toLowerCase();
+  const url = `${SHOP()}/edit/${encodeURIComponent(slug)}`;
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  const plain = { title: 'THE RESET — Considered Essentials', description: 'Considered essentials for men and women.', image: `${SHOP()}/og.jpg`, url };
+  try {
+    const Collection = require('../models/Collection');
+    const c = await Collection.findOne({ slug, published: true }).lean();
+    if (!c) return res.status(404).send(page(plain));
+    let pic = c.image;
+    if (!pic) {
+      const first = await Product.find({ _id: { $in: c.products }, inStock: { $ne: false } }).select('image images').lean();
+      const byId = Object.fromEntries(first.map((p) => [String(p._id), p]));
+      pic = c.products.map((id) => byId[String(id)]).filter(Boolean).map((p) => (p.images && p.images[0]) || p.image).find(Boolean);
+    }
+    res.set('Cache-Control', 'public, max-age=600');
+    res.send(page({ title: `${c.title} — THE RESET`, description: c.blurb || `${c.products.length} hand-picked pieces.`, image: cardImage(pic), url }));
+  } catch (err) {
+    res.send(page(plain));
+  }
+});
+
 // GET /share/wishlist/:code — "Zoya's wishlist" card with the first saved piece
 router.get('/wishlist/:code', async (req, res) => {
   const code = String(req.params.code || '');

@@ -12,6 +12,7 @@ import AdminLogin from './components/AdminLogin';
 const Dashboard   = lazy(() => import('./components/Dashboard'));
 const Products    = lazy(() => import('./components/Products'));
 const Restock     = lazy(() => import('./components/Restock'));
+const Edits       = lazy(() => import('./components/Edits'));
 const AddProduct  = lazy(() => import('./components/AddProduct'));
 const EditProduct = lazy(() => import('./components/EditProduct'));
 const AdminOrders = lazy(() => import('./components/AdminOrders'));
@@ -56,6 +57,7 @@ const TITLES = [
   ['/products/edit/:id', 'Edit product'],
   ['/products',          'Products'],
   ['/restock',           'Restock plan'],
+  ['/edits',             'Edits'],
   ['/orders',            'Orders'],
   ['/customers',         'Customers'],
   ['/coupons',           'Discount codes'],
@@ -157,6 +159,7 @@ function Shell({ name, role, onLogout }) {
             <Route path="/" element={<Dashboard name={name} />} />
             <Route path="/products" element={<Products />} />
             <Route path="/restock" element={<Restock />} />
+            <Route path="/edits" element={<Edits />} />
             <Route path="/products/add" element={<AddProduct />} />
             <Route path="/products/edit/:id" element={<EditProduct />} />
             <Route path="/orders" element={<AdminOrders />} />

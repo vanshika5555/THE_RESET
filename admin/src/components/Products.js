@@ -155,6 +155,7 @@ export default function Products() {
           <SearchInput value={query} onChange={setQuery} placeholder="Search products" />
         </div>
         <Link to="/restock" className="btn btn--secondary">Restock plan</Link>
+        <Link to="/edits" className="btn btn--secondary">Edits</Link>
         <BulkEdit products={products} onDone={fetchProducts} />
         <Link to="/products/add" className="btn btn--primary only-desktop">Add product</Link>
       </div>

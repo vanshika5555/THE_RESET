@@ -13,6 +13,7 @@ router.get('/sitemap.xml', async (req, res) => {
   const base = (process.env.SHOP_URL || 'https://the-reset-snowy.vercel.app').replace(/\/$/, '');
   try {
     const products = await Product.find({ inStock: { $ne: false } }).select('_id updatedAt').lean();
+    const edits = await require('../models/Collection').find({ published: true }).select('slug updatedAt').lean();
     const pages = [
       { loc: '/', priority: '1.0' },
       { loc: '/men', priority: '0.9' },
@@ -24,6 +25,7 @@ router.get('/sitemap.xml', async (req, res) => {
     ];
     const urls = [
       ...pages.map(p => `<url><loc>${esc(base + p.loc)}</loc><priority>${p.priority}</priority></url>`),
+      ...edits.map(c => `<url><loc>${esc(`${base}/edit/${c.slug}`)}</loc><lastmod>${new Date(c.updatedAt).toISOString().slice(0, 10)}</lastmod><priority>0.7</priority></url>`),
       ...products.map(p => `<url><loc>${esc(`${base}/product/${p._id}`)}</loc>${
         p.updatedAt ? `<lastmod>${new Date(p.updatedAt).toISOString().slice(0, 10)}</lastmod>` : ''
       }<priority>0.8</priority></url>`),

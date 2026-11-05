@@ -8,6 +8,7 @@ import Testimonials from "../components/Testimonials";
 import EditorialGrid from "../components/EditorialGrid";
 import ShopByCategory from "../components/ShopByCategory";
 import NextDrop from "../components/NextDrop";
+import HomeEdits from "../components/HomeEdits";
 
 export default function Home() {
   usePageMeta({
@@ -21,6 +22,7 @@ export default function Home() {
       <NextDrop />
       <FeaturedCollection />
       <NewArrivals />
+      <HomeEdits />
       <ShopByCategory />
       <PromiseStrip />
       <Testimonials />

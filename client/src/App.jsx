@@ -36,6 +36,7 @@ const AuthPage = lazyPage(() => import('./pages/AuthPage'));
 const MyOrders = lazyPage(() => import('./pages/MyOrders'));
 const WishlistPage = lazyPage(() => import('./pages/WishlistPage'));
 const SharedWishlist = lazyPage(() => import('./pages/SharedWishlist'));
+const EditPage = lazyPage(() => import('./pages/EditPage'));
 const CheckoutRoute = lazyPage(() => import('./pages/CheckoutRoute'));
 const ForgotPassword = lazyPage(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazyPage(() => import('./pages/ResetPassword'));
@@ -72,6 +73,7 @@ function App() {
                 <Route path="/orders"    element={<MyOrders />} />
                 <Route path="/wishlist"  element={<WishlistPage />} />
                 <Route path="/w/:code"   element={<SharedWishlist />} />
+                <Route path="/edit/:slug" element={<EditPage />} />
                 <Route path="/checkout"  element={<CheckoutRoute />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/search" element={<SearchPage />} />
