@@ -16,7 +16,16 @@ const needsStock = (p) => {
   return t.length > 0 && t.some((s) => s.qty <= LOW);
 };
 
+const dropSoon = (p) => p.dropAt && new Date(p.dropAt) > new Date()
+  ? `Drops ${new Date(p.dropAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })} · `
+  : '';
+
 function stockLine(p) {
+  const line = stockOnly(p);
+  return { ...line, text: dropSoon(p) + line.text };
+}
+
+function stockOnly(p) {
   if (!p.inStock) return { text: 'Hidden from the shop', tone: 'muted' };
   const t = trackedStock(p);
   if (t.length === 0) return { text: 'Stock not tracked yet', tone: 'muted' };
@@ -145,6 +154,7 @@ export default function Products() {
         <div className="toolbar-grow">
           <SearchInput value={query} onChange={setQuery} placeholder="Search products" />
         </div>
+        <Link to="/restock" className="btn btn--secondary">Restock plan</Link>
         <BulkEdit products={products} onDone={fetchProducts} />
         <Link to="/products/add" className="btn btn--primary only-desktop">Add product</Link>
       </div>

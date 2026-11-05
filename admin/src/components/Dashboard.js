@@ -293,7 +293,7 @@ export default function Dashboard({ name }) {
         <section className="panel">
           <div className="panel-head">
             <h2 className="panel-title">Stock to check</h2>
-            <Link to="/products" className="panel-link">All products</Link>
+            <Link to="/restock" className="panel-link">Restock plan</Link>
           </div>
           {stockAlerts.length === 0 ? (
             <Empty

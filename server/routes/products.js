@@ -116,6 +116,66 @@ router.get('/:id/pairs', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/products/restock?days=30 — what to reorder (team only).
+ * For every tracked size of every listed product: how many are left, how
+ * many sold in the period (cancelled and unpaid orders don't count), and how
+ * many shoppers asked to hear when it's back. The admin works out days left
+ * and how many to order from these.
+ */
+router.get('/restock', protect, teamOnly, async (req, res) => {
+  try {
+    const days = Math.min(365, Math.max(7, parseInt(req.query.days, 10) || 30));
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const Order = require('../models/Order');
+    const StockAlert = require('../models/StockAlert');
+    const [products, orders, alerts] = await Promise.all([
+      Product.find({ inStock: { $ne: false } }).select('name colorName image images color sizes stock price dropAt subcategory category createdAt').lean(),
+      Order.find({ createdAt: { $gte: since }, status: { $ne: 'Cancelled' }, 'payment.status': { $nin: ['Awaiting', 'Void'] } })
+        .select('items.product items.size items.qty createdAt').lean(),
+      StockAlert.find({ notifiedAt: null }).select('product size').lean(),
+    ]);
+    const key = (id, size) => `${id}|${size}`;
+    const sold = {};
+    orders.forEach((o) => o.items.forEach((i) => {
+      const k = key(i.product, i.size);
+      sold[k] = (sold[k] || 0) + (Number(i.qty) || 1);
+    }));
+    const waiting = {};
+    alerts.forEach((a) => { const k = key(a.product, a.size); waiting[k] = (waiting[k] || 0) + 1; });
+
+    const rows = [];
+    for (const p of products) {
+      // A piece added 10 days ago has had 10 days to sell, not 30 — but judge
+      // anything on at least a week, so one busy launch day isn't taken as the pace.
+      const activeDays = Math.min(days, Math.max(7, Math.round((Date.now() - new Date(p.createdAt)) / 864e5)));
+      for (const size of p.sizes || []) {
+        const entry = (p.stock || []).find((s) => s.size === size);
+        if (!entry) continue;   // stock not tracked for this size
+        const k = key(p._id, size);
+        rows.push({
+          product: p._id,
+          name: p.colorName ? `${p.name} — ${p.colorName}` : p.name,
+          image: (p.images && p.images[0]) || p.image || '',
+          color: p.color,
+          category: p.category,
+          subcategory: p.subcategory,
+          price: p.price,
+          upcoming: !!(p.dropAt && new Date(p.dropAt) > new Date()),
+          size,
+          left: entry.qty,
+          sold: sold[k] || 0,
+          activeDays,
+          waiting: waiting[k] || 0,
+        });
+      }
+    }
+    res.json({ days, since, rows });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not work out the restock plan.' });
+  }
+});
+
 // GET /api/products/drops — upcoming drops, soonest first (public).
 router.get('/drops', async (req, res) => {
   try {

@@ -75,6 +75,11 @@ const icons = {
       <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
     </svg>
   ),
+  restock: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/><path d="M16.5 5.5l-9 5"/>
+    </svg>
+  ),
   add: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <circle cx="12" cy="12" r="10"/>
@@ -97,6 +102,7 @@ const LINKS = [
   { to: '/gift-cards',   label: 'Gift cards',  icon: icons.gift, owner: true },
   { to: '/products',     label: 'Products',    icon: icons.products },
   { to: '/products/add', label: 'Add product', icon: icons.add },
+  { to: '/restock',      label: 'Restock plan', icon: icons.restock },
   { to: '/team',         label: 'Team',        icon: icons.team, owner: true },
   { to: '/security',     label: 'Security',    icon: icons.security },
 ];
