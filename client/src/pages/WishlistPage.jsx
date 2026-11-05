@@ -1,38 +1,58 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useWishlist } from '../context/WishlistContext';
-import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import WishCard from '../components/WishCard';
 import './WishlistPage.css';
-import { cdn } from '../utils/img';
-import Price from '../components/Price';
 
-// Is this size still available? Pieces saved before stock tracking fall back
-// to the simple in/out switch.
-const sizeLeft = (p, size) => {
-  if (p.inStock === false) return false;
-  if (!p.stock || p.stock.length === 0) return true;
-  const entry = p.stock.find(s => s.size === size);
-  return !!entry && entry.qty > 0;
-};
-
-const photoOf = (p) => (p.images && p.images[0]) || p.image || '';
+const linkFor = (code) => `${window.location.origin}/w/${code}`;
 
 export default function WishlistPage() {
   const { wishlist, toggleWishlist } = useWishlist();
-  const { addToCart } = useCart();
-  const [selectedSizes, setSelectedSizes] = useState({});
-  const [needSize, setNeedSize] = useState(null);   // product id missing a size
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSizeSelect = (productId, size) => {
-    setSelectedSizes(prev => ({ ...prev, [productId]: size }));
-    if (needSize === productId) setNeedSize(null);
+  // Sharing: a link friends can open to see (and buy from) this list.
+  const [share, setShare] = useState({ shared: false, code: '' });
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState('');
+  useEffect(() => {
+    if (!user) return;
+    axios.get('/api/auth/wishlist/share').then((r) => setShare(r.data)).catch(() => {});
+  }, [user]);
+
+  const copy = async (url) => {
+    try { await navigator.clipboard.writeText(url); setNote('Link copied.'); }
+    catch { setNote('Copy the link above to send it.'); }
   };
 
-  const handleAddToCart = (product) => {
-    const size = selectedSizes[product._id];
-    if (!size) { setNeedSize(product._id); return; }
-    setNeedSize(null);
-    addToCart(product, size);
+  const startSharing = async () => {
+    setNote('');
+    if (!user) { navigate('/login', { state: { from: '/wishlist' } }); return; }
+    setBusy(true);
+    try {
+      const { data } = await axios.post('/api/auth/wishlist/share', { wishlist: wishlist.map((p) => p._id) });
+      setShare(data);
+      const url = linkFor(data.code);
+      // Phones: the share sheet (WhatsApp, Messages…). Elsewhere: copy.
+      if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+        try { await navigator.share({ title: 'My THE RESET wishlist', text: 'A few things I’d love:', url }); }
+        catch { /* closed the sheet — the link is still shown */ }
+      } else {
+        await copy(url);
+      }
+    } catch (err) {
+      setNote(err.response?.data?.message || 'Could not share right now. Please try again.');
+    }
+    setBusy(false);
+  };
+
+  const stopSharing = async () => {
+    setBusy(true);
+    try { const { data } = await axios.delete('/api/auth/wishlist/share'); setShare(data); setNote('Sharing stopped — the link won’t open until you share again.'); }
+    catch { setNote('Could not stop sharing. Please try again.'); }
+    setBusy(false);
   };
 
   return (
@@ -40,7 +60,31 @@ export default function WishlistPage() {
       <div className="wl-header">
         <h1 className="wl-title">Wishlist</h1>
         <p className="wl-count">{wishlist.length} item{wishlist.length !== 1 ? 's' : ''}</p>
+        {wishlist.length > 0 && !share.shared && (
+          <button type="button" className="wl-share-btn" onClick={startSharing} disabled={busy}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+            {busy ? 'Sharing…' : 'Share wishlist'}
+          </button>
+        )}
       </div>
+
+      {share.shared && (
+        <div className="wl-shared" role="region" aria-label="Your shared wishlist link">
+          <p className="wl-shared-title">Your wishlist is shared</p>
+          <p className="wl-shared-text">Anyone with this link sees the pieces you’ve saved — handy for birthdays. It shows your first name only, never your email or address.</p>
+          <div className="wl-shared-row">
+            <input readOnly value={linkFor(share.code)} aria-label="Wishlist link" onFocus={(e) => e.target.select()} />
+            <button type="button" onClick={() => (navigator.share && window.matchMedia('(pointer: coarse)').matches
+              ? navigator.share({ title: 'My THE RESET wishlist', url: linkFor(share.code) }).catch(() => {})
+              : copy(linkFor(share.code)))}
+            >Share link</button>
+          </div>
+          <button type="button" className="wl-shared-stop" onClick={stopSharing} disabled={busy}>Stop sharing</button>
+        </div>
+      )}
+      {note && <p className="wl-note" role="status">{note}</p>}
 
       {wishlist.length === 0 ? (
         <div className="wl-empty">
@@ -53,66 +97,9 @@ export default function WishlistPage() {
         </div>
       ) : (
         <div className="wl-grid">
-          {wishlist.map(product => {
-            const sizes = product.sizes || [];
-            const allGone = sizes.length > 0 && sizes.every(s => !sizeLeft(product, s));
-            return (
-              <div key={product._id} className="wl-card">
-                <div className="wl-card-img" style={{ background: product.color || '#f0f0f0' }}>
-                  <Link to={`/product/${product._id}`} className="wl-photo-link" aria-label={`View ${product.name}`}>
-                    {photoOf(product) && <img src={cdn(photoOf(product), 600)} alt="" className="wl-photo" loading="lazy" />}
-                  </Link>
-                  {allGone && <span className="wl-soldout">Sold Out</span>}
-                  <button
-                    className="wl-remove-btn"
-                    onClick={() => toggleWishlist(product)}
-                    aria-label={`Remove ${product.name} from wishlist`}
-                    title="Remove from wishlist"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#111" stroke="#111" strokeWidth="1.5" aria-hidden="true">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                    </svg>
-                  </button>
-                </div>
-                <div className="wl-card-info">
-                  <Link to={`/product/${product._id}`} className="wl-card-name">{product.name}</Link>
-                  <p className="wl-card-price"><Price value={product.price} mrp={product.mrp} /></p>
-
-                  {!allGone && sizes.length > 0 && (
-                    <div className="wl-sizes" role="group" aria-label="Choose a size">
-                      {sizes.map(s => {
-                        const left = sizeLeft(product, s);
-                        return (
-                          <button
-                            key={s}
-                            type="button"
-                            className={`wl-size-btn ${selectedSizes[product._id] === s ? 'wl-size-btn--active' : ''}`}
-                            onClick={() => handleSizeSelect(product._id, s)}
-                            disabled={!left}
-                            aria-pressed={selectedSizes[product._id] === s}
-                          >
-                            {s}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {needSize === product._id && (
-                    <p className="wl-warn" role="alert">Pick a size first.</p>
-                  )}
-
-                  <button
-                    className="wl-add-btn"
-                    onClick={() => handleAddToCart(product)}
-                    disabled={allGone}
-                  >
-                    {allGone ? 'Sold Out' : 'Add to Bag'}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {wishlist.map((product) => (
+            <WishCard key={product._id} product={product} onRemove={toggleWishlist} />
+          ))}
         </div>
       )}
     </div>

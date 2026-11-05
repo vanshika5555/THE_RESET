@@ -197,3 +197,45 @@
   .wl-empty-actions { flex-direction: column; width: 100%; max-width: 320px; }
   .wl-empty-actions .wl-shop-btn { justify-content: center; min-height: 50px; }
 }
+/* Sharing */
+.wl-header { flex-wrap: wrap; }
+.wl-share-btn {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px;
+  border: 1px solid #111; background: #fff; color: #111; font-family: 'Archivo', sans-serif; font-size: 12px;
+  font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+}
+.wl-share-btn:hover { background: #111; color: #fff; }
+.wl-share-btn:disabled { opacity: 0.6; cursor: progress; }
+.wl-shared { margin: -16px 0 32px; padding: 18px 20px; border: 1.5px solid #111; font-family: 'Archivo', sans-serif; }
+.wl-shared-title { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #111; }
+.wl-shared-text { margin: 0 0 14px; font-size: 13.5px; line-height: 1.5; color: #5e5e5e; }
+.wl-shared-row { display: flex; gap: 8px; }
+.wl-shared-row input {
+  flex: 1 1 auto; min-width: 0; height: 46px; padding: 0 12px; border: 1px solid #ccc; background: #fafafa;
+  font: inherit; font-size: 14px; color: #111; outline: none;
+}
+.wl-shared-row input:focus { border-color: #111; }
+.wl-shared-row button {
+  flex: 0 0 auto; height: 46px; padding: 0 18px; border: 0; background: #111; color: #fff;
+  font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+}
+.wl-shared-stop { margin-top: 12px; padding: 0; border: 0; background: none; font: inherit; font-size: 13px; color: #777; text-decoration: underline; cursor: pointer; }
+.wl-note { margin: -20px 0 28px; font-family: 'Archivo', sans-serif; font-size: 13.5px; color: #15803d; }
+.wl-header--shared { flex-direction: column; align-items: flex-start; gap: 6px; }
+.wl-eyebrow { margin: 0; font-family: 'Archivo', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #888; }
+.wl-gift-tip {
+  margin: -16px 0 32px; padding: 14px 16px; background: #f6f5f2; font-family: 'Archivo', sans-serif;
+  font-size: 14px; line-height: 1.6; color: #444; max-width: 760px;
+}
+.wl-gift-tip a { color: #111; }
+.wl-soldout--drop { background: #111; }
+.wl-add-btn--link { display: block; text-align: center; text-decoration: none; box-sizing: border-box; }
+@media (max-width: 600px) {
+  .wl-share-btn { margin-left: 0; width: 100%; justify-content: center; }
+  .wl-shared { margin-top: 0; padding: 16px; }
+  .wl-shared-row { flex-direction: column; }
+  .wl-shared-row input, .wl-shared-row button { flex: none; width: 100%; }
+  .wl-shared-row input { font-size: 16px; }
+  .wl-note { margin-top: 0; }
+  .wl-gift-tip { margin-top: 0; font-size: 13.5px; }
+}

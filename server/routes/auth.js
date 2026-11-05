@@ -576,6 +576,71 @@ router.put('/wishlist', protect, async (req, res) => {
   }
 });
 
+/*
+  Shared wishlist: a link like /w/k3J9xQ2a that shows the saved pieces to
+  anyone (friends buying a gift). The owner can stop sharing at any time;
+  the same link comes back if they share again.
+*/
+const sharedLimiter = require('express-rate-limit')({
+  windowMs: 60 * 1000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ message: 'Too many requests. Please try again in a minute.' }),
+});
+const cleanIds = (list) => (Array.isArray(list) ? list : []).map(String).filter((id) => /^[a-f0-9]{24}$/i.test(id)).slice(0, 100);
+const shareState = (u) => ({ shared: !!u.wishlistShared, code: u.wishlistShared ? u.wishlistCode : '' });
+
+// GET /api/auth/wishlist/share — is my wishlist shared, and its code
+router.get('/wishlist/share', protect, async (req, res) => {
+  const u = await User.findById(req.user._id).select('wishlistCode wishlistShared').lean();
+  res.json(shareState(u || {}));
+});
+
+// POST /api/auth/wishlist/share — { wishlist?: [ids] } turn sharing on
+router.post('/wishlist/share', protect, async (req, res) => {
+  try {
+    const u = await User.findById(req.user._id).select('wishlist wishlistCode wishlistShared');
+    if (Array.isArray(req.body?.wishlist)) u.wishlist = cleanIds(req.body.wishlist);
+    if (!u.wishlist.length) return res.status(400).json({ message: 'Save a piece or two first, then share.' });
+    for (let i = 0; !u.wishlistCode && i < 5; i++) {
+      const code = crypto.randomBytes(6).toString('base64url');
+      if (!(await User.exists({ wishlistCode: code }))) u.wishlistCode = code;
+    }
+    u.wishlistShared = true;
+    await u.save();
+    res.json(shareState(u));
+  } catch (err) {
+    res.status(400).json({ message: 'Could not share your wishlist. Please try again.' });
+  }
+});
+
+// DELETE /api/auth/wishlist/share — stop sharing; the link shows "not shared"
+router.delete('/wishlist/share', protect, async (req, res) => {
+  await User.updateOne({ _id: req.user._id }, { $set: { wishlistShared: false } });
+  res.json({ shared: false, code: '' });
+});
+
+// GET /api/auth/wishlist/shared/:code — the pieces on someone's shared wishlist (public)
+router.get('/wishlist/shared/:code', sharedLimiter, async (req, res) => {
+  try {
+    const code = String(req.params.code || '');
+    if (!/^[A-Za-z0-9_-]{6,16}$/.test(code)) return res.status(404).json({ message: 'This wishlist link isn’t right.' });
+    const u = await User.findOne({ wishlistCode: code }).select('name wishlist wishlistShared').lean();
+    if (!u) return res.status(404).json({ message: 'This wishlist link isn’t right.' });
+    if (!u.wishlistShared) return res.status(410).json({ message: 'This wishlist isn’t shared any more.' });
+    const Product = require('../models/Product');
+    const found = await Product.find({ _id: { $in: u.wishlist }, inStock: { $ne: false } })
+      .select('name price mrp color image images stock sizes subcategory category colorName dropAt inStock')
+      .lean();
+    const byId = Object.fromEntries(found.map((p) => [String(p._id), p]));
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      name: String(u.name || '').trim().split(/\s+/)[0] || 'Someone',
+      items: u.wishlist.map((id) => byId[String(id)]).filter(Boolean),
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not load this wishlist.' });
+  }
+});
+
 // GET /api/auth/reminders/off?u=&t= — "stop these reminders" link in the bag email
 router.get('/reminders/off', async (req, res) => {
   const { validOff } = require('../utils/bagReminders');

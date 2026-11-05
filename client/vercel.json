@@ -20,6 +20,17 @@
       "destination": "https://the-reset-api.onrender.com/share/product/:id"
     },
     {
+      "source": "/w/:code",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|Facebot|meta-externalagent|Twitterbot|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterestbot|SkypeUriPreview|redditbot|Embedly).*"
+        }
+      ],
+      "destination": "https://the-reset-api.onrender.com/share/wishlist/:code"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

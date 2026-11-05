@@ -69,6 +69,9 @@ const userSchema = new mongoose.Schema({
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     default: [],
   },
+  // A link anyone can open to see the wishlist (for gifting). Off = the link stops working.
+  wishlistCode:   { type: String, unique: true, sparse: true },
+  wishlistShared: { type: Boolean, default: false },
 
   // Recently viewed, newest first, capped so it cannot grow forever.
   viewed: {

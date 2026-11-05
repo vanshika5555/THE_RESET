@@ -102,4 +102,30 @@ router.get('/product/:id', async (req, res) => {
   }
 });
 
+// GET /share/wishlist/:code — "Zoya's wishlist" card with the first saved piece
+router.get('/wishlist/:code', async (req, res) => {
+  const code = String(req.params.code || '');
+  const url = `${SHOP()}/w/${encodeURIComponent(code)}`;
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  const plain = { title: 'A wishlist on THE RESET', description: 'Pieces saved on THE RESET — pick one as a gift.', image: `${SHOP()}/og.jpg`, url };
+  try {
+    if (!/^[A-Za-z0-9_-]{6,16}$/.test(code)) return res.status(404).send(page(plain));
+    const User = require('../models/User');
+    const u = await User.findOne({ wishlistCode: code, wishlistShared: true }).select('name wishlist').lean();
+    if (!u) return res.status(404).send(page(plain));
+    const first = String(u.name || '').trim().split(/\s+/)[0] || 'Someone';
+    const items = await Product.find({ _id: { $in: u.wishlist }, inStock: { $ne: false } }).select('image images').lean();
+    const pic = items.map((p) => (p.images && p.images[0]) || p.image).find(Boolean);
+    res.set('Cache-Control', 'public, max-age=600');
+    res.send(page({
+      title: `${first}’s wishlist`,
+      description: `${items.length} piece${items.length === 1 ? '' : 's'} ${first} would love from THE RESET. Pick one as a gift.`,
+      image: cardImage(pic),
+      url,
+    }));
+  } catch (err) {
+    res.send(page(plain));
+  }
+});
+
 module.exports = router;
