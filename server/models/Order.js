@@ -42,6 +42,8 @@ const orderSchema = new mongoose.Schema({
   subtotal: { type: Number, required: true },
   discount: { type: Number, default: 0 },
   couponCode: { type: String, default: '' },
+  // An automatic offer applied instead of a code (the discount above is its saving).
+  offerName: { type: String, default: '' },
   delivery: { type: Number, required: true, default: 0 },
   total:    { type: Number, required: true, default: 0 },
   // A private note for the shop's own use — packing reminders, customer

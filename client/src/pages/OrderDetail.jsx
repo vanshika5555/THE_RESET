@@ -239,7 +239,7 @@ export default function OrderDetail() {
             </div>
             {order.discount > 0 && (
               <div className="od-sum-row od-sum-row--discount">
-                <span>Discount{order.couponCode ? ` (${order.couponCode})` : ''}</span>
+                <span>{order.offerName || `Discount${order.couponCode ? ` (${order.couponCode})` : ''}`}</span>
                 <span>− {inr(order.discount)}</span>
               </div>
             )}

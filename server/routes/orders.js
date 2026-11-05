@@ -29,6 +29,8 @@ const { buildShipment } = require('../utils/couriers');
 const { ensureInvoiceNumber, renderInvoice } = require('../utils/invoice');
 const { log, entry, forCustomer, rupees } = require('../utils/orderLog');
 const credit = require('../utils/credit');
+const Offer = require('../models/Offer');
+const { bestOffer } = require('../utils/offers');
 
 // "Delhivery · 123456" — or '' when there's no tracking number.
 const trackingLine = (order) => (order.shipment?.trackingNumber
@@ -75,6 +77,7 @@ router.post('/', protect, async (req, res) => {
     }
 
     const verifiedItems = [];
+    const offerLines = [];   // for automatic offers: price, qty and department of each line
     let subtotal = 0;
 
     for (const line of items) {
@@ -111,6 +114,7 @@ router.post('/', protect, async (req, res) => {
       const unitPrice = parsePrice(product.price);
       subtotal += unitPrice * qty;
 
+      offerLines.push({ price: unitPrice, qty, category: product.category });
       verifiedItems.push({
         product: product._id,
         name:  product.colorName ? `${product.name} — ${product.colorName}` : product.name,
@@ -138,6 +142,16 @@ router.post('/', protect, async (req, res) => {
       }
       discount = result.discount;
       appliedCode = coupon.code;
+    }
+
+    // Automatic offers: the best one that fits — used instead of the code if it saves more.
+    let offerName = '';
+    const best = bestOffer(await Offer.find({ active: true }).lean(), offerLines);
+    if (best && best.discount > discount) {
+      discount = best.discount;
+      offerName = best.offer.name;
+      coupon = null;          // the code isn't used, so its use isn't counted
+      appliedCode = '';
     }
 
     const afterDiscount = subtotal - discount;
@@ -205,6 +219,7 @@ router.post('/', protect, async (req, res) => {
         subtotal,
         discount,
         couponCode: appliedCode,
+        offerName,
         delivery,
         total,
         shippingAddress: cleanAddress(shippingAddress),

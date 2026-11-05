@@ -101,7 +101,7 @@ export default function OrderConfirm({ orderId, order: passedOrder }) {
               </div>
               {Number(order.discount) > 0 && (
                 <div className="oc-line">
-                  <span>Discount{order.couponCode ? ` (${order.couponCode})` : ''}</span>
+                  <span>{order.offerName || `Discount${order.couponCode ? ` (${order.couponCode})` : ''}`}</span>
                   <span>− ₹{Number(order.discount).toLocaleString('en-IN')}</span>
                 </div>
               )}

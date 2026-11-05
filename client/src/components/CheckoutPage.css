@@ -684,3 +684,10 @@ button.co-payment-option { width: 100%; background: #fff; text-align: left; font
 .co-credit-text { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: #666; line-height: 1.45; }
 .co-credit-text strong { font-size: 14px; font-weight: 600; color: #111; }
 .co-credit-all { margin: 0 0 24px; padding: 12px 14px; background: #edf7f0; color: #166534; font-size: 13.5px; line-height: 1.5; }
+
+/* automatic offers */
+.co-offers { display: flex; flex-direction: column; gap: 6px; margin: 0 0 16px; }
+.co-offer { margin: 0; padding: 10px 12px; background: #edf7f0; color: #166534; font-size: 13.5px; line-height: 1.45; }
+.co-offer strong { font-weight: 600; }
+.co-offer-muted { margin: 0; font-size: 13px; color: #6b6b6b; line-height: 1.45; }
+.co-offer-next { margin: 0; padding: 10px 12px; background: #f6f6f4; font-size: 13.5px; color: #333; line-height: 1.45; }

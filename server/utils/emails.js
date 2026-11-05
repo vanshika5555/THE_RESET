@@ -71,7 +71,7 @@ function totalsTable(order) {
     </tr>`;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">
     ${line('Subtotal', inr(order.subtotal))}
-    ${order.discount > 0 ? line(`Discount${order.couponCode ? ` (${esc(order.couponCode)})` : ''}`, `− ${inr(order.discount)}`) : ''}
+    ${order.discount > 0 ? line(order.offerName ? esc(order.offerName) : `Discount${order.couponCode ? ` (${esc(order.couponCode)})` : ''}`, `− ${inr(order.discount)}`) : ''}
     ${line('Delivery', order.delivery > 0 ? inr(order.delivery) : 'Free')}
     ${order.payment && order.payment.codFee > 0 ? line('Cash on delivery fee', inr(order.payment.codFee)) : ''}
     ${line('Total', inr(order.total || order.subtotal), true)}

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/WishlistContext";
 import { cartSubtotal, amountToFreeDelivery, formatPrice } from "../utils/price";
+import useOffers from "../hooks/useOffers";
+import { nudgeText } from "../utils/offers";
 import "./CartDrawer.css";
 import { cdn } from "../utils/img";
 
@@ -16,6 +18,8 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
   const subtotal = cartSubtotal(cart);
   const toFree = amountToFreeDelivery(subtotal);
   const count = cart.reduce((s, i) => s + i.qty, 0);
+  // Automatic offers: what's already saved, and how close the next one is.
+  const { best, next } = useOffers(cart);
 
   // Escape closes; the page behind does not scroll while the bag is open.
   useEffect(() => {
@@ -73,6 +77,8 @@ export default function CartDrawer({ cart, onClose, onRemove, onQtyChange, onChe
             {toFree > 0
               ? <p>Add <strong>₹{toFree.toLocaleString('en-IN')}</strong> more for free delivery.</p>
               : <p><strong>Free delivery</strong> on this order.</p>}
+            {best && <p className="cd-offer">✓ <strong>{best.offer.name}</strong> — you save {formatPrice(best.discount)} at checkout.</p>}
+            {next && <p className="cd-offer cd-offer--next">{nudgeText(next, formatPrice)}.</p>}
           </div>
         )}
 

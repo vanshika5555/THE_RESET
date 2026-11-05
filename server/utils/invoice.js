@@ -296,7 +296,7 @@ function renderInvoice(order) {
 
   <div class="sum"><table>
     <tr><td>Items</td><td class="r">${money(inv.itemsTotal)}</td></tr>
-    ${inv.discount ? `<tr><td>Discount${order.couponCode ? ` (${esc(order.couponCode)})` : ''}</td><td class="r">− ${money(inv.discount)}</td></tr>` : ''}
+    ${inv.discount ? `<tr><td>${order.offerName ? `Offer: ${esc(order.offerName)}` : `Discount${order.couponCode ? ` (${esc(order.couponCode)})` : ''}`}</td><td class="r">− ${money(inv.discount)}</td></tr>` : ''}
     <tr><td>${order.payment && order.payment.codFee > 0 ? 'Delivery &amp; COD fee' : 'Delivery'}</td><td class="r">${inv.delivery ? money(inv.delivery) : 'Free'}</td></tr>
     ${inv.withTax ? `<tr><td style="color:#888">Includes GST</td><td class="r" style="color:#888">${money(inv.taxTotal)}</td></tr>` : ''}
     <tr class="total"><td>${order.payment && order.payment.method === 'cod' && order.payment.status === 'Pending' && !(order.payment.credit > 0) ? 'Total to pay' : 'Total'}</td><td class="r">${money(inv.total)}</td></tr>

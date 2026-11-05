@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { cartSubtotal, deliveryCharge, amountToFreeDelivery, formatPrice } from '../utils/price';
+import useOffers from '../hooks/useOffers';
+import { nudgeText } from '../utils/offers';
 import { payWithRazorpay } from '../utils/razorpay';
 import AddressFields, { BLANK_ADDRESS, validateAddress } from './AddressFields';
 import './AddressFields.css';
@@ -50,7 +52,11 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
   }, [user]);
 
   const subtotal = cartSubtotal(cart);
-  const discount = coupon ? coupon.discount : 0;
+  // A code or today's automatic offer — whichever saves more (the server decides the same way).
+  const { best: offer, next: nextOffer } = useOffers(cart);
+  const codeSaving = coupon ? coupon.discount : 0;
+  const useOffer = offer && offer.discount > codeSaving;
+  const discount = useOffer ? offer.discount : codeSaving;
   const afterDiscount = subtotal - discount;
   const delivery = deliveryCharge(afterDiscount);
   const applyCredit = useCredit && creditBalance > 0;
@@ -180,7 +186,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
         {
           items: orderItems,
           shippingAddress: address,
-          couponCode: coupon ? coupon.code : '',
+          couponCode: coupon && !useOffer ? coupon.code : '',
           guestEmail: user ? '' : guestEmail.trim(),
           guestName: user ? '' : address.fullName,
           paymentMethod: payMethod,
@@ -574,6 +580,14 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
             )}
           </div>
 
+          {(offer || nextOffer) && (
+            <div className="co-offers">
+              {useOffer && <p className="co-offer">✓ <strong>{offer.offer.name}</strong> applied{coupon ? ` — it saves more than ${coupon.code}, so the code isn’t used` : ''}.</p>}
+              {offer && !useOffer && <p className="co-offer-muted">Your code saves more than today’s offer “{offer.offer.name}”, so the code is used.</p>}
+              {nextOffer && <p className="co-offer-next">{nudgeText(nextOffer, formatPrice)}.</p>}
+            </div>
+          )}
+
           <div className="co-totals">
             <div className="co-total-row">
               <span>Subtotal</span>
@@ -581,7 +595,7 @@ export default function CheckoutPage({ cart, onOrderSuccess }) {
             </div>
             {discount > 0 && (
               <div className="co-total-row co-total-row--discount">
-                <span>Discount ({coupon.code})</span>
+                <span>{useOffer ? offer.offer.name : `Discount (${coupon.code})`}</span>
                 <span>− ₹{discount.toLocaleString('en-IN')}</span>
               </div>
             )}

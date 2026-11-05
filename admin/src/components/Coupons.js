@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { inr, fmtDate, Badge, Switch, Empty, ErrorNote, Drawer } from './ui';
 import './Coupons.css';
+import AutoOffers from './AutoOffers';
 
 // Numbers stay text while the form is open so boxes can be cleared and retyped.
 const BLANK = {
@@ -129,6 +130,8 @@ export default function Coupons() {
   return (
     <div className="coupons">
       <ErrorNote onClose={() => setError('')}>{error}</ErrorNote>
+
+      <AutoOffers />
 
       <div className="toolbar">
         <p className="cp-intro toolbar-grow">Codes customers type at checkout to get money off.</p>

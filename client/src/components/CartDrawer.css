@@ -298,3 +298,7 @@
   .cd-items { padding-top: 16px; gap: 16px; }
   .cd-item { padding-bottom: 16px; }
 }
+/* automatic offers */
+.cd-progress .cd-offer { margin-top: 4px; color: #166534; }
+.cd-progress .cd-offer strong { color: #166534; font-weight: 600; }
+.cd-progress .cd-offer--next { color: #444; }
