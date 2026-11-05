@@ -43,6 +43,9 @@ const productSchema = new mongoose.Schema({
   // "Wear it with": up to 4 pieces the owner chose to show alongside this one.
   pairsWith:   { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }], default: [] },
   inStock:     { type: Boolean, default: true },     // master switch — hide it regardless of counts
+  // A drop: shown with a countdown and "Notify me", but can't be bought until this moment.
+  dropAt:          { type: Date, default: null },
+  dropNotifiedAt:  { type: Date, default: null },     // when the "it's live" emails went out
 }, { timestamps: true });
 
 // How many are left in a given size.

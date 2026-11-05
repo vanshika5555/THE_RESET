@@ -7,6 +7,7 @@ import PromiseStrip from "../components/PromiseStrip";
 import Testimonials from "../components/Testimonials";
 import EditorialGrid from "../components/EditorialGrid";
 import ShopByCategory from "../components/ShopByCategory";
+import NextDrop from "../components/NextDrop";
 
 export default function Home() {
   usePageMeta({
@@ -17,6 +18,7 @@ export default function Home() {
   return (
     <div>
       <Hero />
+      <NextDrop />
       <FeaturedCollection />
       <NewArrivals />
       <ShopByCategory />

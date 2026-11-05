@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import { isUpcoming } from '../utils/drops';
 
 const CartContext = createContext();
 
@@ -76,6 +77,7 @@ export function CartProvider({ children }) {
   }, [cart]);
 
   const addToCart = (product, size) => {
+    if (isUpcoming(product)) return;   // a drop can't go in the bag before it's live
     setCart(prev => {
       const existing = prev.findIndex(i => i._id === product._id && i.size === size);
       if (existing !== -1) {

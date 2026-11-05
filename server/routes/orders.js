@@ -31,6 +31,7 @@ const { log, entry, forCustomer, rupees } = require('../utils/orderLog');
 const credit = require('../utils/credit');
 const Offer = require('../models/Offer');
 const { bestOffer } = require('../utils/offers');
+const { isUpcoming, dropWhen } = require('../utils/drops');
 
 // "Delhivery · 123456" — or '' when there's no tracking number.
 const trackingLine = (order) => (order.shipment?.trackingNumber
@@ -93,6 +94,9 @@ router.post('/', protect, async (req, res) => {
       }
       if (!product.inStock) {
         return res.status(400).json({ message: `${product.name} is out of stock` });
+      }
+      if (isUpcoming(product)) {
+        return res.status(400).json({ message: `${product.name} drops on ${dropWhen(product.dropAt)} — it can't be ordered yet.` });
       }
       if (line.size && !product.sizes.includes(line.size)) {
         return res.status(400).json({ message: `${product.name} is not available in size ${line.size}` });

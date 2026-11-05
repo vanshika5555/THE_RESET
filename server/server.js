@@ -133,6 +133,7 @@ mongoose.connect(process.env.MONGO_URI)
       require('./utils/bagReminders').startBagReminders();
       require('./routes/payments').startPaymentSweeper();
       require('./utils/dailyDigest').startDailyDigest();
+      require('./utils/drops').startDropAlerts();
     });
   })
   .catch((err) => console.log('MongoDB error:', err));

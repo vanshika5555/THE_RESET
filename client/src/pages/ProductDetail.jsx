@@ -12,6 +12,9 @@ import CompleteLook from '../components/CompleteLook';
 import ProductQuestions from '../components/ProductQuestions';
 import RecentlyViewed from '../components/RecentlyViewed';
 import NotifyMe from '../components/NotifyMe';
+import DropPanel from '../components/DropPanel';
+import useNow from '../hooks/useNow';
+import { isUpcoming } from '../utils/drops';
 import DeliveryCheck from '../components/DeliveryCheck';
 import { addRecent } from '../utils/recent';
 import Loading from '../components/Loading';
@@ -270,6 +273,9 @@ export default function ProductDetail() {
     copiedTimer.current = setTimeout(() => setCopied(false), 2200);
   };
 
+  // Ticks while a drop is counting down; flips the page to buyable at the moment.
+  const now = useNow(!!product?.dropAt && new Date(product.dropAt).getTime() > Date.now());
+
   if (loading) return <Loading label="Loading product..." />;
   if (error)   return <div className="pd-state">{error}</div>;
   if (!product) return null;
@@ -321,6 +327,7 @@ export default function ProductDetail() {
   const soldOut = !product.inStock || product.sizes.every(s => qtyFor(s) <= 0);
   // A sold-out size can still be picked — it opens "Notify me" instead.
   const chosenGone = !!chosenSize && qtyFor(chosenSize) <= 0;
+  const upcoming = isUpcoming(product, now);
   const mainImg = gallery[activeImg] || gallery[0];
   const backTo = product.category === 'Women' ? '/women' : '/men';
 
@@ -501,6 +508,9 @@ export default function ProductDetail() {
             </p>
           )}
 
+          {upcoming && <DropPanel product={product} now={now} />}
+
+          {!upcoming && <>
           {chosenGone && <NotifyMe key={chosenSize} productId={product._id} size={chosenSize} />}
 
           {sizeWarning && !chosenGone && (
@@ -530,6 +540,7 @@ export default function ProductDetail() {
               Buy Now
             </button>
           </div>
+          </>}
 
           {added && (
             <div className="pd-added-row">
@@ -601,7 +612,7 @@ export default function ProductDetail() {
       <RecentlyViewed excludeId={product._id} />
 
       {/* Phone: Add to Bag stays in reach after scrolling down */}
-      {!soldOut && (
+      {!soldOut && !upcoming && (
         <div className={`pd-bar ${showBar ? 'pd-bar--show' : ''}`} aria-hidden={!showBar}>
           <div className="pd-bar-text">
             <span className="pd-bar-name">{product.name}</span>

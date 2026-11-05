@@ -61,7 +61,7 @@ async function sendDue() {
     const byId = Object.fromEntries(products.map((p) => [String(p._id), p]));
     const items = u.cart.map((i) => {
       const p = byId[String(i.product)];
-      if (!p || p.inStock === false) return null;
+      if (!p || p.inStock === false || (p.dropAt && new Date(p.dropAt) > new Date())) return null;
       const left = qtyFor(p, i.size);
       if (left <= 0) return null;
       return {

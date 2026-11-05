@@ -5,6 +5,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import "../components/CollectionPage.css";
 import CardGallery from "../components/CardGallery";
 import QuickAdd from '../components/QuickAdd';
+import { isUpcoming, dropBadge } from '../utils/drops';
 import { parsePrice } from "../utils/price";
 import Loading from "../components/Loading";
 import usePageMeta from '../hooks/usePageMeta';
@@ -496,7 +497,8 @@ export default function CollectionPage({ category = 'Men' }) {
                 <CardGallery product={p} />
                 <QuickAdd product={p} />
                 {isSoldOut(p) && <span className="cp-soldout">Sold Out</span>}
-                {p.tag && !isSoldOut(p) && <span className="cp-tag">{p.tag}</span>}
+                {isUpcoming(p) ? <span className="cp-tag cp-tag--drop">{dropBadge(p.dropAt)}</span>
+                  : p.tag && !isSoldOut(p) && <span className="cp-tag">{p.tag}</span>}
                 {p.season && p.season !== 'All Season' && (
                   <span className="cp-season-tag">{p.season}</span>
                 )}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { isUpcoming } from '../utils/drops';
 import './QuickAdd.css';
 
 const left = (p, size) => {
@@ -18,7 +19,7 @@ export default function QuickAdd({ product }) {
   const [open, setOpen] = useState(false);
   const sizes = product.sizes || [];
 
-  if (!sizes.length || sizes.every(s => left(product, s) <= 0)) return null;
+  if (!sizes.length || isUpcoming(product) || sizes.every(s => left(product, s) <= 0)) return null;
 
   // Nothing in here may bubble up and open the product page.
   const stop = (e) => { e.stopPropagation(); e.preventDefault(); };

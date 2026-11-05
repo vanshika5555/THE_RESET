@@ -219,6 +219,22 @@ function backInStock({ product, size }) {
   return { subject, html, text };
 }
 
+function dropLive({ product }) {
+  const url = `${SHOP_URL()}/product/${product._id}`;
+  const img = (product.images && product.images[0]) || product.image;
+  const subject = `It's live: ${product.name}`;
+  const text = `${product.name} has just dropped. Sizes go fast: ${url}`;
+  const html = layout({
+    preheader: 'It just dropped. Sizes go fast.',
+    heading: 'It\'s live.',
+    body: `${img ? `<img src="${esc(img)}" alt="" width="200" style="display:block;width:200px;max-width:100%;margin:0 0 18px">` : ''}
+      <strong style="color:#111">${esc(product.name)}</strong> has just dropped.
+      You asked us to tell you the moment it went live — sizes go fast, so don't wait long.`,
+    cta: { href: url, label: 'Shop the drop' },
+  });
+  return { subject, html, text };
+}
+
 const RETURN_COPY = {
   Requested: { subject: 'request received', heading: 'Request received', line: "We've got your request and will reply within 1 working day." },
   Approved:  { subject: 'approved',         heading: 'Approved',         line: "Your request is approved. We'll arrange a pickup — keep the pieces unworn with tags on." },
@@ -411,4 +427,4 @@ function giftCardReceipt({ card, name }) {
   return { subject, html, text };
 }
 
-module.exports = { referralReward, questionAnswered, giftCard, giftCardReceipt, layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };
+module.exports = { dropLive, referralReward, questionAnswered, giftCard, giftCardReceipt, layout, inr, priceDrop, bagReminder, passwordReset, passwordChanged, welcome, orderPlaced, orderStatus, backInStock, returnUpdate, welcomeCode, esc };

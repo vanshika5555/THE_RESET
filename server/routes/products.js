@@ -5,6 +5,7 @@ const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMidd
 const User = require('../models/User');
 const { notifyRestocked } = require('./alerts');
 const { notifyPriceDrop } = require('../utils/priceDrops');
+const { isUpcoming } = require('../utils/drops');
 
 // GET all products  (public — the shop needs this)
 router.get('/', async (req, res) => {
@@ -46,8 +47,8 @@ function cleanPairs(list, selfId) {
   return ids.slice(0, MAX_PAIRS);
 }
 
-const CARD = 'name price mrp color image images inStock stock sizes subcategory category colorName styleGroup';
-const sellable = (p) => p && p.inStock !== false
+const CARD = 'name price mrp color image images inStock stock sizes subcategory category colorName styleGroup dropAt';
+const sellable = (p) => p && p.inStock !== false && !isUpcoming(p)
   && (!(p.stock || []).length || p.stock.some((s) => s.qty > 0));
 
 /**
@@ -114,6 +115,18 @@ router.get('/:id/pairs', async (req, res) => {
   }
 });
 
+// GET /api/products/drops — upcoming drops, soonest first (public).
+router.get('/drops', async (req, res) => {
+  try {
+    const list = await Product.find({ dropAt: { $gt: new Date() }, inStock: { $ne: false } })
+      .select(`${CARD} dropAt`).sort({ dropAt: 1 }).limit(6).lean();
+    res.set('Cache-Control', 'public, max-age=60');
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ message: 'Could not load drops.' });
+  }
+});
+
 // GET /api/products/:id/colours — every colour of this style, this one included (public)
 router.get('/:id/colours', async (req, res) => {
   try {
@@ -145,7 +158,8 @@ router.get('/:id', async (req, res) => {
 // POST create product  (admin only)
 router.post('/', protect, teamOnly, async (req, res) => {
   try {
-    const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, ...fields } = req.body || {};
+    const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, dropNotifiedAt, lowestNotifiedPrice, ...fields } = req.body || {};
+    if (fields.dropAt === '') fields.dropAt = null;
     if ('pairsWith' in fields) fields.pairsWith = cleanPairs(fields.pairsWith) || [];
     const group = await groupFor(linkTo);
     if (group !== undefined) fields.styleGroup = group;
@@ -162,7 +176,13 @@ router.put('/:id', protect, teamOnly, async (req, res) => {
   try {
     // Bump the version so an order being placed at this exact moment
     // re-reads the product instead of overwriting this edit (see orders.js).
-    const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, lowestNotifiedPrice, ...changes } = req.body || {};
+    const { _id, __v, createdAt, updatedAt, styleGroup, linkTo, lowestNotifiedPrice, dropNotifiedAt, ...changes } = req.body || {};
+    if ('dropAt' in changes) {
+      changes.dropAt = changes.dropAt ? new Date(changes.dropAt) : null;
+      if (changes.dropAt && Number.isNaN(changes.dropAt.getTime())) return res.status(400).json({ message: 'That drop date is not a real date.' });
+      // A new future drop time means a fresh "it's live" email.
+      if (changes.dropAt && changes.dropAt > new Date()) changes.dropNotifiedAt = null;
+    }
     const group = await groupFor(linkTo, req.params.id);
     if (group !== undefined) changes.styleGroup = group;
     if ('pairsWith' in changes) changes.pairsWith = cleanPairs(changes.pairsWith, req.params.id) || [];

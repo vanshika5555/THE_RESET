@@ -9,6 +9,7 @@ const User = require('../models/User');
 const { protect, adminOnly, teamOnly, isTeam } = require('../middleware/authMiddleware');
 const { sendMailLater } = require('../utils/mailer');
 const emails = require('../utils/emails');
+const { DROP, isUpcoming, dropWhen } = require('../utils/drops');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -45,7 +46,17 @@ router.post('/', alertLimiter, async (req, res) => {
 
     if (!EMAIL_RE.test(email)) return res.status(400).json({ message: 'Please enter a valid email address.' });
 
-    const product = await Product.findById(productId).select('name sizes');
+    const product = await Product.findById(productId).select('name sizes dropAt');
+    // An upcoming drop: one sign-up for the launch, whatever the size.
+    if (product && size === DROP) {
+      if (!isUpcoming(product)) return res.status(400).json({ message: 'This piece is already live — you can buy it now.' });
+      await StockAlert.updateOne(
+        { product: product._id, size: DROP, email },
+        { $set: { user: user ? user._id : null, notifiedAt: null } },
+        { upsert: true }
+      );
+      return res.status(201).json({ message: `Done — we'll email ${email} the moment it drops (${dropWhen(product.dropAt)}).` });
+    }
     if (!product || !product.sizes.includes(size)) {
       return res.status(400).json({ message: 'That size is not available for this piece.' });
     }
@@ -76,7 +87,7 @@ router.get('/summary', protect, teamOnly, async (req, res) => {
     rows.forEach(r => {
       if (!r.product) return;
       const key = `${r.product._id}|${r.size}`;
-      map[key] = map[key] || { product: r.product._id, name: r.product.name, size: r.size, waiting: 0 };
+      map[key] = map[key] || { product: r.product._id, name: r.product.name, size: r.size === DROP ? 'Launch' : r.size, waiting: 0 };
       map[key].waiting += 1;
     });
     res.json(Object.values(map).sort((a, b) => b.waiting - a.waiting));
