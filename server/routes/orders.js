@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const Order = require('../models/Order');
 const Product = require('../models/Product');
@@ -16,7 +17,7 @@ const cleanAddress = (a = {}) => Object.fromEntries(
   ADDRESS_FIELDS.map(k => [k, typeof a[k] === 'string' ? a[k].trim().slice(0, 200) : ''])
 );
 
-const { reserve, restock } = require('../utils/stock');
+const { reserve, restock, recordMoves } = require('../utils/stock');
 
 // Free text from the checkout: trimmed, single-spaced lines, length-capped.
 const cleanText = (v, max) => (typeof v === 'string'
@@ -185,8 +186,10 @@ router.post('/', protect, async (req, res) => {
     // Reserve stock line by line; if any line has just sold out, put back
     // what was already taken and tell the customer exactly which piece.
     const reserved = [];
+    const orderId = new mongoose.Types.ObjectId();
+    const moves = [];   // stock history, saved once the order exists
     for (const item of verifiedItems) {
-      if (await reserve(item)) {
+      if (await reserve(item, { reason: 'order', order: orderId, by: req.user, defer: moves })) {
         reserved.push(item);
       } else {
         await restock(reserved);
@@ -218,6 +221,7 @@ router.post('/', protect, async (req, res) => {
     let order;
     try {
       order = await Order.create({
+        _id: orderId,
         user: req.user._id,
         items: verifiedItems,
         subtotal,
@@ -245,6 +249,7 @@ router.post('/', protect, async (req, res) => {
       throw err;
     }
     if (creditUsed > 0) await credit.logSpent(req.user._id, creditUsed, order._id);
+    recordMoves(moves);
 
     if (method === 'online') {
       // Ask Razorpay for a payment order; the shopper pays in the Razorpay window.
@@ -282,7 +287,7 @@ async function releaseOrder(order, paymentStatus = 'Void') {
     }
   );
   if (!r.modifiedCount) return false;
-  await restock(order.items);
+  await restock(order.items, { reason: 'unpaid', order: order._id });
   if (order.couponCode) await Coupon.updateOne({ code: order.couponCode, usedCount: { $gt: 0 } }, { $inc: { usedCount: -1 } });
   await creditBack(order);
   return true;
@@ -480,7 +485,7 @@ async function changeStatus(orderId, status, user, shipmentInput) {
     const updated = await order.save();
 
     if (previous !== 'Cancelled' && req.body.status === 'Cancelled') {
-      await restock(order.items);
+      await restock(order.items, { reason: 'cancel', order: order._id, by: req.user });
       if (await creditBack(updated)) updated.history = (await Order.findById(updated._id).select('history')).history;
     }
     if (previous !== req.body.status) {
@@ -587,7 +592,7 @@ router.put('/:id/cancel', protect, async (req, res) => {
       return res.status(400).json({ message: 'This order has already been processed.' });
     }
 
-    await restock(order.items);
+    await restock(order.items, { reason: 'cancel', order: order._id, by: req.user });
     // Paid online? Refund straight away.
     if (updated.payment?.method === 'online' && updated.payment.status === 'Paid') {
       try {

@@ -1,0 +1,24 @@
+.sh-empty { margin: 0; font-size: 14px; color: var(--text-3); }
+.sh-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.sh-sum { margin: 0; font-size: 14px; color: var(--text-2); }
+.sh-sum strong { color: var(--text); font-weight: 650; }
+.sh-sizes { display: flex; flex-wrap: wrap; gap: 6px; }
+.sh-sizes button {
+  min-width: 40px; min-height: 32px; padding: 0 10px; border: 1px solid var(--line, #e5e5e2); border-radius: 999px;
+  background: #fff; font: inherit; font-size: 13px; color: var(--text-2); cursor: pointer;
+}
+.sh-sizes button.is-on { border-color: var(--text); background: var(--text); color: #fff; }
+.sh-list { list-style: none; margin: 0; padding: 0; }
+.sh-list li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line, #efefec); }
+.sh-change {
+  flex-shrink: 0; min-width: 44px; padding: 4px 0; border-radius: 6px; text-align: center;
+  font-size: 13.5px; font-weight: 650; font-variant-numeric: tabular-nums;
+}
+.sh-change.is-down { background: #f4f4f2; color: var(--text); }
+.sh-change.is-up { background: #e9f7ee; color: #15803d; }
+.sh-what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sh-why { font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
+.sh-why a { color: inherit; font-weight: 600; }
+.sh-when { font-size: 12.5px; color: var(--text-3); }
+.sh-after { flex-shrink: 0; font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.sh-more { margin-top: 6px; padding: 6px 0; border: 0; background: none; font: inherit; font-size: 13.5px; color: var(--text); text-decoration: underline; cursor: pointer; }

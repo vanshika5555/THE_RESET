@@ -6,6 +6,7 @@ const User = require('../models/User');
 const { notifyRestocked } = require('./alerts');
 const { notifyPriceDrop } = require('../utils/priceDrops');
 const { isUpcoming } = require('../utils/drops');
+const { recordEdit } = require('../utils/stock');
 
 // GET all products  (public — the shop needs this)
 router.get('/', async (req, res) => {
@@ -127,6 +128,22 @@ router.get('/drops', async (req, res) => {
   }
 });
 
+// GET /api/products/:id/stock-history — the last 60 stock changes, newest first (team only)
+router.get('/:id/stock-history', protect, teamOnly, async (req, res) => {
+  try {
+    if (!/^[a-f0-9]{24}$/i.test(req.params.id)) return res.json([]);
+    const StockMove = require('../models/StockMove');
+    const rows = await StockMove.find({ product: req.params.id }).sort({ createdAt: -1, _id: -1 }).limit(60).lean();
+    res.json(rows.map((r) => ({
+      _id: r._id, at: r.createdAt, size: r.size, change: r.change, after: r.after, reason: r.reason,
+      order: r.order ? String(r.order) : '', orderNo: r.order ? String(r.order).slice(-8).toUpperCase() : '',
+      by: r.by ? { name: r.by.name, role: r.by.role } : null,
+    })));
+  } catch (err) {
+    res.status(500).json({ message: 'Could not load the stock history.' });
+  }
+});
+
 // GET /api/products/:id/colours — every colour of this style, this one included (public)
 router.get('/:id/colours', async (req, res) => {
   try {
@@ -165,6 +182,7 @@ router.post('/', protect, teamOnly, async (req, res) => {
     if (group !== undefined) fields.styleGroup = group;
     const product = new Product(fields);
     const saved = await product.save();
+    recordEdit(null, saved.toObject(), req.user);
     res.status(201).json(saved);
   } catch (err) {
     res.status(err.status || 400).json({ message: err.message });
@@ -193,6 +211,7 @@ router.put('/:id', protect, teamOnly, async (req, res) => {
       { new: true, runValidators: true }
     );
     if (!updated) return res.status(404).json({ message: 'Product not found' });
+    recordEdit(before, updated.toObject(), req.user);   // stock history, one line per changed size
     notifyRestocked(before, updated.toObject());   // emails anyone waiting; never blocks the save
     notifyPriceDrop(before, updated.toObject());   // wishlist shoppers hear about a lower price
     res.json(updated);

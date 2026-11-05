@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { sizesFor, guessFitType } from '../utils/sizeOptions';
 import { Switch, Thumb, ErrorNote } from './ui';
 import PhotoDrop from './PhotoDrop';
+import StockHistory from './StockHistory';
 import './ProductForm.css';
 
 const CATEGORIES = {
@@ -27,8 +28,18 @@ export const BLANK_PRODUCT = {
   name: '', price: '', mrp: '', description: '', category: 'Men', season: 'All Season',
   subcategory: '', fitType: 'Top', tag: '', color: '#ececea', inStock: true,
   sizes: [], stock: [], image: '', images: [''], materials: '', delivery: '',
-  colorName: '', swatch: '',
+  colorName: '', swatch: '', dropAt: null,
 };
+
+// A drop time as the date-time box wants it ("2026-11-13T19:00", this computer's time).
+const toLocalInput = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const dropText = (iso) => new Date(iso).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
 
 // Prices are numbers now (2990); older products may still hold text ("₹2,990").
 const priceDigits = (p) => (typeof p === 'number'
@@ -356,6 +367,12 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
             )}
           </Card>
 
+          {initial?._id && (
+            <Card order={4} title="Stock history" hint="Every sale, cancel and edit, with how many were left after.">
+              <StockHistory productId={initial._id} />
+            </Card>
+          )}
+
           <Card order={5} title="Care and delivery" hint="Shown on the product page.">
             <div className="form-grid">
               <div className="field span-2">
@@ -379,6 +396,27 @@ export default function ProductForm({ initial, onSave, saveLabel }) {
                 <span>{form.inStock ? 'Customers can see and buy it.' : 'Customers can’t see it.'}</span>
               </span>
               <Switch on={form.inStock} onChange={() => set('inStock', !form.inStock)} label="Show in the shop" />
+            </div>
+          </Card>
+
+          <Card order={6} title="Drop" hint="Show it with a countdown before it goes on sale. Shoppers can ask to be emailed the moment it’s live.">
+            <div className="field">
+              <label className="field-label" htmlFor="pf-drop">Goes on sale <span className="field-opt">optional</span></label>
+              <input
+                id="pf-drop"
+                className="input"
+                type="datetime-local"
+                value={toLocalInput(form.dropAt)}
+                onChange={(e) => set('dropAt', e.target.value ? new Date(e.target.value).toISOString() : null)}
+              />
+              {form.dropAt && (
+                <p className={`pf-drop-note ${new Date(form.dropAt) > new Date() ? '' : 'pf-drop-note--live'}`}>
+                  {new Date(form.dropAt) > new Date()
+                    ? `Can’t be bought until ${dropText(form.dropAt)}.`
+                    : `Went live ${dropText(form.dropAt)}.`}
+                  {' '}<button type="button" className="pf-link" onClick={() => set('dropAt', null)}>Remove</button>
+                </p>
+              )}
             </div>
           </Card>
 
