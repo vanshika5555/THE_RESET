@@ -17,6 +17,7 @@ function why(m) {
     case 'order':  return <>Sold · order {order}</>;
     case 'cancel': return <>Order {order} cancelled{m.by && m.by.role !== 'user' && name ? ` by ${name}` : m.by ? ' by the customer' : ''}</>;
     case 'unpaid': return <>Order {order} not paid · put back</>;
+    case 'size':   return m.change < 0 ? <>Order {order} · customer swapped to this size</> : <>Order {order} · customer swapped out of this size</>;
     case 'new':    return <>Added{name ? ` by ${name}` : ''}</>;
     default:       return <>Edited{name ? ` by ${name}` : ''}</>;
   }

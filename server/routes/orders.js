@@ -17,7 +17,7 @@ const cleanAddress = (a = {}) => Object.fromEntries(
   ADDRESS_FIELDS.map(k => [k, typeof a[k] === 'string' ? a[k].trim().slice(0, 200) : ''])
 );
 
-const { reserve, restock, recordMoves } = require('../utils/stock');
+const { reserve, restock, recordMoves, adjustStock } = require('../utils/stock');
 
 // Free text from the checkout: trimmed, single-spaced lines, length-capped.
 const cleanText = (v, max) => (typeof v === 'string'
@@ -712,6 +712,49 @@ router.put('/:id/address', protect, async (req, res) => {
     res.json(forCustomer(order));
   } catch (err) {
     res.status(400).json({ message: 'Could not save the address. Please try again.' });
+  }
+});
+
+/**
+ * PUT /api/orders/:id/items/:itemId/size — { size }
+ * Swap one piece for another size before the order ships. The new size is
+ * taken from stock first; only then is the old one put back, so a size that
+ * has just sold out can't be promised.
+ */
+router.put('/:id/items/:itemId/size', protect, async (req, res) => {
+  try {
+    const size = typeof req.body.size === 'string' ? req.body.size.trim().slice(0, 10) : '';
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (String(order.user) !== String(req.user._id)) return res.status(403).json({ message: 'This order is not on your account.' });
+    if (!['Pending', 'Confirmed'].includes(order.status) || order.shipment?.trackingNumber) {
+      return res.status(400).json({ message: 'This order has already been handed to the courier, so sizes can’t change now. You can exchange it once it arrives.' });
+    }
+    const item = order.items.id(req.params.itemId);
+    if (!item) return res.status(404).json({ message: 'That piece isn’t on this order.' });
+    if (item.size === size) return res.json(forCustomer(order));
+
+    const product = await Product.findById(item.product).select('name sizes inStock');
+    if (!product || !product.sizes.includes(size)) return res.status(400).json({ message: 'That size isn’t available for this piece.' });
+
+    const why = { reason: 'size', order: order._id, by: req.user };
+    if (!(await adjustStock(item.product, size, -item.qty, why))) {
+      return res.status(409).json({ message: `Size ${size} has sold out${item.qty > 1 ? ` (or there aren’t ${item.qty} left)` : ''}. Your order still has size ${item.size}.` });
+    }
+    const was = item.size;
+    // Save the order before putting the old size back; if saving fails, undo the take.
+    item.size = size;
+    log(order, 'change', `Size changed by the customer · ${item.name} ${was} → ${size}`, req.user);
+    try {
+      await order.save();
+    } catch (err) {
+      await adjustStock(item.product, size, item.qty);
+      throw err;
+    }
+    await adjustStock(item.product, was, item.qty, why);
+    res.json(forCustomer(order));
+  } catch (err) {
+    res.status(400).json({ message: 'Could not change the size. Please try again.' });
   }
 });
 

@@ -9,6 +9,7 @@ import openInvoice from '../utils/openInvoice';
 import { formatPrice } from '../utils/price';
 import useBuyAgain from '../hooks/useBuyAgain';
 import AddressEditor from '../components/AddressEditor';
+import SizeSwap from '../components/SizeSwap';
 
 const inr = (n) => '₹' + (n || 0).toLocaleString('en-IN');
 
@@ -48,6 +49,8 @@ export default function OrderDetail() {
   const [buyAgain, buying, buyNote] = useBuyAgain();
   const [editingAddr, setEditingAddr] = useState(false);
   const [addrNote, setAddrNote] = useState('');
+  const [swapping, setSwapping] = useState(null);   // item id being resized
+  const [swapNote, setSwapNote] = useState({});     // item id -> message
 
   usePageMeta({ title: 'Order details' });
 
@@ -159,8 +162,22 @@ export default function OrderDetail() {
                   <Link to={`/product/${item.product || item._id}`} className="od-item-name">
                     {item.name}
                   </Link>
-                  <p className="od-item-meta">Size {item.size} · Qty {item.qty}</p>
+                  <p className="od-item-meta">
+                    Size {item.size} · Qty {item.qty}
+                    {canChangeAddress && item._id && swapping !== item._id && (
+                      <> · <button type="button" className="od-change od-change--inline" onClick={() => { setSwapping(item._id); setSwapNote((n) => ({ ...n, [item._id]: '' })); }}>Change size</button></>
+                    )}
+                  </p>
                   <p className="od-item-price">{formatPrice(item.price)}</p>
+                  {swapping === item._id && (
+                    <SizeSwap
+                      orderId={order._id}
+                      item={item}
+                      onClose={() => setSwapping(null)}
+                      onSaved={(o, msg) => { setOrder(o); setSwapping(null); setSwapNote((n) => ({ ...n, [item._id]: msg })); }}
+                    />
+                  )}
+                  {swapNote[item._id] && <p className="od-addr-saved" role="status">✓ {swapNote[item._id]}</p>}
                 </div>
               </div>
             ))}

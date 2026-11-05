@@ -11,7 +11,8 @@ const stockMoveSchema = new mongoose.Schema({
   change:  { type: Number, required: true },          // −1 sold, +3 restocked
   after:   { type: Number, default: null },           // how many were left afterwards
   // order = sold · cancel = order cancelled · unpaid = online payment never came · edit = changed in the admin
-  reason:  { type: String, enum: ['order', 'cancel', 'unpaid', 'edit', 'new'], required: true },
+  // size = the customer swapped sizes on an order before it shipped
+  reason:  { type: String, enum: ['order', 'cancel', 'unpaid', 'edit', 'new', 'size'], required: true },
   order:   { type: mongoose.Schema.Types.ObjectId, ref: 'Order', default: null },
   by: {
     type: new mongoose.Schema({

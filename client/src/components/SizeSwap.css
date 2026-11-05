@@ -1,0 +1,11 @@
+.ss { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.ss-sizes { display: flex; flex-wrap: wrap; gap: 6px; }
+.ss-size { min-width: 44px; height: 40px; padding: 0 10px; border: 1px solid #ddd; background: #fff; font: inherit; font-size: 13.5px; color: #111; cursor: pointer; }
+.ss-size.is-on { border-color: #111; background: #111; color: #fff; }
+.ss-size:disabled { color: #bbb; background: #fafafa; text-decoration: line-through; cursor: not-allowed; }
+.ss-actions { display: flex; align-items: center; gap: 14px; }
+.ss-btn { height: 40px; padding: 0 16px; border: 1px solid #111; background: #111; color: #fff; font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.ss-btn:disabled { opacity: 0.45; cursor: default; }
+.ss-link { padding: 0; border: 0; background: none; font: inherit; font-size: 13px; color: #666; text-decoration: underline; cursor: pointer; }
+.ss-note { margin: 0; font-size: 13px; color: #888; }
+.ss-error { margin: 0; font-size: 13px; color: #b91c1c; }
