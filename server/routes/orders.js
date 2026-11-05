@@ -661,6 +661,60 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
+/**
+ * The same checks as the checkout form: who, a phone that can be called,
+ * and an address the courier can find. Returns a message, or '' when fine.
+ */
+function addressProblem(a) {
+  if (!a.fullName || a.fullName.length < 3) return 'Enter the full name of the person receiving the order.';
+  if (!/^[6-9]\d{9}$/.test(a.phone)) return 'Enter a 10 digit mobile number.';
+  if (!a.houseNo) return 'Add the flat, house number or building.';
+  if (!a.address || a.address.length < 3) return 'Add the street or area.';
+  if (!a.city || !a.state) return 'Add the city and state.';
+  if (!/^[1-9]\d{5}$/.test(a.pincode)) return 'Enter a 6 digit pincode.';
+  return '';
+}
+
+/**
+ * PUT /api/orders/:id/address — { shippingAddress, deliveryNote? }
+ * The customer fixes where it goes — only until it's handed to the courier.
+ */
+router.put('/:id/address', protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (String(order.user) !== String(req.user._id)) return res.status(403).json({ message: 'This order is not on your account.' });
+    if (!['Pending', 'Confirmed'].includes(order.status) || order.shipment?.trackingNumber) {
+      return res.status(400).json({ message: 'This order has already been handed to the courier, so the address can’t change now. Contact us and we’ll try to help.' });
+    }
+
+    const next = cleanAddress(req.body.shippingAddress);
+    next.phone = next.phone.replace(/\D/g, '').slice(-10);
+    next.pincode = next.pincode.replace(/\D/g, '');
+    const problem = addressProblem(next);
+    if (problem) return res.status(400).json({ message: problem });
+
+    const before = order.shippingAddress?.toObject ? order.shippingAddress.toObject() : (order.shippingAddress || {});
+    const changed = ADDRESS_FIELDS.filter((k) => String(before[k] || '') !== next[k]);
+    if (changed.length) {
+      order.shippingAddress = next;
+      const where = [next.city, next.pincode].filter(Boolean).join(' ');
+      log(order, 'address', `Delivery address changed by the customer · ${where}`, req.user);
+    }
+    if ('deliveryNote' in (req.body || {})) {
+      const note = cleanText(req.body.deliveryNote, 200);
+      if (note !== (order.deliveryNote || '')) {
+        order.deliveryNote = note;
+        log(order, 'address', 'Courier note changed by the customer', req.user);
+      }
+    }
+    await order.save();
+    res.json(forCustomer(order));
+  } catch (err) {
+    res.status(400).json({ message: 'Could not save the address. Please try again.' });
+  }
+});
+
 // PUT /api/orders/:id/note — save the shop's private note on an order (admin only)
 router.put('/:id/note', protect, teamOnly, async (req, res) => {
   try {

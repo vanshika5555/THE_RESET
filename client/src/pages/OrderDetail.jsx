@@ -8,6 +8,7 @@ import ReturnPanel from '../components/ReturnPanel';
 import openInvoice from '../utils/openInvoice';
 import { formatPrice } from '../utils/price';
 import useBuyAgain from '../hooks/useBuyAgain';
+import AddressEditor from '../components/AddressEditor';
 
 const inr = (n) => '₹' + (n || 0).toLocaleString('en-IN');
 
@@ -45,6 +46,8 @@ export default function OrderDetail() {
   const [awbCopied, setAwbCopied] = useState(false);
   const [invoiceError, setInvoiceError] = useState('');
   const [buyAgain, buying, buyNote] = useBuyAgain();
+  const [editingAddr, setEditingAddr] = useState(false);
+  const [addrNote, setAddrNote] = useState('');
 
   usePageMeta({ title: 'Order details' });
 
@@ -99,6 +102,8 @@ export default function OrderDetail() {
       .catch(() => {});
   };
   const currentStep = STEPS.indexOf(order.status);
+  // The address can change until the parcel is with the courier.
+  const canChangeAddress = ['Pending', 'Confirmed'].includes(order.status) && !order.shipment?.trackingNumber;
   const addressLine = [a.houseNo, a.address, a.landmark, a.city, a.state]
     .filter(Boolean).join(', ');
 
@@ -224,12 +229,29 @@ export default function OrderDetail() {
           )}
 
           <div className="od-box">
-            <h2 className="od-section-title">Delivery Address</h2>
-            <p className="od-addr-name">{a.fullName}</p>
-            <p className="od-addr-line">{addressLine}</p>
-            <p className="od-addr-line">{a.pincode}</p>
-            {a.phone && <p className="od-addr-line">+91 {a.phone}</p>}
-            {order.deliveryNote && <p className="od-addr-line od-delnote">Note for the courier: {order.deliveryNote}</p>}
+            <div className="od-box-head">
+              <h2 className="od-section-title">Delivery Address</h2>
+              {canChangeAddress && !editingAddr && (
+                <button type="button" className="od-change" onClick={() => { setEditingAddr(true); setAddrNote(''); }}>Change</button>
+              )}
+            </div>
+            {editingAddr ? (
+              <AddressEditor
+                order={order}
+                onClose={() => setEditingAddr(false)}
+                onSaved={(o) => { setOrder(o); setEditingAddr(false); setAddrNote('Saved — we’ll deliver to this address.'); }}
+              />
+            ) : (
+              <>
+                <p className="od-addr-name">{a.fullName}</p>
+                <p className="od-addr-line">{addressLine}</p>
+                <p className="od-addr-line">{a.pincode}</p>
+                {a.phone && <p className="od-addr-line">+91 {a.phone}</p>}
+                {order.deliveryNote && <p className="od-addr-line od-delnote">Note for the courier: {order.deliveryNote}</p>}
+                {addrNote && <p className="od-addr-saved" role="status">✓ {addrNote}</p>}
+                {canChangeAddress && !addrNote && <p className="od-addr-hint">You can change this until the order ships.</p>}
+              </>
+            )}
           </div>
 
           <div className="od-box">

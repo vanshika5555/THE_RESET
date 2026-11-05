@@ -8,7 +8,7 @@
  */
 
 // Lines the customer may see on their order page.
-const PUBLIC_TYPES = new Set(['placed', 'paid', 'status', 'shipment', 'cancelled', 'refund', 'return']);
+const PUBLIC_TYPES = new Set(['placed', 'paid', 'status', 'shipment', 'cancelled', 'refund', 'return', 'address']);
 
 const who = (user) => (user && user._id
   ? { id: user._id, name: String(user.name || '').slice(0, 60), role: user.role || 'user' }
@@ -40,6 +40,8 @@ const CUSTOMER_WORDS = [
   [/^Tracking changed/, 'Tracking number updated'],
   [/^Order cancelled by the shop$/, 'Order cancelled by THE RESET'],
   [/^Cancelled by the customer$/, 'You cancelled the order'],
+  [/^Delivery address changed by the customer · /, 'You changed the delivery address · '],
+  [/^Courier note changed by the customer$/, 'You changed the note for the courier'],
   [/^Online payment wasn’t completed, so the order was cancelled$/, 'Payment wasn’t completed, so the order was cancelled'],
   [/^(Return|Exchange) requested · (\d+ pieces?) · .*$/, (m, kind, n) => `You asked for ${kind === 'Exchange' ? 'an exchange' : 'a return'} · ${n}`],
   [/received back at the shop$/, 'received by us'],
