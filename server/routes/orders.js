@@ -327,6 +327,43 @@ router.post('/:id/abandon', protect, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/orders/track?order=E6F7A8B2&phone=9876543210 — track without signing in.
+ * Needs the order number from the email AND the delivery phone number, and
+ * shows only what a courier slip would: status, pieces, tracking — no address.
+ */
+const trackLimiter = require('express-rate-limit')({
+  windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false,
+  handler: (req, res) => res.status(429).json({ message: 'Too many tries. Please wait a few minutes.' }),
+});
+router.get('/track', trackLimiter, async (req, res) => {
+  try {
+    const short = String(req.query.order || '').replace(/[^a-f0-9]/gi, '').toLowerCase();
+    const phone = String(req.query.phone || '').replace(/\D/g, '').slice(-10);
+    if (short.length < 6 || phone.length !== 10) {
+      return res.status(400).json({ message: 'Enter the order number from your email and the 10-digit phone number it was sent to.' });
+    }
+    const candidates = await Order.find({
+      'shippingAddress.phone': { $in: [phone, `+91${phone}`, `0${phone}`, `+91 ${phone}`] },
+      'payment.status': { $ne: 'Awaiting' },
+    }).sort({ createdAt: -1 }).limit(200);
+    const order = candidates.find((o) => String(o._id).toLowerCase().endsWith(short));
+    if (!order) return res.status(404).json({ message: 'We couldn’t find that order. Check the number and the phone it was placed with.' });
+    const c = forCustomer(order);
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      _id: c._id, number: String(c._id).slice(-8).toUpperCase(), status: c.status, createdAt: c.createdAt, deliveredAt: c.deliveredAt,
+      firstName: String(c.shippingAddress?.fullName || '').split(/\s+/)[0], city: c.shippingAddress?.city || '',
+      items: (c.items || []).map((i) => ({ name: i.name, size: i.size, qty: i.qty, image: i.image, color: i.color })),
+      shipment: c.shipment?.trackingNumber ? { courier: c.shipment.courier, trackingNumber: c.shipment.trackingNumber, trackingUrl: c.shipment.trackingUrl, shippedAt: c.shipment.shippedAt } : null,
+      payment: { method: c.payment?.method, status: c.payment?.status, due: c.payment?.method === 'cod' && c.payment?.status === 'Pending' ? credit.amountDue(c) : 0 },
+      history: c.history || [],
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Could not look that up just now. Please try again.' });
+  }
+});
+
 // GET /api/orders/myorders — the signed-in customer's own orders
 router.get('/myorders', protect, async (req, res) => {
   try {

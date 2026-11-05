@@ -92,6 +92,7 @@ export default function Footer() {
         <div className="footer-col">
           <h2 className="footer-col-title">Help</h2>
           <ul className="footer-links">
+            <li><Link to="/track">Track an Order</Link></li>
             <li><Link to="/help#faq">FAQ</Link></li>
             <li><Link to="/help#shipping">Shipping</Link></li>
             <li><Link to="/help#returns">Returns &amp; Exchanges</Link></li>

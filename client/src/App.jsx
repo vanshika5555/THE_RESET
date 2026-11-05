@@ -46,6 +46,7 @@ const Legal = lazyPage(() => import('./pages/Legal'));
 const NotFound = lazyPage(() => import('./pages/NotFound'));
 const OrderDetail = lazyPage(() => import('./pages/OrderDetail'));
 const GiftCards = lazyPage(() => import('./pages/GiftCards'));
+const TrackOrder = lazyPage(() => import('./pages/TrackOrder'));
 
 function App() {
   return (
@@ -74,6 +75,7 @@ function App() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/help" element={<Help />} />
                 <Route path="/gift-cards" element={<GiftCards />} />
+                <Route path="/track" element={<TrackOrder />} />
                 <Route path="/privacy" element={<Legal />} />
                 <Route path="/terms" element={<Legal />} />
                 <Route path="/profile/*" element={<Profile />} />

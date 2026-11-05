@@ -151,12 +151,15 @@ function orderPlaced({ name, order }) {
     + (order.payment && order.payment.method === 'cod' && order.payment.status === 'Pending'
       ? `\nCash on delivery: keep ${inr(due(order))} ready — pay the courier in cash or by UPI.` : '')
     + (order.payment && order.payment.method === 'credit' ? '\nPaid in full with your store credit.' : '')
-    + `\n\nTrack it: ${SHOP_URL()}/orders/${order._id}`;
+    + `\n\nTrack it: ${SHOP_URL()}/orders/${order._id}`
+    + `\nNo sign-in needed: ${SHOP_URL()}/track?order=${id} (with your phone number)`;
   const html = layout({
     preheader: `We've got it. Total ${inr(order.total || order.subtotal)}.`,
     heading: `Thank you, ${esc(firstName(name))}.`,
     body: `Your order <strong>#${id}</strong> is in. We'll email you again when it ships — usually within 2 working days.
-      ${giftLine(order)}${itemsTable(order.items)}${totalsTable(order)}${payLine(order)}${addressBlock(order.shippingAddress)}`,
+      ${giftLine(order)}${itemsTable(order.items)}${totalsTable(order)}${payLine(order)}${addressBlock(order.shippingAddress)}
+      <p style="margin:14px 0 0;font:400 13px/1.6 Helvetica,Arial,sans-serif;color:#888">Track it any time — no sign-in needed — at
+        <a href="${SHOP_URL()}/track?order=${id}" style="color:#111">${SHOP_URL().replace(/^https?:\/\//, '')}/track</a> with your order number and phone.</p>`,
     cta: { href: `${SHOP_URL()}/orders/${order._id}`, label: 'View order' },
   });
   return { subject, html, text };

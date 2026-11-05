@@ -9,6 +9,65 @@ import './Customers.css';
 
 const orderTotal = (o) => Number(o.total) || Number(o.subtotal) || 0;
 
+const KIND = { refund: 'Return', spent: 'Spent', returned: 'Given back', adjust: 'Added by hand' };
+
+// Store credit: the balance, the latest lines, and adding or taking back credit.
+function CreditBox({ userId }) {
+  const [data, setData] = useState(null);
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    setData(null); setAmount(''); setNote(''); setMsg('');
+    axios.get(`/api/auth/users/${userId}/credit`).then((r) => setData(r.data)).catch(() => setMsg('Could not load their credit.'));
+  }, [userId]);
+
+  const change = async (sign) => {
+    const n = Number(amount);
+    if (!(n > 0)) { setMsg('Enter an amount.'); return; }
+    if (!note.trim()) { setMsg('Add a short reason — they see it on their statement.'); return; }
+    setBusy(true); setMsg('');
+    try {
+      const r = await axios.post(`/api/auth/users/${userId}/credit`, { amount: sign * n, note: note.trim() });
+      setData(r.data); setAmount(''); setNote('');
+    } catch (err) {
+      setMsg(err.response?.data?.message || 'Could not change the credit.');
+    }
+    setBusy(false);
+  };
+
+  if (!data) return <p className="cu-none">{msg || 'Loading…'}</p>;
+  return (
+    <div className="cu-credit">
+      <p className="cu-credit-balance">{inr(data.balance)}<span>to spend at checkout</span></p>
+      {data.history.length > 0 && (
+        <ul className="cu-list">
+          {data.history.slice(0, 5).map((h) => (
+            <li key={h._id}>
+              <span>
+                {h.note || KIND[h.kind]}
+                <span className="cu-credit-meta">{KIND[h.kind]} · {fmtShort(h.createdAt)}{h.by ? ` · ${h.by}` : ''}</span>
+              </span>
+              <span className={`cu-num ${h.amount > 0 ? 'cu-plus' : ''}`}>{h.amount > 0 ? '+' : '−'} {inr(Math.abs(h.amount))}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="cu-credit-form">
+        <input className="input" type="number" inputMode="decimal" min="1" placeholder="₹ amount" value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Amount" />
+        <input className="input" maxLength={120} placeholder="Reason, e.g. Sorry for the late parcel" value={note} onChange={(e) => setNote(e.target.value)} aria-label="Reason" />
+      </div>
+      {msg && <p className="cu-credit-msg" role="alert">{msg}</p>}
+      <div className="cu-credit-actions">
+        <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => change(1)}>Add credit</button>
+        {data.balance > 0 && <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => change(-1)}>Take back</button>}
+      </div>
+    </div>
+  );
+}
+
 function Avatar({ name }) {
   return <span className="cu-avatar" aria-hidden="true">{(name || '?').trim().charAt(0).toUpperCase()}</span>;
 }
@@ -171,6 +230,10 @@ export default function Customers() {
                 <div><span className="cu-stat-value">{inr(os.spent)}</span><span className="cu-stat-label">Spent</span></div>
                 <div><span className="cu-stat-value">{fmtShort(open.createdAt) || '—'}</span><span className="cu-stat-label">Joined</span></div>
               </div>
+            </Section>
+
+            <Section title="Store credit">
+              <CreditBox userId={open._id} />
             </Section>
 
             <Section title={`In their bag (${(open.cart || []).length})`}>

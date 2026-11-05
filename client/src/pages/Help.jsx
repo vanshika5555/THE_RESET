@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: 'How do I track my order?',
-    a: 'Sign in and open My Orders in your profile. Each order shows its current status, from Pending through to Delivered.',
+    a: 'Open “Track an order” (link at the bottom of every page) and enter the order number from your email with your phone number — no sign-in needed. Signed in, My Orders shows every order with its updates.',
   },
   {
     q: 'What sizes do you carry?',

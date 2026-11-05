@@ -1,0 +1,48 @@
+.tr { max-width: 680px; margin: 0 auto; padding: 56px 24px 80px; color: #111; }
+.tr-title { margin: 0 0 10px; font-size: clamp(30px, 6vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+.tr-lede { margin: 0 0 28px; font-size: 15px; line-height: 1.6; color: #555; }
+.tr-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.tr-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tr-field span { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #6b6b6b; }
+.tr-field input { width: 100%; padding: 13px 14px; border: 1px solid #ddd; font: inherit; font-size: 15px; outline: none; }
+.tr-field input:focus { border-color: #111; }
+.tr-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border: 1px solid #111; background: #111; color: #fff; font: inherit; font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; text-decoration: none; cursor: pointer; }
+.tr-btn:disabled { opacity: .5; }
+.tr-btn--sm { min-height: 40px; padding: 0 16px; font-size: 12px; }
+.tr-error { margin: 14px 0 0; padding: 10px 12px; background: #fef2f2; color: #b91c1c; font-size: 14px; }
+.tr-result { margin-top: 32px; padding: 24px; border: 1px solid #e5e5e5; }
+.tr-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 22px; }
+.tr-no { margin: 0; font-size: 18px; font-weight: 700; }
+.tr-sub { margin: 4px 0 0; font-size: 13.5px; color: #6b6b6b; }
+.tr-status { flex-shrink: 0; padding: 4px 12px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: #fef3e2; color: #b45309; }
+.tr-status--confirmed { background: #e0f2fe; color: #0369a1; }
+.tr-status--shipped { background: #ede9fe; color: #6d28d9; }
+.tr-status--delivered { background: #dcfce7; color: #15803d; }
+.tr-status--cancelled { background: #fee2e2; color: #b91c1c; }
+.tr-steps { position: relative; display: flex; justify-content: space-between; list-style: none; margin: 0 0 22px; padding: 0; }
+.tr-steps::before { content: ''; position: absolute; top: 7px; left: 12%; right: 12%; height: 2px; background: #eee; }
+.tr-steps li { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tr-dot { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid #ddd; }
+.tr-steps li.is-done .tr-dot { background: #111; border-color: #111; }
+.tr-step { font-size: 12px; color: #999; }
+.tr-steps li.is-done .tr-step { color: #111; }
+.tr-date { font-size: 11px; color: #6b6b6b; }
+.tr-ship { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; background: #f6f6f4; font-size: 14px; margin-bottom: 14px; }
+.tr-cod { margin: 0 0 14px; padding: 12px 14px; border: 1.5px solid #111; font-size: 14px; }
+.tr-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.tr-items li { display: flex; align-items: center; gap: 12px; font-size: 14.5px; }
+.tr-items small { display: block; margin-top: 2px; font-size: 13px; color: #6b6b6b; }
+.tr-img { flex: 0 0 auto; width: 48px; height: 60px; overflow: hidden; }
+.tr-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tr-h2 { margin: 26px 0 10px; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #6b6b6b; }
+.tr-log { list-style: none; margin: 0; padding: 0; }
+.tr-log li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+.tr-log time { flex-shrink: 0; font-size: 12.5px; color: #6b6b6b; }
+.tr-more { margin: 22px 0 0; font-size: 13.5px; color: #6b6b6b; }
+.tr-more a { color: #111; }
+@media (max-width: 640px) {
+  .tr { padding: 32px 16px 64px; }
+  .tr-form { grid-template-columns: minmax(0, 1fr); }
+  .tr-result { padding: 18px 16px; }
+  .tr-log li { flex-direction: column; gap: 2px; }
+}

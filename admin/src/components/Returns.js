@@ -74,13 +74,21 @@ export default function Returns() {
     setBusy(false);
   };
 
+  // How a return's refund splits: money back, and any part as store credit.
+  const rf = current?.refund || {};
+  const creditPart = rf.method === 'credit' ? (rf.amount || 0) : (rf.creditAmount || 0);
+  const moneyPart = Math.max(0, (rf.amount || 0) - creditPart);
+  const plus = creditPart > 0 && moneyPart > 0 ? ` + ${inr(creditPart)} credit` : '';
+
   const actions = current
     ? current.status === 'Received'
       ? [current.type === 'exchange'
           ? { to: 'Exchanged', label: 'Send the new size' }
-          : current.refund?.method !== 'razorpay'
-            ? { to: 'Refunded', label: current.refund?.amount ? `I've sent ${inr(current.refund.amount)} by UPI` : 'I\'ve sent the refund', needsRef: true }
-            : { to: 'Refunded', label: `Refund ${inr(current.refund?.amount || 0)} now` }]
+          : rf.method === 'credit' || moneyPart === 0
+            ? { to: 'Refunded', label: `Add ${inr(creditPart)} store credit` }
+            : rf.method !== 'razorpay'
+              ? { to: 'Refunded', label: rf.amount ? `I've sent ${inr(moneyPart)} by UPI${plus}` : 'I\'ve sent the refund', needsRef: true }
+              : { to: 'Refunded', label: `Refund ${inr(moneyPart)} now${plus}` }]
       : (NEXT[current.status] || [])
     : [];
 
@@ -157,7 +165,9 @@ export default function Returns() {
                 {current.status === 'Approved' && 'Once the pieces reach you and pass the check, mark them received — they go back into stock.'}
                 {current.status === 'Received' && (current.type === 'exchange'
                   ? 'Send the new size. Its stock is taken off automatically (it must be in stock).'
-                  : current.refund?.method !== 'razorpay'
+                  : rf.method === 'credit'
+                    ? 'They chose store credit. It goes onto their account straight away — they can spend it at checkout.'
+                    : rf.method !== 'razorpay'
                     ? 'They paid cash. Send the refund to their UPI ID from your bank app, then add the reference number below.'
                     : 'They paid online. "Refund now" sends the money back to their card or UPI through Razorpay.')}
                 {['Refunded', 'Exchanged', 'Rejected'].includes(current.status) && 'This request is closed.'}
@@ -166,7 +176,14 @@ export default function Returns() {
 
             {current.type === 'return' && (
               <Section title="Refund" aside={current.refund?.amount > 0 && <strong>{inr(current.refund.amount)}</strong>}>
-                {current.refund?.method !== 'razorpay' ? (
+                {creditPart > 0 && (
+                  <p className="rt-help">
+                    {rf.method === 'credit'
+                      ? <><strong>{inr(creditPart)}</strong> as store credit — the customer chose this.</>
+                      : <><strong>{inr(moneyPart)}</strong> as money and <strong>{inr(creditPart)}</strong> as store credit, because part of the order was paid with credit.</>}
+                  </p>
+                )}
+                {rf.method === 'credit' ? null : current.refund?.method !== 'razorpay' ? (
                   <>
                     {current.refund?.upi && (
                     <div className="rt-upi">
