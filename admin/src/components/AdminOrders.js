@@ -10,6 +10,7 @@ import {
 import openInvoice from '../utils/openInvoice';
 import { toCsv, download } from '../utils/csv';
 import './AdminOrders.css';
+import { TagList } from './CustomerTags';
 
 const fullAddress = (a) =>
   [a?.houseNo, a?.address, a?.landmark, a?.city, a?.state].filter(Boolean).join(', ');
@@ -212,7 +213,7 @@ export default function AdminOrders() {
           </table>
           ${isGift ? '' : `<div class="totals">
             <div><span>Subtotal</span><span>${inr(order.subtotal)}</span></div>
-            ${order.discount ? `<div><span>Discount ${order.couponCode ? '(' + order.couponCode + ')' : ''}</span><span>− ${inr(order.discount)}</span></div>` : ''}
+            ${order.discount ? `<div><span>${order.offerName ? esc(order.offerName) : `Discount ${order.couponCode ? '(' + esc(order.couponCode) + ')' : ''}`}</span><span>− ${inr(order.discount)}</span></div>` : ''}
             <div><span>Delivery</span><span>${order.delivery ? inr(order.delivery) : 'Free'}</span></div>
             <div class="grand"><span>Total</span><span>${inr(orderTotal(order))}</span></div>
             ${order.payment?.method === 'cod' && order.payment?.status === 'Pending' ? `<div class="grand"><span>Collect on delivery</span><span>${inr(amountDue(order))}</span></div>` : ''}
@@ -423,7 +424,7 @@ export default function AdminOrders() {
                 onClick={() => setParam('order', o._id)}
               >
                 <span className="cell orow-cust">
-                  <span className="cell-main">{customerName(o)}</span>
+                  <span className="cell-main">{customerName(o)} <TagList tags={o.user?.shopTags} small /></span>
                   <span className="cell-sub">
                     {o.gift?.isGift && <span className="orow-gift" title="Gift order">🎁 Gift</span>}
                     <span>{shortId(o._id)}</span>
@@ -668,7 +669,7 @@ export default function AdminOrders() {
                   <dt>Subtotal</dt><dd>{inr(open.subtotal)}</dd>
                   {open.discount > 0 && (
                     <>
-                      <dt>Discount{open.couponCode ? ` (${open.couponCode})` : ''}</dt>
+                      <dt>{open.offerName ? `Offer: ${open.offerName}` : `Discount${open.couponCode ? ` (${open.couponCode})` : ''}`}</dt>
                       <dd className="kv-good">− {inr(open.discount)}</dd>
                     </>
                   )}
@@ -691,6 +692,12 @@ export default function AdminOrders() {
                   <span className="od-account-name">{open.user?.name || 'Guest'}</span>
                   {open.user?.email && <span className="od-account-email">{open.user.email}</span>}
                 </div>
+                {(open.user?.shopTags?.length > 0 || open.user?.shopNote) && (
+                  <div className="od-account-notes">
+                    <TagList tags={open.user.shopTags} />
+                    {open.user.shopNote && <p className="od-account-note">{open.user.shopNote}</p>}
+                  </div>
+                )}
                 {open.user && (
                   <button type="button" className="btn btn--ghost btn--sm od-account-link" onClick={() => navigate(`/customers?q=${encodeURIComponent(open.user.email || open.user.name || '')}`)}>
                     See all their orders

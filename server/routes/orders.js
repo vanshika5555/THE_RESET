@@ -402,7 +402,7 @@ router.get('/myorders', protect, async (req, res) => {
 router.get('/', protect, teamOnly, async (req, res) => {
   try {
     const orders = await Order.find({ 'payment.status': { $ne: 'Awaiting' } })
-      .populate('user', 'name email')
+      .populate('user', 'name email +shopTags +shopNote')
       .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {

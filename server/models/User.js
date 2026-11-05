@@ -65,6 +65,11 @@ const userSchema = new mongoose.Schema({
   referredBy:         { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   referralRewarded:   { type: Boolean, default: false },
 
+  // The shop's own labels and notes about a customer ("VIP", "prefers WhatsApp").
+  // Never sent to the customer: left out of every query unless asked for by name.
+  shopTags: { type: [String], default: [], select: false },
+  shopNote: { type: String, default: '', maxlength: 1000, select: false },
+
   wishlist: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     default: [],

@@ -364,7 +364,7 @@ router.put('/changepassword', protect, async (req, res) => {
 router.get('/users', protect, adminOnly, async (req, res) => {
   try {
     const users = await User.find({})
-      .select('-password')
+      .select('-password +shopTags +shopNote')
       // Bring product names through so the admin shows pieces, not ids.
       .populate('wishlist', 'name price category')
       .populate('viewed.product', 'name price category')
@@ -372,6 +372,21 @@ router.get('/users', protect, adminOnly, async (req, res) => {
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// PUT /api/auth/users/:id/notes — { tags: [..], note } the shop's labels for a customer (owner)
+router.put('/users/:id/notes', protect, adminOnly, async (req, res) => {
+  try {
+    const tags = [...new Set((Array.isArray(req.body.tags) ? req.body.tags : [])
+      .map((t) => String(t || '').replace(/\s+/g, ' ').trim().slice(0, 24))
+      .filter(Boolean))].slice(0, 8);
+    const note = String(req.body.note ?? '').trim().slice(0, 1000);
+    const r = await User.updateOne({ _id: req.params.id }, { $set: { shopTags: tags, shopNote: note } });
+    if (!r.matchedCount) return res.status(404).json({ message: 'Customer not found.' });
+    res.json({ shopTags: tags, shopNote: note });
+  } catch (err) {
+    res.status(400).json({ message: 'Could not save the note.' });
   }
 });
 

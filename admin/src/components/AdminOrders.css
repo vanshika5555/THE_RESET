@@ -155,3 +155,7 @@
   .orow-wrap .row { padding-left: 2px; }
   .orow-pick { flex-basis: 40px; padding-left: 6px; }
 }
+
+/* The shop's tags and note about this customer */
+.od-account-notes { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 10px 12px; background: var(--hover); border-radius: var(--r-sm); }
+.od-account-note { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-2); white-space: pre-line; overflow-wrap: anywhere; }

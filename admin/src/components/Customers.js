@@ -6,6 +6,7 @@ import {
   StatusBadge, SearchInput, FilterTabs, Empty, ErrorNote, Chevron, Drawer, Section,
 } from './ui';
 import './Customers.css';
+import CustomerTags, { TagList } from './CustomerTags';
 
 const orderTotal = (o) => Number(o.total) || Number(o.subtotal) || 0;
 
@@ -129,7 +130,8 @@ export default function Customers() {
     if (filter === 'Never')  list = list.filter((u) => sum(u).count === 0);
     if (filter === 'Bag')    list = list.filter((u) => (u.cart || []).length > 0);
     const q = search.trim().toLowerCase();
-    if (q) list = list.filter((u) => (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+    if (q) list = list.filter((u) => (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
+      || (u.shopTags || []).some((t) => t.toLowerCase().includes(q)));
     return [...list].sort((a, b) => sum(b).spent - sum(a).spent || new Date(b.createdAt) - new Date(a.createdAt));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customers, filter, search, summaries]);
@@ -150,7 +152,7 @@ export default function Customers() {
 
       <div className="toolbar">
         <div className="toolbar-grow">
-          <SearchInput value={search} onChange={setSearch} placeholder="Search by name or email" />
+          <SearchInput value={search} onChange={setSearch} placeholder="Search by name, email or tag" />
         </div>
       </div>
 
@@ -189,6 +191,7 @@ export default function Customers() {
                     <span className="cell">
                       <span className="cell-main">{u.name || 'No name'}</span>
                       <span className="cu-email">{u.email}</span>
+                      <TagList tags={u.shopTags} small />
                     </span>
                   </span>
                   <span className="cell cell-muted only-desktop">{fmtDate(u.createdAt)}</span>
@@ -230,6 +233,10 @@ export default function Customers() {
                 <div><span className="cu-stat-value">{inr(os.spent)}</span><span className="cu-stat-label">Spent</span></div>
                 <div><span className="cu-stat-value">{fmtShort(open.createdAt) || '—'}</span><span className="cu-stat-label">Joined</span></div>
               </div>
+            </Section>
+
+            <Section title="Tags and notes">
+              <CustomerTags user={open} onSaved={(d) => setUsers((list) => list.map((u) => (u._id === open._id ? { ...u, ...d } : u)))} />
             </Section>
 
             <Section title="Store credit">
